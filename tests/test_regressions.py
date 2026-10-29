@@ -7,7 +7,7 @@ from aksharacheck.detectors import malformed_clusters, run_dom_detectors, merge_
 def test_invalid_cluster(text):
     assert malformed_clusters(text), text
 
-@pytest.mark.parametrize("text",["क्षत्रिय","ಕೊ","क़ि","क्\\u200dष","किं","क्क्"])
+@pytest.mark.parametrize("text",["क्षत्रिय","ಕೊ","क़ि","क्\u200dष","किं","क्क्"])
 def test_valid_cluster(text):
     assert not malformed_clusters(text), text
 
