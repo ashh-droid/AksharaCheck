@@ -149,158 +149,261 @@ def _fix_message(finding):
     return ""
 
 
-def _card(finding,folder,index):
-    kind=str(finding.get("detector",""))
-    title,why,action=FINDING_COPY.get(kind,("Rendering observation","Review the browser measurements.","Inspect the relevant element."))
-    severity=finding.get("severity","info")
-    confidence="Suspected, review needed" if finding.get("confidence")=="suspected" else "Browser measurement"
-    sample=str(finding.get("sample","")).strip()
-    preview='<p class="sample" dir="auto">'+esc(sample)+'</p>' if sample else ""
-    photo=_photo(finding,folder)
-    status=_fix_message(finding)
-    target=esc(finding.get("url",""))
-    selector=esc(finding.get("selector",""))
-    raw=esc(json.dumps(finding.get("evidence") or {},indent=2,ensure_ascii=False))
-    patch=finding.get("fix") or {}
-    declarations={**(patch.get("css") or {}),**(patch.get("attributes") or {})}
-    patch_view=('<pre class="patch">'+esc("\n".join(str(k)+": "+str(v)+";" for k,v in declarations.items()))+'</pre>') if declarations else ""
-    details=(
-        '<details class="technical"><summary>Inspect details and suggested next step</summary>'
-        '<div class="details-body"><p><strong>Next step:</strong> '+esc(action)+'</p>'
-        '<p class="meta"><strong>Page:</strong> '+target+'</p>'
-        '<p class="meta"><strong>Element:</strong> <code>'+selector+'</code></p>'
-        '<p class="meta"><strong>Observed width:</strong> '+esc(str(finding.get("viewports") or [finding.get("viewport")]))+' px</p>'
-        '<pre>'+raw+'</pre>'+patch_view+'</div></details>'
-    )
-    return (
-        '<article class="issue"><div class="issue-main">'
-        '<span class="severity '+esc(severity)+'">'+esc(severity)+'</span>'
-        '<div class="issue-copy"><div class="issue-heading"><h3>'+esc(title)+'</h3>'
-        '<span class="scope">'+esc(_viewport(finding))+'</span></div>'
-        +preview+
-        '<p class="observation">'+_evidence_summary(finding)+'</p>'
-        '<p class="why">'+esc(why)+'</p>'
-        '<div class="issue-tags"><span class="confidence">'+esc(confidence)+'</span>'+status+'</div></div>'
-        +photo+'</div>'+details+'</article>'
-    )
+
+def _label(value, singular, plural=None):
+    return str(value)+" "+(singular if value==1 else (plural or singular+"s"))
+
+
+def _safe_target(url):
+    from urllib.parse import urlsplit
+    url=str(url or "")
+    parsed=urlsplit(url)
+    if parsed.scheme in {"http","https"} and parsed.hostname:
+        return '<a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+esc(url)+'</a>'
+    return esc(url)
+
+
+def _observed(f):
+    """Short, detector-specific measurement. Do not repeat the category's prose."""
+    details=f.get("evidence") or {}
+    kind=f.get("detector")
+    if kind=="possible-clipping":
+        amount=details.get("overflow_pixels")
+        if amount is None:
+            amount=max(0,float(details.get("scroll_height") or 0)-float(details.get("client_height") or 0))
+        return "Content height exceeds the visible area by "+str(round(float(amount),1))+" px."
+    if kind=="mobile-overflow":
+        amount=max(0,float(details.get("scroll_width") or 0)-float(details.get("client_width") or 0))
+        return "Text extends "+str(round(amount,1))+" px beyond its container."
+    if kind=="tight-line-height":
+        return "Measured line-height ratio: "+str(details.get("ratio","not available"))+"."
+    if kind=="font-fallback":
+        return "Requested font: "+str(details.get("requested","not available"))+"."
+    if kind=="font-load-failed":
+        return "Font request: HTTP "+str(details["status"])+"." if "status" in details else "Browser font request failed."
+    if kind=="wrong-lang":
+        return "Declared language: "+str(details.get("effective","not set"))+". Script: "+str(details.get("script","Indic"))+"."
+    if kind=="broken-cluster":
+        return _label(len(details.get("invalid_sequences") or []),"invalid character sequence")+"."
+    if kind=="mixed-language":
+        return "More than one Indic script appears within this element."
+    if kind=="legacy-font":
+        return "Computed font: "+str(details.get("computed_font","not available"))+"."
+    return "Browser evidence is available for review."
+
+
+def _fix_status(f):
+    state=(f.get("fix") or {}).get("status")
+    if state=="verified":
+        return '<span class="result verified">Verified after a separate browser check</span>'
+    if state=="unverified":
+        return '<span class="result failed">Proposed repair failed verification</span>'
+    if state=="not-applicable":
+        return '<span class="result neutral">Manual correction needed</span>'
+    if state=="unavailable":
+        return '<span class="result neutral">AI generation unavailable</span>'
+    return ""
+
+
+def _finding_row(f, folder, index):
+    detector=f.get("detector","")
+    title,why,action=FINDING_COPY.get(detector,("Rendering observation","Inspect this occurrence.","Review the underlying page."))
+    sample=str(f.get("sample") or "").strip()
+    if len(sample)>180:
+        sample=sample[:177]+"…"
+    sample_html='<div class="sample" lang="und" dir="auto">'+esc(sample)+'</div>' if sample else ""
+    note=esc(_observed(f))
+    current=f.get("fix") or {}
+    fix_code={**(current.get("css") or {}),**(current.get("attributes") or {})}
+    fix_html=('<div class="fix-snippet"><strong>Proposed change</strong><pre>'+esc("\n".join(str(k)+": "+str(v)+";" for k,v in fix_code.items()))+'</pre></div>') if fix_code else ""
+    photo=_photo(f,folder)
+    # Images are shown inside expanded details only. A missing or 1px crop
+    # must never create a huge empty rectangle on the main report.
+    evidence=esc(json.dumps(f.get("evidence") or {},ensure_ascii=False,indent=2))
+    widths=", ".join(str(w) for w in sorted(set(f.get("viewports") or [f.get("viewport",390)])))
+    target=esc(f.get("url",""))
+    selector=esc(f.get("selector",""))
+    technical=(
+        '<details class="technical"><summary>View evidence and next step</summary>'
+        '<div class="technical-body"><p class="next-step"><strong>Recommended next step</strong><span>'+esc(action)+'</span></p>'
+        +(('<p><strong>AI explanation</strong><span>'+esc(f["ai_explanation"])+'</span></p>') if f.get("ai_explanation") else "")
+        +('<p class="technical-line"><strong>Page</strong><span>'+target+'</span></p>')
+        +('<p class="technical-line"><strong>Element</strong><code>'+selector+'</code></p>')
+        +('<p class="technical-line"><strong>Viewport widths</strong><span>'+esc(widths)+' px</span></p>')
+        +(('<div class="capture"><strong>Browser capture</strong>'+photo+'</div>') if photo else "")
+        +fix_html+'<div class="raw-evidence"><strong>Raw browser measurements</strong><pre>'+evidence+'</pre></div>'
+        +'</div></details>')
+    confidence='<span class="uncertain">Needs visual confirmation</span>' if f.get("confidence")=="suspected" else ""
+    return ('<article class="finding-row" id="finding-'+esc(f.get("id",index))+'">'
+            '<div class="finding-number">'+str(index).zfill(2)+'</div>'
+            '<div class="finding-text"><div class="finding-top">'
+            '<span class="viewport">'+esc(_viewport(f))+'</span>'+confidence+'</div>'
+            +sample_html+'<div class="measurement">'+note+'</div>'
+            +_fix_status(f)+technical+'</div></article>')
+
+
+def _group(detector, findings, folder, severity):
+    title,description,_=FINDING_COPY.get(detector,("Rendering observation","Measurements available for review.","Inspect this finding."))
+    # One explanation per detector, instead of identical paragraphs on every finding.
+    total=len(findings)
+    preview=esc(next((f.get("sample") for f in findings if f.get("sample")),""))
+    open_attr=" open" if severity!="info" else ""
+    rows="".join(_finding_row(f,folder,i) for i,f in enumerate(findings,1))
+    label="Potential" if severity=="warning" else ("Observation" if severity=="info" else "Error")
+    return ('<details class="issue-group '+esc(severity)+'"'+open_attr+'>'
+            '<summary class="group-summary"><span class="group-accent"></span>'
+            '<span class="group-heading"><span class="group-category">'+esc(label)+'</span>'
+            '<strong>'+esc(title)+'</strong><small>'+esc(description)+'</small></span>'
+            '<span class="group-count">'+_label(total,"occurrence")+'</span>'
+            '<span class="chevron" aria-hidden="true"></span></summary>'
+            '<div class="group-items">'+rows+'</div></details>')
 
 
 def _html_report(data,folder):
+    from collections import defaultdict
     counts=Counter(f.get("severity","info") for f in data.get("findings",[]))
-    target=esc(data.get("target",""))
-    target_link='<a href="'+target+'" target="_blank" rel="noopener noreferrer">'+target+'</a>'
-    cards=[]
-    for severity,title,desc in SECTIONS:
-        findings=[f for f in data.get("findings",[]) if f.get("severity")==severity]
-        if not findings:
-            continue
-        cards.append('<section class="finding-section" id="section-'+severity+'">'
-                     '<div class="section-heading"><div><h2>'+esc(title)+'</h2><p>'+esc(desc)+'</p></div>'
-                     '<span class="section-count">'+str(len(findings))+'</span></div>'
-                     +"\n".join(_card(f,folder,i) for i,f in enumerate(findings))+'</section>')
-    body="\n".join(cards) if cards else '<div class="empty-state"><strong>No issues detected by the implemented checks.</strong><p>This does not guarantee that all characters render correctly.</p></div>'
-    if data.get("demo_mode"):
-        body='<aside class="demo-banner"><strong>Offline engineering demonstration.</strong> No BharatCode API was called. Example repairs are predefined local rules.</aside>'+body
-    if any("error" in page for page in data.get("pages",[])):
-        body='<aside class="demo-banner"><strong>Partial scan.</strong> One or more page widths could not be checked. Missing results are not counted as clean.</aside>'+body
-    links=' '.join('<a href="#section-'+severity+'">'+esc(title)+'</a>' for severity,title,_ in SECTIONS if counts[severity])
-    warning_note=(
-        "Potential issues are screening signals, not confirmed visual defects. "
-        "The scanner does not change the audited website."
+    target=data.get("target","")
+    groups=defaultdict(list)
+    for f in data.get("findings",[]):
+        groups[(f.get("severity","info"),f.get("detector","unknown"))].append(f)
+    priority={"error":0,"warning":1,"info":2}
+    parts=[]
+    for (severity,detector),findings in sorted(groups.items(),key=lambda pair:(priority.get(pair[0][0],3),-len(pair[1]),pair[0][1])):
+        parts.append(_group(detector,findings,folder,severity))
+    content="\n".join(parts) or (
+        '<div class="empty"><span class="empty-icon" aria-hidden="true">✓</span>'
+        '<h2>No issues detected by these checks</h2><p>This does not guarantee complete rendering correctness.</p></div>'
     )
-    svg=('<svg class="mark" aria-hidden="true" viewBox="0 0 120 120">'
-         '<path d="M49.65 21.36 A40 40 0 1 1 49.65 98.64" fill="none" stroke="#55C59D" stroke-width="13" stroke-linecap="round"/>'
-         '<g fill="#F27D92"><circle cx="34.83" cy="91.08" r="6.5"/><circle cx="24.05" cy="77.54" r="6.5"/>'
-         '<circle cx="20" cy="60" r="6.5"/><circle cx="24.05" cy="42.46" r="6.5"/>'
-         '<circle cx="34.83" cy="28.92" r="6.5"/></g></svg>')
+    notices=[]
+    if data.get("demo_mode"):
+        notices.append('<div class="notice danger"><strong>Offline development demo</strong> No BharatCode model call was made. Sample repairs are predefined rules.</div>')
+    if any("error" in page for page in data.get("pages",[])):
+        notices.append('<div class="notice danger"><strong>Incomplete scan</strong> Some pages or viewports could not be checked. Missing data is not clean data.</div>')
+    if not data.get("engine_version"):
+        notices.append('<div class="notice subtle"><strong>Earlier scan data.</strong> This report has the latest design, but the recorded findings use an earlier scanner. Run a fresh scan to apply the latest detection rules.</div>')
+    logo=(
+        '<svg class="logo" viewBox="0 0 120 120" aria-hidden="true">'
+        '<path d="M49.65 21.36 A40 40 0 1 1 49.65 98.64" fill="none" stroke="#0E6B4E" stroke-width="13" stroke-linecap="round"/>'
+        '<g fill="#D9475A"><circle cx="34.83" cy="91.08" r="6.5"/>'
+        '<circle cx="24.05" cy="77.54" r="6.5"/><circle cx="20" cy="60" r="6.5"/>'
+        '<circle cx="24.05" cy="42.46" r="6.5"/><circle cx="34.83" cy="28.92" r="6.5"/></g></svg>'
+    )
     css=r"""
-:root{--paper:#F8FAF7;--ink:#1B2440;--muted:#505E76;--line:#DCE5EB;--rule:#B8CCE6;--green:#0E6B4E;--red:#B8323F;--navy:#141B30;font-family:system-ui,"Noto Sans Devanagari","Noto Sans Kannada",sans-serif;color:var(--ink);background:var(--paper)}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;line-height:1.58}
-a{color:inherit}a:focus-visible,summary:focus-visible{outline:3px solid var(--green);outline-offset:4px}
-.container{max-width:1160px;padding:0 28px;margin:auto}
-.masthead{background:var(--navy);color:white}
-.masthead-inner{padding-top:30px;padding-bottom:35px}
-.brand{display:flex;align-items:center;gap:14px}.mark{width:45px;height:45px;flex-shrink:0}
-.brand-name{font-size:27px;font-weight:750;letter-spacing:-.03em}
-.masthead-bottom{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-top:27px}
-.kicker{font-size:11px;letter-spacing:.13em;color:#BCE9D5;text-transform:uppercase;font-weight:700}
-.masthead h1{font-size:clamp(29px,4vw,43px);line-height:1.12;letter-spacing:-.035em;margin:7px 0 4px}
-.target{color:#CBD9E8;font-size:13px;overflow-wrap:anywhere}.target a{text-underline-offset:3px}
-.actions{display:flex;gap:9px;flex-wrap:wrap}
-.actions a{font-size:13px;font-weight:600;text-decoration:none;border:1px solid #5E6D83;border-radius:5px;padding:9px 12px;white-space:nowrap}
-.actions a:hover{background:#26334B}
-.summary-wrap{background:var(--paper);background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 47px,rgba(184,204,230,.18) 48px,transparent 49px);border-bottom:1px solid var(--line)}
-.summary{padding:25px 0 27px}
-.stat-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
-.stat{background:white;border:1px solid var(--line);border-radius:8px;padding:16px 19px;display:flex;align-items:center;gap:16px;min-height:82px}
-.stat-number{font-size:35px;line-height:1;font-weight:760;min-width:32px;font-variant-numeric:tabular-nums}
-.stat.error .stat-number{color:var(--red)}.stat.warning .stat-number{color:#915C10}.stat.info .stat-number{color:var(--green)}
-.stat-label{font-weight:700;font-size:14px}.stat-note{font-size:12px;color:var(--muted);margin-top:2px}
-.notice{font-size:13px;color:var(--muted);margin:15px 0 0;max-width:90ch}
-.contents{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin:22px 0 0}
-.contents a{font-size:13px;color:var(--green);font-weight:700;text-decoration:none;border-bottom:1px solid #8FBFAE}
-main{padding:36px 0 65px}.finding-section{margin-bottom:37px}
-.section-heading{display:flex;align-items:center;justify-content:space-between;gap:20px;margin:0 0 15px}
-.section-heading h2{margin:0;font-size:23px;letter-spacing:-.025em;line-height:1.2}
-.section-heading p{color:var(--muted);font-size:13px;margin:5px 0 0}
-.section-count{display:inline-flex;align-items:center;justify-content:center;width:37px;height:37px;border:1px solid var(--line);border-radius:50%;font-size:14px;font-weight:700;color:var(--muted);background:#fff;flex-shrink:0}
-.issue{border:1px solid var(--line);background:white;border-radius:9px;margin:10px 0;box-shadow:0 3px 14px rgba(27,36,64,.025);overflow:hidden}
-.issue-main{display:flex;align-items:flex-start;gap:17px;padding:19px 21px}
-.severity{font-size:11px;line-height:1.4;letter-spacing:.02em;text-transform:capitalize;font-weight:700;border-radius:4px;padding:5px 9px;flex:none}
-.severity.error{background:#FCE8E9;color:var(--red)}.severity.warning{background:#FFF1DC;color:#825010}.severity.info{background:#E8F2F0;color:#0E6B4E}
-.issue-copy{flex:1;min-width:0}
-.issue-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
-.issue h3{font-size:17px;letter-spacing:-.015em;line-height:1.35;margin:1px 0 0}
-.scope{color:#5C6A80;font-size:12px;white-space:nowrap;flex-shrink:0}
-.sample{font-size:clamp(18px,2vw,24px);font-weight:500;line-height:1.5;margin:7px 0 10px;overflow-wrap:anywhere}
-.observation{color:var(--ink);font-size:13px;font-weight:600;margin:9px 0 3px}
-.why{font-size:13px;color:var(--muted);margin:0;max-width:77ch}
-.issue-tags{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
-.confidence,.repair{font-size:11px;border-radius:4px;padding:3px 7px;background:#F3F6F8;color:#607088;font-weight:650}
-.repair.verified{color:var(--green);background:#E6F3EC}
-.repair.caution{color:var(--red);background:#FCE8E9}
-.repair.neutral{color:#596680;background:#F2F4F7}
-.evidence-photo{display:flex;flex-direction:column;flex:0 0 164px;max-width:164px;align-items:center;gap:5px;text-decoration:none;border:1px solid var(--line);border-radius:5px;background:var(--paper);padding:7px}
-.evidence-photo img{width:100%;max-height:92px;object-fit:contain}
-.evidence-photo span,.screenshot-link{font-size:11px;color:var(--green);font-weight:650}
-.screenshot-link{display:inline-block;flex:0 0 105px;max-width:105px;text-decoration:none;border-left:1px solid var(--line);padding-left:13px;line-height:1.4;margin-top:5px}
-.technical{border-top:1px solid var(--line);padding:0 21px}
-.technical summary{font-weight:650;font-size:12px;color:var(--green);cursor:pointer;padding:10px 0;list-style:revert}
-.details-body{border-top:1px dashed var(--line);padding:14px 0 18px;font-size:13px}
-.details-body p{margin:0 0 9px}.meta{color:var(--muted);overflow-wrap:anywhere}
-pre{background:#F3F6F8;border:1px solid var(--line);border-radius:6px;padding:13px;font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere;overflow-x:auto;max-height:300px}
-code{font-size:12px;overflow-wrap:anywhere}.patch{border-left:3px solid var(--green);background:#EAF5EE}
-.demo-banner{padding:15px 18px;background:#FCE8E9;border-left:4px solid var(--red);font-size:13px;margin:15px 0}
-.empty-state{padding:35px;background:white;border:1px solid var(--line);border-radius:9px}
-.empty-state p{color:var(--muted)}
-.report-footer{border-top:1px solid var(--line);padding:20px 0 35px;color:var(--muted);font-size:12px}
-@media(max-width:760px){.container{padding:0 18px}.masthead-inner{padding-top:24px;padding-bottom:28px}.masthead-bottom{align-items:flex-start;flex-direction:column;gap:18px}.stat-row{gap:8px}.stat{padding:13px;min-height:76px;gap:8px}.stat-number{font-size:27px}.stat-label{font-size:12px}.stat-note{font-size:11px}.issue-main{flex-wrap:wrap;padding:15px;gap:10px}.issue-copy{flex-basis:calc(100% - 91px)}.evidence-photo{margin-left:82px;max-width:170px;flex-basis:170px}.screenshot-link{flex:1;margin-left:82px}.technical{padding:0 15px}.scope{white-space:normal}.section-heading h2{font-size:21px}}
-@media(max-width:420px){.stat-row{grid-template-columns:1fr 1fr 1fr;gap:6px}.stat{flex-direction:column;text-align:center;align-items:center;padding:12px 5px;gap:4px;min-height:91px}.stat-number{font-size:27px}.stat-note{line-height:1.2}.issue-heading{flex-direction:column;gap:2px}.issue-copy{flex-basis:calc(100% - 83px)}.sample{font-size:19px}.evidence-photo,.screenshot-link{margin-left:72px}}
-@media print{.masthead{background:#141B30!important;print-color-adjust:exact}.issue{break-inside:avoid}.technical{display:none}a{text-decoration:none}}
+@import url('https://fonts.googleapis.com/css2?family=Anek:wght@400;500;600;700;800&family=Anek+Devanagari:wght@400;500;600;700&family=Anek+Kannada:wght@400;500;600;700&display=swap');
+:root{--paper:#F8FAF7;--ink:#1B2440;--muted:#56627A;--navy:#141B30;--line:#D8E4F0;--green:#0E6B4E;--red:#B8323F;--pale:#EAF5EF;--font:'Anek','Anek Devanagari','Anek Kannada','Nirmala UI',system-ui,sans-serif}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 var(--font);-webkit-font-smoothing:antialiased}
+a{color:inherit}button,summary{font:inherit}a:focus-visible,summary:focus-visible{outline:3px solid var(--green);outline-offset:4px}
+.shell{max-width:1140px;margin:0 auto;padding:0 clamp(18px,3vw,38px)}
+.topbar{background:#fff;border-bottom:1px solid var(--line)}.topbar-inner{min-height:80px;display:flex;justify-content:space-between;align-items:center;gap:20px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}.logo{width:40px;height:40px;flex:none}
+.brand-name{font-size:25px;font-weight:800;letter-spacing:-.025em;line-height:1.05}
+.brand-sub{display:flex;gap:10px;font-size:12px;color:var(--muted);margin-top:3px;line-height:1.2}
+.top-actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.top-actions a{font-size:13px;font-weight:650;text-decoration:none;padding:9px 13px;border:1px solid var(--line);border-radius:6px;color:var(--ink);background:#fff}
+.top-actions a:hover{border-color:var(--green);color:var(--green)}
+.hero{background:var(--paper);border-bottom:1px solid var(--line);position:relative;overflow:hidden}
+.hero:before{position:absolute;content:"";top:0;bottom:0;left:max(16px,calc((100vw - 1070px)/2));width:1.5px;background:#EC97A5;opacity:.65;pointer-events:none}
+.hero:after{content:"";position:absolute;inset:0;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 44px,rgba(184,204,230,.26) 45px,transparent 46px);pointer-events:none}
+.hero-content{position:relative;z-index:1;padding-top:34px;padding-bottom:34px;padding-left:39px;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:35px;align-items:center}
+.kicker{font-size:12px;color:var(--green);font-weight:750;letter-spacing:.04em;margin:0 0 8px}
+.hero h1{font-size:clamp(31px,3.65vw,46px);letter-spacing:-.035em;line-height:1.12;margin:0 0 11px;font-weight:800}
+.subtitle{color:var(--muted);font-size:15px;line-height:1.55;margin:0;max-width:600px}
+.scanned-url{display:block;font-size:13px;font-weight:650;margin-top:14px;color:var(--green);overflow-wrap:anywhere;text-underline-offset:3px}
+.score{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));background:#fff;border:1px solid var(--line);border-radius:9px;padding:17px 10px;box-shadow:0 6px 16px #1B244006}
+.score-item{text-align:center;padding:2px 7px;border-right:1px solid var(--line)}.score-item:last-child{border-right:0}
+.score-num{font-size:29px;font-weight:800;line-height:1.15;font-variant-numeric:tabular-nums}
+.score-num.error{color:var(--red)}.score-num.warning{color:#925516}.score-num.info{color:var(--green)}
+.score-label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-top:4px}
+.main{padding-top:30px;padding-bottom:55px}
+.intro{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:22px}
+.intro h2{font-size:23px;letter-spacing:-.025em;line-height:1.2;margin:0 0 5px;font-weight:800}
+.intro p{color:var(--muted);font-size:14px;margin:0;max-width:670px}
+.count-note{display:inline-flex;align-items:center;gap:9px;white-space:nowrap;font-size:12px;color:var(--green);font-weight:750;padding-top:4px}
+.count-note:before{content:"";width:8px;height:8px;border-radius:50%;background:var(--green)}
+.issue-group{margin:14px 0;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 4px 15px rgba(27,36,64,.025);overflow:hidden}
+.group-summary{display:flex;align-items:center;gap:17px;list-style:none;cursor:pointer;padding:18px 22px;min-height:100px}
+.group-summary::-webkit-details-marker{display:none}.group-summary:hover{background:#FCFDFB}
+.group-accent{width:3px;height:51px;border-radius:2px;flex:none;background:#F2AE5D}.issue-group.error .group-accent{background:#D9475A}.issue-group.info .group-accent{background:#87BFB1}
+.group-heading{min-width:0;display:flex;flex-direction:column;flex:1;gap:1px}
+.group-category{color:#975B13;font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.issue-group.error .group-category{color:#B8323F}.issue-group.info .group-category{color:var(--green)}
+.group-heading strong{font-size:18px;line-height:1.3;letter-spacing:-.015em}
+.group-heading small{font-size:13px;color:var(--muted);line-height:1.45;max-width:750px;font-weight:400}
+.group-count{font-size:12px;white-space:nowrap;color:var(--muted);font-weight:650}
+.chevron{display:inline-flex;align-items:center;justify-content:center;flex:none;width:30px;height:30px;border:1px solid var(--line);border-radius:50%;background:#fff}
+.chevron:after{content:"";width:7px;height:7px;border-right:2px solid var(--green);border-bottom:2px solid var(--green);transform:translateY(-2px) rotate(45deg)}
+.issue-group[open]>.group-summary .chevron:after{transform:translateY(2px) rotate(225deg)}
+.group-items{border-top:1px solid var(--line);padding:0 22px}
+.finding-row{display:grid;grid-template-columns:32px minmax(0,1fr);gap:12px;padding:16px 0;border-bottom:1px solid #E9EFF4}
+.finding-row:last-child{border-bottom:0}
+.finding-number{color:#8793A5;font-size:12px;font-weight:700;padding-top:3px;font-variant-numeric:tabular-nums}
+.finding-top{display:flex;align-items:center;gap:10px;margin-bottom:5px;flex-wrap:wrap}
+.viewport{font-size:12px;font-weight:750;color:var(--ink)}
+.uncertain{font-size:11px;color:#946323;background:#FFF2DF;border-radius:4px;padding:1px 7px}
+.sample{font-size:clamp(16px,2.1vw,21px);line-height:1.6;font-weight:550;overflow-wrap:anywhere;color:var(--ink);margin:0 0 3px}
+.measurement{font-size:13px;color:var(--muted);line-height:1.5}
+.result{display:inline-block;margin:7px 0 0;border-radius:4px;padding:3px 8px;font-size:12px;font-weight:700}
+.result.verified{color:var(--green);background:#E4F3E9}
+.result.failed{color:var(--red);background:#FDEDEE}
+.result.neutral{color:#526077;background:#F0F3F7}
+.technical{margin:7px 0 0}
+.technical summary{font-size:12px;cursor:pointer;color:var(--green);font-weight:750;width:fit-content}
+.technical summary:hover{text-decoration:underline;text-underline-offset:3px}
+.technical-body{margin-top:12px;padding:14px 18px;border:1px solid var(--line);border-radius:7px;background:#FAFCFE}
+.technical-body p{margin:0 0 12px;font-size:13px;line-height:1.55}
+.technical-body strong{display:block;color:var(--ink);font-size:12px;margin-bottom:3px}
+.technical-line span{overflow-wrap:anywhere;color:var(--muted)}
+.technical-line code{font-size:11px;overflow-wrap:anywhere;color:var(--muted)}
+.technical-body pre{background:#F0F5F8;border:1px solid var(--line);padding:12px;font:12px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;overflow:auto;max-height:210px;white-space:pre-wrap;overflow-wrap:anywhere}
+.capture{margin-bottom:12px;display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.capture .evidence-photo{width:min(100%,250px);border:1px solid var(--line);background:white;padding:6px;border-radius:5px;display:flex;flex-direction:column;gap:4px;text-decoration:none}
+.capture .evidence-photo img{max-width:100%;max-height:150px;object-fit:contain;display:block}
+.capture .evidence-photo span,.capture .screenshot-link{font-size:12px;font-weight:700;color:var(--green);text-decoration:underline}
+.capture .screenshot-link{align-self:center}
+.fix-snippet pre{border-left:3px solid var(--green)}
+.raw-evidence{margin-top:12px}
+.notice{margin:0 0 16px;padding:13px 16px;font-size:13px;background:#F1F5F7;border:1px solid var(--line);border-radius:6px;color:var(--muted)}
+.notice strong{color:var(--ink)}.notice.danger{border-left:3px solid var(--red);background:#FFF3F3}
+.notice.subtle{border-left:3px solid var(--green)}
+.empty{padding:43px 24px;background:white;border:1px solid var(--line);text-align:center;border-radius:10px}
+.empty-icon{display:inline-flex;background:#E9F5EF;color:var(--green);font-size:25px;width:45px;height:45px;align-items:center;justify-content:center;border-radius:50%}
+.empty h2{font-size:23px;margin:14px 0 3px}.empty p{color:var(--muted);margin:0}
+.footer{border-top:1px solid var(--line);padding:23px 0 35px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:20px}
+.footer span:last-child{white-space:nowrap}
+@media(max-width:800px){.hero-content{grid-template-columns:minmax(0,1fr);gap:22px}.score{max-width:390px}.hero:before{left:24px}.hero-content{padding-left:41px}.topbar-inner{min-height:75px}}
+@media(max-width:520px){.shell{padding:0 18px}.topbar-inner{min-height:74px;gap:10px}.brand{gap:8px}.logo{width:34px;height:34px}.brand-name{font-size:20px}.brand-sub{gap:5px;font-size:9px}.top-actions a{padding:7px 8px;font-size:11px}.hero-content{padding-left:29px;padding-top:26px;padding-bottom:27px}.hero:before{left:19px}.hero h1{font-size:31px}.score{padding:12px 7px}.score-num{font-size:25px}.main{padding-top:24px}.intro{display:block}.count-note{padding-top:12px}.group-summary{padding:14px 13px;gap:11px;min-height:0}.group-accent{height:55px}.group-heading strong{font-size:16px}.group-heading small{font-size:12px}.group-count{display:none}.group-items{padding:0 13px}.finding-row{grid-template-columns:22px minmax(0,1fr);gap:7px;padding:13px 0}.sample{font-size:18px}.technical-body{padding:12px}.footer{flex-wrap:wrap}}
+@media(print){.topbar{border:0}.top-actions,.technical summary{display:none}.hero{background:#fff}.issue-group:not([open]) .group-items{display:block}.issue-group{break-inside:avoid}.group-summary{min-height:0}.main{padding-top:18px}}
 """
-    page=(
+    # Use a local stylesheet in the standalone HTML, avoiding missing assets.
+    target_html=_safe_target(target)
+    score=(
+        '<div class="score" role="group" aria-label="Finding counts">'
+        '<div class="score-item"><span class="score-num error">'+str(counts["error"])+'</span><span class="score-label">Errors</span></div>'
+        '<div class="score-item"><span class="score-num warning">'+str(counts["warning"])+'</span><span class="score-label">Warnings</span></div>'
+        '<div class="score-item"><span class="score-num info">'+str(counts["info"])+'</span><span class="score-label">Notes</span></div></div>'
+    )
+    return (
         '<!doctype html><html lang="en"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
         '<meta name="color-scheme" content="light">'
-        '<title>AksharaCheck | Browser evidence review</title><style>'+css+'</style></head>'
-        '<body><header class="masthead"><div class="container masthead-inner">'
-        '<div class="brand">'+svg+'<span class="brand-name">AksharaCheck</span></div>'
-        '<div class="masthead-bottom"><div><div class="kicker">Rendering review</div>'
-        '<h1>What the browser found.</h1><p class="target">'+target_link+'</p></div>'
-        '<div class="actions"><a href="report.json">JSON report</a><a href="report.md">Markdown</a></div>'
-        '</div></div></header>'
-        '<section class="summary-wrap"><div class="container summary">'
-        '<div class="stat-row">'
-        '<div class="stat error"><span class="stat-number">'+str(counts["error"])+'</span><div><div class="stat-label">Errors</div><div class="stat-note">Review first</div></div></div>'
-        '<div class="stat warning"><span class="stat-number">'+str(counts["warning"])+'</span><div><div class="stat-label">Warnings</div><div class="stat-note">Needs inspection</div></div></div>'
-        '<div class="stat info"><span class="stat-number">'+str(counts["info"])+'</span><div><div class="stat-label">Notes</div><div class="stat-note">Context only</div></div></div>'
-        '</div><p class="notice">'+esc(warning_note)+'</p>'
-        '<nav class="contents" aria-label="Report sections">'+links+'</nav></div></section>'
-        '<main class="container">'+body+'</main>'
-        '<footer class="report-footer"><div class="container">AksharaCheck · Chromium measurements, not a guarantee of exhaustive rendering correctness.</div></footer>'
-        '</body></html>'
+        '<meta name="description" content="AksharaCheck browser evidence report for Indic text rendering.">'
+        '<title>AksharaCheck | Rendering review</title><style>'+css+'</style></head>'
+        '<body><header class="topbar"><div class="shell topbar-inner">'
+        '<div class="brand">'+logo+'<div><div class="brand-name">AksharaCheck</div>'
+        '<div class="brand-sub"><span lang="hi">अक्षर जाँच</span><span lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ</span></div></div></div>'
+        '<nav class="top-actions" aria-label="Report exports">'
+        '<a href="report.json">JSON</a><a href="report.md">Markdown</a></nav></div></header>'
+        '<section class="hero"><div class="shell hero-content"><div>'
+        '<p class="kicker">BROWSER RENDERING REVIEW</p>'
+        '<h1>Every letter matters.</h1>'
+        '<p class="subtitle">A focused look at the issues Chromium detected. Warnings are candidates for review, not confirmed faults.</p>'
+        '<div class="scanned-url">'+target_html+'</div></div>'+score+'</div></section>'
+        '<main class="shell main">'+''.join(notices)
+        +'<div class="intro"><div><h2>Findings worth reviewing</h2><p>Grouped by issue type, with the measurements and browser captures one click away.</p></div>'
+        +'<div class="count-note">'+_label(len(data.get("findings",[])),"finding")+' recorded</div></div>'
+        +content+'</main><footer class="shell footer"><span>AksharaCheck. Browser measurements, not a full accessibility audit.</span>'
+        '<span>Checked with Chromium</span></footer></body></html>'
     )
-    return page
 
 
 def write_reports(data,dest):
