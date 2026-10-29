@@ -70,15 +70,18 @@ def main():
                 assert geometry["ctaOffset"]<18,f"{width}px: closing action not vertically centered"
                 assert geometry["badgeOffset"]<10,f"{width}px: sample status badge not aligned"
 
-            # The formerly inert link must visibly populate an editable textbox.
+            # The editor starts with visible issues. The control toggles to a clean example.
             textarea=page.get_by_role("textbox",name="Hindi or Kannada text to check")
-            assert textarea.input_value()==""
-            page.get_by_role("button",name="Load the example").click()
             assert "सूचना" in textarea.input_value()
-            assert "Example loaded" in page.locator(".sample-feedback").inner_text()
+            page.get_by_role("button",name="Show a clean example").click()
+            assert "किताब" in textarea.input_value()
+            assert "Clean example loaded" in page.locator(".sample-feedback").inner_text()
+            page.get_by_role("button",name="Show a broken example").click()
+            assert "सूचना" in textarea.input_value()
+            assert "Broken example loaded" in page.locator(".sample-feedback").inner_text()
             textarea.fill("कन्नड")
             assert textarea.input_value()=="कन्नड"
-            page.get_by_role("button",name="Load the example").click()
+            page.get_by_role("button",name="Show a broken example").click()
             assert "सूचना" in textarea.input_value()
             page.get_by_role("button",name="Replay example").click()
             assert page.locator(".hero-sheet").count()==1
