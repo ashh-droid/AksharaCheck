@@ -1,7 +1,8 @@
 """Generate reader-first JSON, Markdown and standalone HTML audit reports.
 
-The standalone HTML requires no JS build and never downloads fonts or scripts
-from a third party. Data supplied by scanned sites is HTML-escaped.
+The standalone HTML requires no JavaScript build. An optional Google Fonts
+stylesheet loads when online; the page uses system fallbacks offline.
+Data supplied by scanned sites is HTML-escaped.
 """
 from __future__ import annotations
 
@@ -58,11 +59,6 @@ FINDING_COPY={
         "Review the appearance at normal zoom. This is an observation, not proof of clipping."
     ),
 }
-SECTIONS=(
-    ("error","Characters or resources needing attention","Measured problems that deserve inspection."),
-    ("warning","Potential rendering issues","These signals require visual confirmation before editing a page."),
-    ("info","Additional observations","Useful context. These entries are not confirmed rendering defects."),
-)
 PNG_MAGIC=b"\x89PNG\r\n\x1a\n"
 
 
@@ -97,30 +93,6 @@ def _viewport(finding):
     return " + ".join(dict.fromkeys(types))
 
 
-def _evidence_summary(finding):
-    kind=finding.get("detector","")
-    d=finding.get("evidence") or {}
-    if kind=="possible-clipping":
-        hidden=d.get("overflow_pixels")
-        if hidden is None:
-            hidden=round(float(d.get("scroll_height",0))-float(d.get("client_height",0)),1)
-        return "Measured content exceeds the visible area by "+esc(hidden)+" px."
-    if kind=="mobile-overflow":
-        extra=round(float(d.get("scroll_width",0))-float(d.get("client_width",0)),1)
-        return "Text exceeds the available width by "+esc(extra)+" px."
-    if kind=="wrong-lang":
-        return "Page language: "+esc(d.get("effective","not provided"))+". Detected script: "+esc(d.get("script","Indic"))+"."
-    if kind=="font-load-failed":
-        code=d.get("status","request failed")
-        return "Font request returned "+esc(code)+"."
-    if kind=="font-fallback":
-        return "Requested font: "+esc(d.get("requested","not provided"))+"."
-    if kind=="broken-cluster":
-        sequences=d.get("invalid_sequences") or []
-        return str(len(sequences))+" malformed sign sequence(s) found in this element."
-    return FINDING_COPY.get(kind,("","",""))[1]
-
-
 def _photo(finding,folder):
     crop=_asset(finding.get("element_screenshot"),folder)
     shot=_asset(finding.get("screenshot"),folder)
@@ -135,21 +107,6 @@ def _photo(finding,folder):
     return ""
 
 
-def _fix_message(finding):
-    fix=finding.get("fix") or {}
-    state=fix.get("status")
-    if state=="verified":
-        return '<span class="repair verified">✓ Independently verified in Chromium</span>'
-    if state=="unverified":
-        return '<span class="repair caution">Suggested repair did not pass verification</span>'
-    if state=="not-applicable":
-        return '<span class="repair neutral">Manual correction required</span>'
-    if state=="unavailable":
-        return '<span class="repair neutral">AI suggestion unavailable</span>'
-    return ""
-
-
-
 def _label(value, singular, plural=None):
     return str(value)+" "+(singular if value==1 else (plural or singular+"s"))
 
@@ -157,7 +114,10 @@ def _label(value, singular, plural=None):
 def _safe_target(url):
     from urllib.parse import urlsplit
     url=str(url or "")
-    parsed=urlsplit(url)
+    try:
+        parsed=urlsplit(url)
+    except ValueError:
+        return esc(url)
     if parsed.scheme in {"http","https"} and parsed.hostname:
         return '<a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+esc(url)+'</a>'
     return esc(url)
