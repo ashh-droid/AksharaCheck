@@ -95,3 +95,10 @@ def test_editorial_desktop_frame_uses_single_centered_width():
     assert ".hero{grid-template-columns:minmax(0,1.03fr) minmax(0,.97fr)" in css
     assert "min-height:calc(100svh - 84px)" in css
     assert "min-height:0;padding:42px 0 85px" in css
+
+def test_closing_banner_stays_compact():
+    css=(FRONTEND/"src"/"style.css").read_text(encoding="utf-8")
+    assert "grid-template-columns:44px minmax(0,1fr) auto" in css
+    assert "min-height:112px;margin-bottom:48px" in css
+    assert ".bottom-cta h2{font-size:clamp(20px,1.65vw,28px)" in css
+    assert ".bottom-cta .brand-symbol{width:42px;height:42px}" in css
