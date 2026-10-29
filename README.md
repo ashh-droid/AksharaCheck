@@ -102,25 +102,26 @@ cd ..
 
 Then visit http://127.0.0.1:8000. The CLI works without npm; the graphical interface does not. Do not deploy the browser scanner publicly without process isolation, outbound private-network blocking and an external rate limiter.
 
-## Optional GitHub Pages preview
+## GitHub Pages preview (static frontend only)
 
-GitHub Pages is **static hosting only**. It can publish this React interface and browser-only text checker, but it cannot run the Python/FastAPI/Chromium website scanner. Do **not** present a GitHub Pages-only deployment as a working end-to-end scan service. A separate secured backend, publicly reachable over HTTPS, is needed for actual URL scans.
+GitHub Pages hosts the React homepage and browser-only Hindi/Kannada text checker. It **cannot** run FastAPI or Playwright and is **not** the complete scanner. The Pages build visibly labels the missing server feature rather than pretending scans are available. Keep a secure HTTPS backend as a separate release milestone.
 
-The repository is currently private. GitHub Free generally requires a **public repository** for Pages, which is also a hackathon submission requirement. Leave the source private until it has been reviewed for secrets and is ready for publication.
-
-A Pages-ready frontend build uses the correct `/AksharaCheck/` asset prefix, without changing local Vite or the single-server FastAPI build:
+The public repository is `ashh-droid/AksharaCheck`. Local development uses the normal `/` base; the Pages build uses `/AksharaCheck/` so fonts, scripts and favicon load correctly. From the checkout of the PR branch on Windows:
 
 ```cmd
+git pull
 cd web
-npm install
-npm run build:pages
+npm run deploy:pages
 ```
 
-When ready to publish the static preview, the compiled `web/dist` folder can be pushed to a dedicated `gh-pages` branch (for example with `npx gh-pages -d dist -b gh-pages`). Then select **Settings > Pages > Deploy from a branch > gh-pages > /(root)**. This approach does not require adding a custom GitHub Actions workflow. GitHub's Pages publishing infrastructure may still run a deployment job.
+The command builds the frontend and publishes **only** `web/dist` to an independent `gh-pages` branch. It does not merge the source PR and does not require a custom GitHub Actions workflow. It does require working Git credentials and an npm connection.
 
-The expected preview address is `https://ashh-droid.github.io/AksharaCheck/` **after** publishing succeeds. This is not a verified live link yet.
+On GitHub, select **Settings > Pages > Build and deployment > Source: Deploy from a branch > Branch: gh-pages / (root) > Save**. GitHub's own Pages deployment job may still run. Once publishing is complete, open `https://ashh-droid.github.io/AksharaCheck/` and confirm the logo, text checker, navigation, and responsive layouts.
 
-For a real hosted scanner, publish FastAPI + Chromium behind hardened outbound-network rules, a queue and rate limits. Set `VITE_API_URL` to that backend's HTTPS origin before building a separated frontend, and configure `AKSHARA_ORIGINS` for the exact frontend origin. Never expose `BHARATCODE_API_KEY` in Vite or JavaScript. The current code is not yet approved for an unrestricted public URL-scanning endpoint.
+For local production preview before publishing, run `npm run build:pages` followed by `npm run preview`, and visit the `/AksharaCheck/` path displayed by Vite. Opening the server root `/` instead may show an empty or redirected view because the build expects that repository subpath.
+
+The real URL-scanning backend must be deployed independently with Chromium isolation, rate limiting and outbound private-network blocking. Keep `BHARATCODE_API_KEY` server-side. Set `VITE_API_URL` to an authorized HTTPS backend before building a full-stack separated deployment.
+
 
 ## Frontend and responsive QA
 
