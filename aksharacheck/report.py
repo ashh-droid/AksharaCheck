@@ -261,21 +261,28 @@ a{color:inherit}button,summary{font:inherit}a:focus-visible,summary:focus-visibl
 .top-actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 .top-actions a{font-size:13px;font-weight:650;text-decoration:none;padding:9px 13px;border:1px solid var(--line);border-radius:6px;color:var(--ink);background:#fff}
 .top-actions a:hover{border-color:var(--green);color:var(--green)}
-.hero{background:var(--paper);border-bottom:1px solid var(--line);position:relative;overflow:hidden}
-.hero:before{position:absolute;content:"";top:0;bottom:0;left:max(16px,calc((100vw - 1070px)/2));width:1.5px;background:#EC97A5;opacity:.65;pointer-events:none}
-.hero:after{content:"";position:absolute;inset:0;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 44px,rgba(184,204,230,.26) 45px,transparent 46px);pointer-events:none}
-.hero-content{position:relative;z-index:1;padding-top:34px;padding-bottom:34px;padding-left:39px;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:35px;align-items:center}
-.kicker{font-size:12px;color:var(--green);font-weight:750;letter-spacing:.04em;margin:0 0 8px}
-.hero h1{font-size:clamp(31px,3.65vw,46px);letter-spacing:-.035em;line-height:1.12;margin:0 0 11px;font-weight:800}
-.subtitle{color:var(--muted);font-size:15px;line-height:1.55;margin:0;max-width:600px}
-.generated{display:block;font-size:11px;color:var(--muted);margin-top:5px}
-.scanned-url{display:block;font-size:13px;font-weight:650;margin-top:14px;color:var(--green);overflow-wrap:anywhere;text-underline-offset:3px}
-.score{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));background:#fff;border:1px solid var(--line);border-radius:9px;padding:17px 10px;box-shadow:0 6px 16px #1B244006}
-.score-item{text-align:center;padding:2px 7px;border-right:1px solid var(--line)}.score-item:last-child{border-right:0}
-.score-num{font-size:29px;font-weight:800;line-height:1.15;font-variant-numeric:tabular-nums}
+.hero{background:linear-gradient(117deg,#F3F7F2 0%,#F8FAF7 68%);border-bottom:1px solid var(--line)}
+.hero-content{display:grid;grid-template-columns:minmax(0,1fr) minmax(288px,340px);gap:clamp(24px,4vw,48px);align-items:center;padding-top:36px;padding-bottom:38px}
+.hero-copy{min-width:0;padding-left:19px;border-left:3px solid #A9D3C0}
+.kicker{display:flex;align-items:center;gap:9px;font-size:11px;color:var(--green);font-weight:800;letter-spacing:.105em;margin:0 0 9px}
+.kicker:before{content:"";display:block;width:7px;height:7px;border-radius:50%;background:#30A57E;flex:none}
+.hero h1{font-size:clamp(32px,3.25vw,43px);letter-spacing:-.032em;line-height:1.14;margin:0 0 11px;font-weight:780}
+.subtitle{color:var(--muted);font-size:14px;line-height:1.56;margin:0;max-width:60ch}
+.scan-meta{display:flex;flex-direction:column;align-items:flex-start;gap:3px;margin-top:18px}
+.scan-meta-label{font-size:10px;line-height:1.2;letter-spacing:.09em;font-weight:800;color:#748098}
+.scanned-url{display:block;font-size:13px;font-weight:650;line-height:1.5;color:var(--green);overflow-wrap:anywhere;word-break:break-word;text-underline-offset:3px}
+.scanned-url a:hover{color:#07553D}
+.generated{display:block;font-size:11px;color:var(--muted);line-height:1.4;margin-top:3px}
+.score-panel{min-width:0;align-self:center;background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px 20px 13px;box-shadow:0 10px 30px rgba(27,36,64,.045)}
+.score-heading{font-size:10px;letter-spacing:.09em;font-weight:800;color:var(--muted);margin-bottom:13px}
+.score{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.score-item{text-align:center;padding:3px 6px 6px;border-right:1px solid var(--line)}
+.score-item:last-child{border-right:0}
+.score-num{display:block;font-size:33px;font-weight:800;line-height:1.08;font-variant-numeric:tabular-nums}
 .score-num.error{color:var(--red)}.score-num.error.zero{color:var(--green)}.score-num.warning{color:#925516}.score-num.info{color:var(--green)}
-.score-label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-top:4px}
-.main{padding-top:30px;padding-bottom:55px}
+.score-label{display:block;font-size:12px;font-weight:650;color:var(--muted);margin-top:6px}
+.score-footnote{border-top:1px solid #E8EEF1;margin:12px 0 0;padding-top:10px;color:var(--muted);font-size:11px;line-height:1.4}
+.main{padding-top:32px;padding-bottom:55px}
 .intro{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:22px}
 .intro h2{font-size:23px;letter-spacing:-.025em;line-height:1.2;margin:0 0 5px;font-weight:800}
 .intro p{color:var(--muted);font-size:14px;margin:0;max-width:670px}
@@ -331,8 +338,8 @@ a{color:inherit}button,summary{font:inherit}a:focus-visible,summary:focus-visibl
 .empty h2{font-size:23px;margin:14px 0 3px}.empty p{color:var(--muted);margin:0}
 .footer{border-top:1px solid var(--line);padding:23px 0 35px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:20px}
 .footer span:last-child{white-space:nowrap}
-@media(max-width:800px){.hero-content{grid-template-columns:minmax(0,1fr);gap:22px}.score{max-width:390px}.hero:before{left:24px}.hero-content{padding-left:41px}.topbar-inner{min-height:75px}}
-@media(max-width:520px){.topbar-inner{flex-wrap:wrap;padding-top:12px;padding-bottom:12px}.top-actions{flex-shrink:0}.shell{padding:0 18px}.topbar-inner{min-height:74px;gap:10px}.brand{gap:8px}.logo{width:34px;height:34px}.brand-name{font-size:20px}.brand-sub{gap:5px;font-size:9px}.top-actions a{padding:7px 8px;font-size:11px}.hero-content{padding-left:29px;padding-top:26px;padding-bottom:27px}.hero:before{left:19px}.hero h1{font-size:31px}.score{padding:12px 7px}.score-num{font-size:25px}.main{padding-top:24px}.intro{display:block}.count-note{padding-top:12px}.group-summary{padding:14px 13px;gap:11px;min-height:0}.group-accent{height:55px}.group-heading strong{font-size:16px}.group-heading small{font-size:12px}.group-count{display:none}.group-items{padding:0 13px}.finding-row{grid-template-columns:22px minmax(0,1fr);gap:7px;padding:13px 0}.sample{font-size:18px}.technical-body{padding:12px}.footer{flex-wrap:wrap}}
+@media(max-width:800px){.hero-content{grid-template-columns:minmax(0,1fr);gap:22px;padding-top:28px;padding-bottom:28px}.score-panel{max-width:440px;width:100%}.topbar-inner{min-height:75px}}
+@media(max-width:520px){.topbar-inner{flex-wrap:wrap;padding-top:12px;padding-bottom:12px}.top-actions{flex-shrink:0}.shell{padding:0 18px}.topbar-inner{min-height:74px;gap:10px}.brand{gap:8px}.logo{width:34px;height:34px}.brand-name{font-size:20px}.brand-sub{gap:5px;font-size:9px}.top-actions a{padding:7px 8px;font-size:11px}.hero-content{padding-top:25px;padding-bottom:27px}.hero-copy{padding-left:13px;border-left-width:2px}.hero h1{font-size:30px}.score-panel{padding:14px 13px 10px}.score-num{font-size:27px}.main{padding-top:24px}.intro{display:block}.count-note{padding-top:12px}.group-summary{padding:14px 13px;gap:11px;min-height:0}.group-accent{height:55px}.group-heading strong{font-size:16px}.group-heading small{font-size:12px}.group-count{display:none}.group-items{padding:0 13px}.finding-row{grid-template-columns:22px minmax(0,1fr);gap:7px;padding:13px 0}.sample{font-size:18px}.technical-body{padding:12px}.footer{flex-wrap:wrap}}
 @media(max-width:390px){.top-actions{width:100%;justify-content:flex-start}.brand-name{font-size:21px}.brand-sub{font-size:10px}}
 @media(print){.topbar{border:0}.top-actions,.technical summary{display:none}.hero{background:#fff}.issue-group:not([open]) .group-items{display:block}.issue-group{break-inside:avoid}.group-summary{min-height:0}.main{padding-top:18px}}
 """
@@ -343,10 +350,10 @@ a{color:inherit}button,summary{font:inherit}a:focus-visible,summary:focus-visibl
     issued_line=('<span class="generated">Scanned '+esc(issued)+' UTC</span>') if issued and not issued.endswith("Z") else (
                 '<span class="generated">Scanned '+esc(issued)+'</span>' if issued else "")
     score=(
-        '<div class="score" role="group" aria-label="Finding counts">'
+        '<div class="score-panel"><div class="score-heading">FINDINGS SUMMARY</div>'+'<div class="score" role="group" aria-label="Finding counts">'
         '<div class="score-item"><span class="score-num error'+(' zero' if not counts["error"] else '')+'">'+str(counts["error"])+'</span><span class="score-label">Errors</span></div>'
         '<div class="score-item"><span class="score-num warning">'+str(counts["warning"])+'</span><span class="score-label">Warnings</span></div>'
-        '<div class="score-item"><span class="score-num info">'+str(counts["info"])+'</span><span class="score-label">Notes</span></div></div>'
+        '<div class="score-item"><span class="score-num info">'+str(counts["info"])+'</span><span class="score-label">Notes</span></div></div><p class="score-footnote">Review warnings before treating them as confirmed defects.</p></div>'
     )
     return (
         '<!doctype html><html lang="en"><head><meta charset="utf-8">'
@@ -359,11 +366,11 @@ a{color:inherit}button,summary{font:inherit}a:focus-visible,summary:focus-visibl
         '<div class="brand-sub"><span lang="hi">अक्षर जाँच</span><span lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ</span></div></div></div>'
         '<nav class="top-actions" aria-label="Report exports">'
         '<a href="report.json">JSON</a><a href="report.md">Markdown</a></nav></div></header>'
-        '<section class="hero"><div class="shell hero-content"><div>'
+        '<section class="hero" aria-labelledby="report-title"><div class="shell hero-content"><div class="hero-copy">'
         '<p class="kicker">BROWSER RENDERING REVIEW</p>'
-        '<h1>Every letter matters.</h1>'
+        '<h1 id="report-title">Every letter matters.</h1>'
         '<p class="subtitle">A focused look at the issues Chromium detected. Warnings are candidates for review, not confirmed faults.</p>'
-        '<div class="scanned-url">'+target_html+'</div>'+issued_line+'</div>'+score+'</div></section>'
+        '<div class="scan-meta"><span class="scan-meta-label">SCANNED PAGE</span><div class="scanned-url">'+target_html+'</div>'+issued_line+'</div></div>'+score+'</div></section>'
         '<main class="shell main">'+''.join(notices)
         +'<div class="intro"><div><h2>Findings worth reviewing</h2><p>Grouped by issue type, with the measurements and browser captures one click away.</p></div>'
         +'<div class="count-note">'+_label(len(data.get("findings",[])),"finding")+' recorded</div></div>'
