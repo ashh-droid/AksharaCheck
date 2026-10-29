@@ -290,10 +290,10 @@ body{font-size:16px;line-height:1.55}
 .sample-report{max-width:640px}
 .sample-report-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .sample-report-top .sample-error{display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:0 10px}
-.bottom-cta{display:grid;grid-template-columns:68px minmax(0,1fr) auto;align-items:center;gap:28px;padding:36px clamp(32px,4vw,70px);min-height:164px;margin-bottom:65px}
-.bottom-cta .brand-symbol{width:62px;height:62px}
-.bottom-cta h2{font-size:clamp(26px,2.35vw,38px);line-height:1.22}
-.bottom-cta a{margin:0;display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 22px;line-height:1.2}
+.bottom-cta{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:20px;padding:20px clamp(22px,2.5vw,40px);min-height:112px;margin-bottom:48px}
+.bottom-cta .brand-symbol{width:42px;height:42px}
+.bottom-cta h2{font-size:clamp(20px,1.65vw,28px);line-height:1.24;font-weight:700;letter-spacing:-.01em}
+.bottom-cta a{margin:0;display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 19px;line-height:1.2;font-size:14px}
 .backend-note{border-left:3px solid #9EB8A8;background:#E9F2EC;padding:11px 14px;margin:13px 0;font-size:13px;color:var(--ink-soft)}
 .preview-entry{margin-top:26px;max-width:520px}
 .preview-start{display:inline-flex;align-items:center;justify-content:center;min-height:50px;padding:0 23px;background:var(--green);border-radius:7px;color:white;font-weight:700;text-decoration:none;line-height:1.2;gap:8px}
@@ -334,8 +334,8 @@ body{font-size:16px;line-height:1.55}
  .lede{font-size:17px}
  .hero-sheet{max-width:650px;width:100%;margin:auto;justify-self:center;min-height:355px}
  .try-grid,.report-grid,.faq-section{grid-template-columns:1fr;gap:28px}
- .bottom-cta{grid-template-columns:48px 1fr;gap:17px;min-height:0;padding:26px}
- .bottom-cta .brand-symbol{width:45px;height:45px}
+ .bottom-cta{grid-template-columns:38px 1fr;gap:13px;min-height:0;padding:19px 20px}
+ .bottom-cta .brand-symbol{width:36px;height:36px}
  .bottom-cta a{grid-column:2;justify-self:start}
 }
 @media(max-width:480px){
@@ -354,7 +354,7 @@ body{font-size:16px;line-height:1.55}
  .hero-sheet .verified-stamp{width:57px;height:57px;right:6px;bottom:11px}
  .hero-sheet .verified-stamp span{font-size:23px}
  .hero-sheet .play-again{left:61px;bottom:-27px}
- .bottom-cta{grid-template-columns:1fr;gap:14px}
+ .bottom-cta{grid-template-columns:1fr;gap:12px;padding:19px}
  .bottom-cta a{grid-column:1;justify-self:stretch}
  .recorded-list a{flex-direction:column;gap:2px}
  .topbar-inner{gap:12px}
