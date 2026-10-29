@@ -20,11 +20,26 @@ def main():
     scan.add_argument('--allow-local',action='store_true',help='ONLY for a trusted local test site')
     scan.add_argument('--fail-on',choices=['error','warning','never'],default='never')
     scan.add_argument('--json',action='store_true',help='Print machine-readable JSON report to stdout')
+    render=sub.add_parser('render',help='Rebuild HTML and Markdown from an existing JSON report')
+    render.add_argument('json_file',help='Path to an existing report.json')
     serve=sub.add_parser('serve',help='Start the web service')
     serve.add_argument('--port',type=int,default=8000)
     serve.add_argument('--host',default='127.0.0.1',
                        help='Bind host. Use 0.0.0.0 only behind secured deployment infrastructure.')
     args=parser.parse_args()
+    if args.command=='render':
+        from pathlib import Path
+        try:
+            source=Path(args.json_file)
+            report_data=json.loads(source.read_text(encoding='utf-8'))
+            if not isinstance(report_data,dict) or not isinstance(report_data.get('findings'),list):
+                raise ValueError('This file is not an AksharaCheck findings report')
+            write_reports(report_data,source.parent)
+            print('Updated HTML and Markdown:',source.parent)
+        except (OSError,ValueError,KeyError,TypeError) as exc:
+            print(f'Report error: {exc}',file=sys.stderr)
+            sys.exit(2)
+        return
     if args.command=='serve':
         import uvicorn
         uvicorn.run('aksharacheck.api:app',host=args.host,port=args.port)
