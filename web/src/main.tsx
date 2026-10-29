@@ -8,6 +8,7 @@ type Report={target:string;summary:{error:number;warning:number;info:number};fin
 type Job={status:string;events:string[];error?:string};
 type LetterProblem={index:number;title:string;hint:string;character:string};
 const API=import.meta.env.VITE_API_URL||'';
+const PAGES_PREVIEW=window.location.hostname.endsWith('.github.io')&&!import.meta.env.VITE_API_URL;
 const REPO='https://github.com/ashh-droid/AksharaCheck';
 const SAMPLE='सूचना: परीक्षा ह िंदी माध्यम में होगी। अाज शाम तक फ़ॉर्म जमा करें।\nಪರೀಕ್ಷೆ ಮುಂದೂಡಲಾಗ ಿದೆ. ಹೊಸ ದಿನಾಂಕವನ್ನು ಶೀಘ್ರದಲ್ಲೇ ತಿಳಿಸಲಾಗುವುದು.';
 const CLEAN_SAMPLE='किताब सही दिखती है।\nಕನ್ನಡ ಸರಿಯಾಗಿ ಕಾಣುತ್ತದೆ.';
@@ -120,10 +121,11 @@ function App(){
      <p className="lede">Your site may look fine in English. AksharaCheck opens it in a real browser, finds the <span lang="hi">हिंदी</span> and <span lang="kn">ಕನ್ನಡ</span> text that comes out broken, and rechecks supported repairs in Chromium before calling them verified.</p>
      <form onSubmit={scan} className="scan-form">
       <label htmlFor="url" className="sr-only">Website address</label>
-      <div className="scan-input"><input ref={input} id="url" type="text" placeholder="https://your-site.in" value={url} onChange={e=>setUrl(e.target.value)} required spellCheck={false}/><button type="submit" disabled={busy}>{busy?'Checking…':'Check this page'}</button></div>
+      <div className="scan-input"><input ref={input} id="url" type="text" placeholder="https://your-site.in" value={url} onChange={e=>setUrl(e.target.value)} required spellCheck={false}/><button type="submit" disabled={busy||PAGES_PREVIEW}>{PAGES_PREVIEW?'Scanner preview only':busy?'Checking…':'Check this page'}</button></div>
       <div className="scan-options"><label>Language <select value={lang} onChange={e=>setLang(e.target.value)} disabled={busy}><option value="both">Hindi and Kannada</option><option value="hi">Hindi only</option><option value="kn">Kannada only</option></select></label></div>
       <label className="ai-option"><input type="checkbox" checked={ai} onChange={e=>setAi(e.target.checked)} disabled={!aiAvailable||busy}/> Also suggest CSS fixes with BharatCode AI {!aiAvailable&&<span>(not set up on this server)</span>}</label>
-      {backendOnline===false&&<p className="backend-note" role="status">{['localhost','127.0.0.1'].includes(window.location.hostname)?'The local scanner backend is not connected. Start it on port 8000 to enable scans.':'The scan service is temporarily offline. The local text checker below still works.'}</p>}
+      {PAGES_PREVIEW&&<p className="backend-note pages-preview" role="status">This is a static preview. Full website scans require the Python scanner service. <a href="#try">Try the Hindi and Kannada text checker below.</a></p>}
+      {!PAGES_PREVIEW&&backendOnline===false&&<p className="backend-note" role="status">{['localhost','127.0.0.1'].includes(window.location.hostname)?'The local scanner backend is not connected. Start it on port 8000 to enable scans.':'The scan service is temporarily offline. The local text checker below still works.'}</p>}
       <p className="examples">Or try <button type="button" onClick={()=>{setUrl('https://hi.wikipedia.org/');input.current?.focus()}}>hi.wikipedia.org</button>, <button type="button" onClick={()=>{setUrl('https://kn.wikipedia.org/');input.current?.focus()}}>kn.wikipedia.org</button> or <button type="button" onClick={()=>{setUrl('https://www.india.gov.in/');input.current?.focus()}}>india.gov.in</button></p>
      </form>
     </div>
