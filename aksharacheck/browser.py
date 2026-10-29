@@ -39,7 +39,7 @@ DOM_JS = r'''(args) => {
 }'''
 
 USER_AGENT="AksharaCheck/0.2 (public Indic rendering audit; project on GitHub)"
-SKIP_EXT=re.compile(r"\\.(?:pdf|zip|rar|7z|docx?|xlsx?|pptx?|mp[34]|mov|png|jpe?g|gif|svg|webp)(?:$|\\?)",re.I)
+SKIP_EXT=re.compile(r"\.(?:pdf|zip|rar|7z|docx?|xlsx?|pptx?|mp[34]|mov|png|jpe?g|gif|svg|webp)(?:$|\?)",re.I)
 
 class Scanner:
     def __init__(self, output_dir="output", *, allow_local=False, max_pages=1, timeout=60):
