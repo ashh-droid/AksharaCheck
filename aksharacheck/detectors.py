@@ -117,8 +117,30 @@ def run_dom_detectors(page_url, viewport, nodes, lang="both"):
         lh = float(node.get("lineHeight") or 0)
         if font_size > 0 and lh and (lh/font_size) < 1.4 and (node.get("lineCount") or 1) > 1:
             result.append(finding(page_url,viewport,node,"tight-line-height","info", {"font_size":font_size,"line_height":lh,"ratio":round(lh/font_size,2)}))
-        if node.get("overflowY") in {"hidden", "clip"} and float(node.get("scrollHeight") or 0) > float(node.get("clientHeight") or 0) + 3 and not node.get("intentionalClamp"):
-            result.append(finding(page_url,viewport,node,"possible-clipping","warning", {"scroll_height":node["scrollHeight"],"client_height":node["clientHeight"],"note":"Geometry suggests clipping; inspect screenshot before confirming"}, confidence="suspected"))
+        # ScrollHeight can exceed a 0-1px hidden navigation item even when no text
+        # is presented to the reader. Require readable visible geometry and meaningful
+        # overflow, but keep the result a suspected issue until visually reviewed.
+        visible_height=float(node.get("clientHeight") or 0)
+        scroll_height=float(node.get("scrollHeight") or 0)
+        visible_width=float(node.get("clientWidth") or 0)
+        difference=scroll_height-visible_height
+        bounds=node.get("bounds") or {}
+        vertical_clipping=(
+            node.get("overflowY") in {"hidden","clip"}
+            and not node.get("intentionalClamp")
+            and visible_width>=12
+            and visible_height >= max(12,font_size*.72)
+            and difference >= max(7,font_size*.35)
+            and not node.get("offscreen",False)
+            and not node.get("ariaHidden",False)
+            and float(bounds.get("h",visible_height) or 0)>=max(12,font_size*.72)
+        )
+        if vertical_clipping:
+            result.append(finding(page_url,viewport,node,"possible-clipping","warning",
+                                  {"scroll_height":scroll_height,"client_height":visible_height,
+                                   "overflow_pixels":round(difference,1),
+                                   "note":"Potential content clipping. Verify the screenshot before changing CSS."},
+                                  confidence="suspected"))
     return result
 
 
