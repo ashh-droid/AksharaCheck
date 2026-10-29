@@ -82,10 +82,14 @@ def main():
                     footerBrand:parseFloat(getComputedStyle(document.querySelector('.footer-brand strong')).fontSize),
                     sheet:document.querySelector('.hero-sheet').getBoundingClientRect().width
                 })""")
-                edge=max(16,min(width*.0125,28))
-                ideal=width-2*edge
-                assert abs(desktop["frame"]-ideal)<5,f"{width}px: full-width desktop layout is still capped or misaligned: {desktop}"
-                assert desktop["frame"]/width>.95,f"{width}px: desktop content does not span available width: {desktop}"
+                gutter=max(20,min(width*.03,48))
+                ideal=min(width-2*gutter,1420)
+                assert abs(desktop["frame"]-ideal)<5,f"{width}px: centered desktop frame mismatch: {desktop}"
+                if width>=1700:
+                    assert desktop["frame"]/width<.90,f"{width}px: content is stretched to the edges: {desktop}"
+                hero_height=page.locator(".hero").evaluate("(el)=>el.getBoundingClientRect().height")
+                header_height=page.locator(".topbar").evaluate("(el)=>el.getBoundingClientRect().height")
+                assert hero_height>=height-header_height-3,f"{width}px: desktop hero fails to use the vertical viewport"
                 assert desktop["brand"]>=27,f"{width}px: company name too small: {desktop}"
                 assert desktop["footerBrand"]>=22,f"{width}px: footer name too small: {desktop}"
                 assert desktop["sheet"]>=500,f"{width}px: hero art too narrow: {desktop}"
