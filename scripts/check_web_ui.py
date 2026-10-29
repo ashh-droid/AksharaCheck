@@ -67,6 +67,14 @@ def main():
             assert abs(geometry["left"]-geometry["right"])<3,(
                 f"{width}px: page frame is not centered: {geometry}"
             )
+            alignment=page.evaluate("""() => {
+                const selectors=['.topbar .wrap','.hero.wrap','.bottom-cta.wrap','.footer.wrap'];
+                return selectors.map(s=>({selector:s,left:document.querySelector(s).getBoundingClientRect().left,
+                    right:document.querySelector(s).getBoundingClientRect().right}));
+            }""")
+            assert all(abs(r["left"]-alignment[0]["left"])<=3 and
+                       abs(r["right"]-alignment[0]["right"])<=3
+                       for r in alignment),f"{width}px: header, hero, CTA, footer disagree on alignment: {alignment}"
             if width>=1440:
                 desktop=page.evaluate("""() => ({
                     frame:document.querySelector('.hero.wrap').getBoundingClientRect().width,
@@ -74,7 +82,8 @@ def main():
                     footerBrand:parseFloat(getComputedStyle(document.querySelector('.footer-brand strong')).fontSize),
                     sheet:document.querySelector('.hero-sheet').getBoundingClientRect().width
                 })""")
-                assert desktop["frame"]/width>=.88,f"{width}px: layout too narrow: {desktop}"
+                ideal=min(width-2*min(48,max(20,width*.03)),1420)
+                assert abs(desktop["frame"]-ideal)<5,f"{width}px: editorial frame not centered at intended width: {desktop}"
                 assert desktop["brand"]>=27,f"{width}px: company name too small: {desktop}"
                 assert desktop["footerBrand"]>=22,f"{width}px: footer name too small: {desktop}"
                 assert desktop["sheet"]>=500,f"{width}px: hero art too narrow: {desktop}"
