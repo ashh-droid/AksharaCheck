@@ -56,7 +56,13 @@ async def run_scan(scan_id:str,request:ScanRequest):
     finally:job['ended']=time.time()
 
 @app.get('/api/health')
-def health():return {"ok":True,"name":"AksharaCheck","version":"0.1.0","ai_available":bool(os.getenv("BHARATCODE_API_KEY"))}
+def health():
+    # An issued key can authenticate /models while /responses is still HTTP 402.
+    # Enable generation in the UI only after a real authorized model call succeeds.
+    configured=bool(os.getenv("BHARATCODE_API_KEY"))
+    enabled=os.getenv("BHARATCODE_API_ENABLED","").strip()=="1"
+    return {"ok":True,"name":"AksharaCheck","version":"0.1.0",
+            "ai_configured":configured,"ai_available":configured and enabled}
 
 @app.post('/api/scans',status_code=202)
 async def start(req:ScanRequest,request:Request):
