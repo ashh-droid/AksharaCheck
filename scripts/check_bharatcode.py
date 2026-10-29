@@ -2,12 +2,13 @@
 
 Run from the repository root:
   python scripts/check_bharatcode.py
-Set BHARATCODE_API_KEY in a *local* shell first. Never commit the key.
+The script privately prompts for the key unless BHARATCODE_API_KEY is already set. Never commit or paste the key into chats.
 This makes one GET request and one short generation request.
 """
 import json
 import os
 import sys
+from getpass import getpass
 import httpx
 
 BASE="https://bharatcode.ai/api/model/v1"
@@ -16,8 +17,14 @@ MODEL="qwen-3.8-27b"
 def run():
     key=os.environ.get("BHARATCODE_API_KEY","").strip()
     if not key:
-        print("NOT READY: BHARATCODE_API_KEY is missing. Set it privately in your local terminal.")
-        return 2
+        try:
+            key=getpass("Enter your BharatCode API key (typing is hidden): ").strip()
+        except (EOFError,KeyboardInterrupt):
+            print("\nCancelled without sending a request.")
+            return 2
+        if not key:
+            print("No API key entered.")
+            return 2
     headers={"Authorization":f"Bearer {key}","Content-Type":"application/json"}
     try:
         with httpx.Client(timeout=45,follow_redirects=False) as client:
