@@ -31,3 +31,17 @@ def test_cli_bind_host_defaults_to_local():
     output=run("serve","--help")
     assert output.returncode==0
     assert "--host" in output.stdout
+
+def test_render_reuses_saved_browser_data(tmp_path):
+    import json
+    report=tmp_path/"report.json"
+    report.write_text(json.dumps({
+        "target":"https://example.org",
+        "summary":{"error":0,"warning":0,"info":0},
+        "pages":[],"findings":[]
+    }),encoding="utf-8")
+    result=run("render",str(report))
+    assert result.returncode==0,result.stderr
+    assert (tmp_path/"report.html").is_file()
+    assert (tmp_path/"report.md").is_file()
+    assert "What the browser found." in (tmp_path/"report.html").read_text(encoding="utf-8")
