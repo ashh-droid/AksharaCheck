@@ -47,7 +47,7 @@ async def run_scan(scan_id:str,request:ScanRequest):
     try:
         output=ROOT/scan_id
         data=await Scanner(output_dir=output,max_pages=1).scan(request.url,request.lang,progress)
-        if request.use_ai and os.getenv('BHARATCODE_API_KEY'):
+        if request.use_ai and os.getenv('BHARATCODE_API_KEY') and os.getenv('BHARATCODE_API_ENABLED','').strip()=='1':
             await explain_and_verify(data,progress=progress,max_fixes=5)
         write_reports(data,output)
         job.update(status='complete',summary=data['summary'])
@@ -67,6 +67,8 @@ def health():
 @app.post('/api/scans',status_code=202)
 async def start(req:ScanRequest,request:Request):
     cleanup_expired()
+    if req.use_ai and not (os.getenv("BHARATCODE_API_KEY") and os.getenv("BHARATCODE_API_ENABLED","").strip()=="1"):
+        raise HTTPException(503,"BharatCode model generation is not enabled for this server. Scanning without AI remains available.")
     if req.lang not in {'both','hi','kn'}:raise HTTPException(400,'Invalid language')
     try:validate_url(req.url)
     except (UnsafeURL,ValueError) as exc:raise HTTPException(400,str(exc))
