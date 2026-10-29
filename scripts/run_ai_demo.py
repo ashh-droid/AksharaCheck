@@ -33,7 +33,7 @@ async def test(url):
     print("Sending up to five browser findings to BharatCode for explanations and suggested repairs.")
     async def progress(msg):
         print(msg)
-    await explain_and_verify(report,allow_local=True,max_fixes=5,progress=progress)
+    await explain_and_verify(report,allow_local=True,max_fixes=5,progress=progress,output_dir=OUTPUT)
     write_reports(report,OUTPUT)
     checked=[f for f in report["findings"] if f.get("ai_explanation")]
     print("AI FINDINGS:",len(checked))

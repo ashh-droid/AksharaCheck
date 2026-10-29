@@ -1,65 +1,74 @@
-"""Generate reader-first JSON, Markdown and standalone HTML audit reports.
+"""Generate JSON, Markdown and a standalone HTML report.
 
-The standalone HTML requires no JavaScript build. An optional Google Fonts
-stylesheet loads when online; the page uses system fallbacks offline.
-Data supplied by scanned sites is HTML-escaped.
+The HTML needs no JavaScript and no network: styles are inline and the Anek
+fonts are copied next to the report. Everything that comes from a scanned
+site is HTML-escaped.
 """
 from __future__ import annotations
 
 import html
 import json
+import shutil
 import struct
-from collections import Counter
+from collections import Counter, defaultdict
+from datetime import datetime
 from pathlib import Path
+from urllib.parse import urlsplit
 
+# title, why it matters, what to do when no automatic repair applies
 FINDING_COPY={
     "broken-cluster":(
-        "Broken character sequence",
-        "A dependent sign has no valid letter before it. Browsers may show a dotted circle.",
-        "Correct the affected text in the source. CSS cannot repair a mistyped Unicode sequence."
+        "Broken letters",
+        "A vowel sign, nukta or virama has no letter to attach to, so browsers draw it on a dotted circle.",
+        "Correct the text itself. This is a typing or conversion mistake, so CSS cannot repair it."
     ),
     "possible-clipping":(
-        "Text may be cut off",
-        "The browser measured more text height than the visible element allows. This is an indicator, not visual proof.",
-        "Inspect the element on the original page. Hidden navigation or intentional animation may explain the measurement."
+        "Letters may be cut off",
+        "The text is taller than the box that shows it, so marks above or below the line can disappear.",
+        "Let the box grow with its text, for example with height: auto and a roomier line height."
     ),
     "mobile-overflow":(
-        "Text extends past its container",
-        "A line is wider than its available space at the phone viewport.",
-        "Inspect at phone width and allow appropriate line breaks without hiding text."
+        "Text runs off the screen on phones",
+        "A line is wider than the space it has at phone width.",
+        "Allow the line to wrap, without hiding or shrinking the text."
     ),
     "wrong-lang":(
-        "Language tag may be wrong",
-        "The script in this element does not match its inherited language tag.",
-        "Set the appropriate language attribute, or label each language separately in mixed content."
+        "Wrong language tag",
+        "The text is in one script but tagged as another language, so screen readers use the wrong voice and browsers may pick the wrong font.",
+        "Set the lang attribute that matches the text, such as lang=\"hi\" or lang=\"kn\"."
     ),
     "mixed-language":(
-        "Mixed scripts need language labels",
-        "This text combines scripts whose pronunciation rules differ.",
-        "Wrap each language span in the matching language attribute."
+        "Two languages without labels",
+        "Hindi and Kannada sit in one element with one language tag.",
+        "Wrap each language in its own element with the matching lang attribute."
     ),
     "font-load-failed":(
-        "Web font request failed",
-        "The browser could not load a font resource requested by the page.",
-        "Check the font URL and whether the failing font actually appears in visible text."
+        "Web font did not load",
+        "The browser could not download a font the page asked for.",
+        "Check the font address, and whether that font is actually used for visible text."
     ),
     "font-fallback":(
-        "Another font was rendered",
-        "Chromium used a different font from the first requested family.",
-        "Check glyph appearance before treating this as a defect. Font fallback can be intentional."
+        "A different font was used",
+        "Chromium drew this text with a font other than the first one the page asked for.",
+        "Compare the letters with the intended font. A fallback can be deliberate."
     ),
     "legacy-font":(
-        "Possible legacy encoded text",
-        "The page may be using an older non-Unicode font encoding.",
-        "Review the original text and font mapping before proposing a Unicode conversion."
+        "Old non-Unicode font",
+        "The text looks like Latin letters shown through a legacy Indic font, which search, copy and screen readers cannot read.",
+        "Convert the text to Unicode and use a Unicode font."
     ),
     "tight-line-height":(
-        "Line spacing is compact",
-        "Multiple lines may have limited space for Indic marks.",
-        "Review the appearance at normal zoom. This is an observation, not proof of clipping."
+        "Tight line spacing",
+        "Several lines sit close together, which leaves little room for Indic marks.",
+        "Check it at normal zoom. A line height of about 1.6 suits Devanagari and Kannada."
     ),
 }
+# One vocabulary everywhere: Fix, Check, Note.
+SEVERITY={"error":("Fix","To fix"),"warning":("Check","To check"),"info":("Note","Notes")}
+ORDER=("error","warning","info")
 PNG_MAGIC=b"\x89PNG\r\n\x1a\n"
+ASSETS=Path(__file__).resolve().parent/"assets"
+FONT_FILES=[f"font-anek-{script}-{weight}.woff2" for script in ("latin","devanagari","kannada") for weight in ("400","600")]
 
 
 def esc(value):
@@ -87,40 +96,70 @@ def _asset(name,folder):
     return name if (folder/name).is_file() else ""
 
 
-def _viewport(finding):
-    widths=sorted(set(finding.get("viewports") or [finding.get("viewport",390)]))
-    types=["Phone" if w<=430 else "Tablet" if w<=1024 else "Desktop" for w in widths]
-    return " + ".join(dict.fromkeys(types))
-
-
-def _photo(finding,folder):
-    crop=_asset(finding.get("element_screenshot"),folder)
-    shot=_asset(finding.get("screenshot"),folder)
-    if crop:
-        width,height=_png_size(folder/crop)
-        if width>=90 and height>=55 and width/height<=12:
-            return ('<a class="evidence-photo" href="'+esc(crop)+'" target="_blank" rel="noopener noreferrer">'
-                    '<img src="'+esc(crop)+'" alt="Captured text from the browser" loading="lazy">'
-                    '<span>Enlarge capture <span aria-hidden="true">↗</span></span></a>')
-    if shot:
-        return '<a class="screenshot-link" href="'+esc(shot)+'" target="_blank" rel="noopener noreferrer">Open browser screenshot <span aria-hidden="true">↗</span></a>'
-    return ""
+def _usable_crop(name,folder):
+    """A crop worth showing: real pixels, not a 1 px sliver."""
+    crop=_asset(name,folder)
+    if not crop:
+        return ""
+    width,height=_png_size(folder/crop)
+    return crop if width>=60 and height>=24 and width/height<=16 else ""
 
 
 def _label(value, singular, plural=None):
-    return str(value)+" "+(singular if value==1 else (plural or singular+"s"))
+    return f"{value:,} "+(singular if value==1 else (plural or singular+"s"))
 
 
-def _safe_target(url):
-    from urllib.parse import urlsplit
+def _lang_of(text):
+    deva=sum(0x0900<=ord(c)<=0x097F for c in text)
+    kan=sum(0x0C80<=ord(c)<=0x0CFF for c in text)
+    if deva==kan==0:
+        return "und"
+    return "hi" if deva>=kan else "kn"
+
+
+def _widths(finding):
+    widths=sorted(set(finding.get("viewports") or [finding.get("viewport",390)]))
+    names=[("phone" if w<=430 else "tablet" if w<=1024 else "desktop")+f" ({w} px)" for w in widths]
+    return " and ".join(names)
+
+
+def _where(finding):
+    widths=sorted(set(finding.get("viewports") or [finding.get("viewport",390)]))
+    kinds=list(dict.fromkeys("Phone" if w<=430 else "Tablet" if w<=1024 else "Desktop" for w in widths))
+    return " and ".join([kinds[0]]+[k.lower() for k in kinds[1:]])
+
+
+def _safe_link(url, text=None):
     url=str(url or "")
     try:
         parsed=urlsplit(url)
     except ValueError:
-        return esc(url)
+        return esc(text or url)
     if parsed.scheme in {"http","https"} and parsed.hostname:
-        return '<a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+esc(url)+'</a>'
-    return esc(url)
+        return '<a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+esc(text or url)+'</a>'
+    return esc(text or url)
+
+
+def _page_name(url):
+    try:
+        parts=urlsplit(str(url or ""))
+    except ValueError:
+        return str(url or "")
+    if parts.scheme not in {"http","https"} or not parts.hostname:
+        return str(url or "Scanned page")
+    path=parts.path.rstrip("/")
+    return (parts.netloc+path) or str(url)
+
+
+def _when(value):
+    value=str(value or "").strip()
+    if not value:
+        return ""
+    try:
+        moment=datetime.fromisoformat(value.replace("Z","+00:00"))
+    except ValueError:
+        return value
+    return f"{moment.day} {moment:%b %Y}, {moment:%H:%M} UTC"
 
 
 def _observed(f):
@@ -131,271 +170,365 @@ def _observed(f):
         amount=details.get("overflow_pixels")
         if amount is None:
             amount=max(0,float(details.get("scroll_height") or 0)-float(details.get("client_height") or 0))
-        return "Content height exceeds the visible area by "+str(round(float(amount),1))+" px."
+        return f"The text needs {round(float(amount),1):g} px more height than the box gives it."
     if kind=="mobile-overflow":
         amount=max(0,float(details.get("scroll_width") or 0)-float(details.get("client_width") or 0))
-        return "Text extends "+str(round(amount,1))+" px beyond its container."
+        return f"The line runs {round(amount,1):g} px past its container."
     if kind=="tight-line-height":
-        return "Measured line-height ratio: "+str(details.get("ratio","not available"))+"."
+        return "Line height is "+str(details.get("ratio","not measured"))+" times the font size."
     if kind=="font-fallback":
-        return "Requested font: "+str(details.get("requested","not available"))+"."
+        return "The page asked for "+str(details.get("requested","another font"))+"."
     if kind=="font-load-failed":
-        return "Font request: HTTP "+str(details["status"])+"." if "status" in details else "Browser font request failed."
+        return "The font request returned HTTP "+str(details["status"])+"." if "status" in details else "The font request failed."
     if kind=="wrong-lang":
-        return "Declared language: "+str(details.get("effective","not set"))+". Script: "+str(details.get("script","Indic"))+"."
+        return ("Tagged as "+str(details.get("effective") or "no language")+", written in "
+                +str(details.get("script","an Indic script")).capitalize()+".")
     if kind=="broken-cluster":
-        return _label(len(details.get("invalid_sequences") or []),"invalid character sequence")+"."
+        return ""
     if kind=="mixed-language":
-        return "More than one Indic script appears within this element."
+        scripts=details.get("scripts") or {}
+        parts=[f"{name.capitalize()} ({count} letters)" for name,count in scripts.items()]
+        return "Scripts in one element: "+", ".join(parts)+"." if parts else "More than one script in one element."
     if kind=="legacy-font":
-        return "Computed font: "+str(details.get("computed_font","not available"))+"."
-    return "Browser evidence is available for review."
-
-
-def _fix_status(f):
-    state=(f.get("fix") or {}).get("status")
-    if state=="verified":
-        return '<span class="result verified">Verified after a separate browser check</span>'
-    if state=="unverified":
-        return '<span class="result failed">Proposed repair failed verification</span>'
-    if state=="not-applicable":
-        return '<span class="result neutral">Manual correction needed</span>'
-    if state=="unavailable":
-        return '<span class="result neutral">AI generation unavailable</span>'
+        return "Font used: "+str(details.get("computed_font","not recorded"))+"."
     return ""
 
 
-def _finding_row(f, folder, index):
-    detector=f.get("detector","")
-    title,why,action=FINDING_COPY.get(detector,("Rendering observation","Inspect this occurrence.","Review the underlying page."))
+def _sequences(f):
+    """The exact characters of each broken letter, the evidence a developer can search for."""
+    items=(f.get("evidence") or {}).get("invalid_sequences") or []
+    if not items:
+        return ""
+    rows=[]
+    for item in items[:6]:
+        seq=str(item.get("sequence",""))
+        mark=seq[-1:] if seq else ""
+        codes=" ".join(esc(c) for c in item.get("codepoints") or [])
+        # The sequence as typed: the browser draws its own dotted circle, which is the evidence.
+        rows.append('<li><span class="glyph" lang="'+_lang_of(seq)+'">'+esc(seq.strip() or mark)+'</span>'
+                    '<code>'+codes+'</code><span class="seq-why">'+esc(str(item.get("reason","")).capitalize())+'</span></li>')
+    return '<ul class="sequences" aria-label="Characters">'+"".join(rows)+'</ul>'
+
+
+def _css_text(change):
+    return "\n".join(f"{k}: {v};" for k,v in (change.get("css") or {}).items())+(
+        "\n".join(f'{k}="{v}"' for k,v in (change.get("attributes") or {}).items()))
+
+
+def _explanation(f):
+    english=str(f.get("ai_explanation") or "").strip()
+    if not english:
+        return ""
+    lines=['<p>'+esc(english)+'</p>']
+    for code,name in (("hi","हिंदी"),("kn","ಕನ್ನಡ")):
+        text=str(f.get("summary_"+code) or "").strip()
+        if text:
+            lines.append('<p class="translation"><span class="lang-name" lang="'+code+'">'+name+'</span>'
+                         '<span lang="'+code+'">'+esc(text)+'</span></p>')
+    return '<div class="ai"><p class="ai-label">BharatCode explanation</p>'+"".join(lines)+'</div>'
+
+
+def _attempts(fix):
+    tries=fix.get("attempts") or []
+    if len(tries)<2 and all(t.get("status")=="verified" for t in tries):
+        return ""
+    rows=[]
+    for t in tries:
+        ok=t.get("status")=="verified"
+        rows.append('<li class="'+("ok" if ok else "bad")+'"><span class="mark" aria-hidden="true">'+("✓" if ok else "✗")+'</span>'
+                    '<code>'+esc(_css_text(t).replace("\n"," "))+'</code>'
+                    '<span>'+("Passed the browser check" if ok else "Rejected: "+esc(t.get("reason") or "did not pass"))+'</span></li>')
+    return ('<div class="attempts"><p class="attempts-title">BharatCode suggested '+_label(len(tries),"repair")
+            +', and Chromium tested each one</p><ol>'+"".join(rows)+'</ol></div>')
+
+
+def _repair(f, folder, before):
+    """What to do next: a verified fix with before and after, a failed one with the reason, or a manual step."""
+    _,_,action=FINDING_COPY.get(f.get("detector"),("","","Review the element on the page."))
+    fix=f.get("fix") or {}
+    state=fix.get("status")
+    if state=="verified":
+        after=_usable_crop(fix.get("after_screenshot"),folder)
+        width=fix.get("viewport") or f.get("viewport")
+        compare=""
+        if after and not before:
+            compare=('<div class="compare single"><figure><img src="'+esc(after)+'" alt="The element after the fix">'
+                     '<figcaption>After the fix</figcaption></figure></div>')
+        if before and after:
+            compare=('<div class="compare"><figure><img src="'+esc(before)+'" alt="The element before the fix">'
+                     '<figcaption>Before</figcaption></figure><figure><img src="'+esc(after)+'" alt="The element after the fix">'
+                     '<figcaption>After</figcaption></figure></div>')
+        return ('<div class="repair ok"><p class="repair-title"><span aria-hidden="true">✓</span> Fix verified in a fresh Chromium at '
+                +esc(width)+' px</p><pre>'+esc(_css_text(fix))+'</pre>'+compare+_attempts(fix)+'</div>')
+    if state=="unverified":
+        reason=fix.get("reason") or "it did not pass the browser check"
+        return ('<div class="repair bad"><p class="repair-title"><span aria-hidden="true">✗</span> No suggested fix passed. '
+                +esc(reason)+'.</p>'+_attempts(fix)+'<p class="next">'+esc(action)+'</p></div>')
+    note=""
+    if state=="unavailable":
+        note='<p class="muted">BharatCode was not available for this scan.</p>'
+    return '<div class="repair todo"><p class="repair-title">What to change</p><p>'+esc(action)+'</p>'+note+'</div>'
+
+
+def _card(f, folder):
+    severity=f.get("severity","info")
+    word=SEVERITY.get(severity,SEVERITY["info"])[0]
     sample=str(f.get("sample") or "").strip()
-    if len(sample)>180:
-        sample=sample[:177]+"…"
-    sample_html='<div class="sample" lang="und" dir="auto">'+esc(sample)+'</div>' if sample else ""
-    note=esc(_observed(f))
-    current=f.get("fix") or {}
-    fix_code={**(current.get("css") or {}),**(current.get("attributes") or {})}
-    fix_html=('<div class="fix-snippet"><strong>Proposed change</strong><pre>'+esc("\n".join(str(k)+": "+str(v)+";" for k,v in fix_code.items()))+'</pre></div>') if fix_code else ""
-    photo=_photo(f,folder)
-    # Images are shown inside expanded details only. A missing or 1px crop
-    # must never create a huge empty rectangle on the main report.
+    if len(sample)>220:
+        sample=sample[:217]+"…"
+    before=_usable_crop(f.get("element_screenshot"),folder)
+    fix=f.get("fix") or {}
+    compared=fix.get("status")=="verified" and _usable_crop(fix.get("after_screenshot"),folder)
+    shot=_asset(f.get("screenshot"),folder)
+    check='<span class="tag">Needs a look</span>' if f.get("confidence")=="suspected" else ""
+    measured=_observed(f)
+    image=('<figure class="capture"><img src="'+esc(before)+'" alt="The element as Chromium drew it">'
+           '<figcaption>As Chromium drew it at '+esc(f.get("viewport",""))+' px</figcaption></figure>') if before and not compared else ""
     evidence=esc(json.dumps(f.get("evidence") or {},ensure_ascii=False,indent=2))
-    widths=", ".join(str(w) for w in sorted(set(f.get("viewports") or [f.get("viewport",390)])))
-    target=esc(f.get("url",""))
-    selector=esc(f.get("selector",""))
-    technical=(
-        '<details class="technical"><summary>View evidence and next step</summary>'
-        '<div class="technical-body"><p class="next-step"><strong>Recommended next step</strong><span>'+esc(action)+'</span></p>'
-        +(('<p><strong>AI explanation</strong><span>'+esc(f["ai_explanation"])+'</span></p>') if f.get("ai_explanation") else "")
-        +('<p class="technical-line"><strong>Page</strong><span>'+target+'</span></p>')
-        +('<p class="technical-line"><strong>Element</strong><code>'+selector+'</code></p>')
-        +('<p class="technical-line"><strong>Viewport widths</strong><span>'+esc(widths)+' px</span></p>')
-        +(('<div class="capture"><strong>Browser capture</strong>'+photo+'</div>') if photo else "")
-        +fix_html+'<div class="raw-evidence"><strong>Raw browser measurements</strong><pre>'+evidence+'</pre></div>'
-        +'</div></details>')
-    confidence='<span class="uncertain">Needs visual confirmation</span>' if f.get("confidence")=="suspected" else ""
-    return ('<article class="finding-row" id="finding-'+esc(f.get("id",index))+'">'
-            '<div class="finding-number">'+str(index).zfill(2)+'</div>'
-            '<div class="finding-text"><div class="finding-top">'
-            '<span class="viewport">'+esc(_viewport(f))+'</span>'+confidence+'</div>'
-            +sample_html+'<div class="measurement">'+note+'</div>'
-            +_fix_status(f)+technical+'</div></article>')
+    details=('<details class="more"><summary>Measurements and element</summary><dl>'
+             '<div><dt>Page</dt><dd>'+_safe_link(f.get("url",""))+'</dd></div>'
+             '<div><dt>Element</dt><dd><code>'+esc(f.get("selector",""))+'</code></dd></div>'
+             '<div><dt>Checked at</dt><dd>'+esc(_widths(f))+'</dd></div>'
+             +('<div><dt>Screenshot</dt><dd><a href="'+esc(shot)+'" target="_blank" rel="noopener noreferrer">Whole page at '+esc(f.get("viewport",""))+' px</a></dd></div>' if shot else "")
+             +'</dl><pre>'+evidence+'</pre></details>')
+    return ('<article class="card '+esc(severity)+('' if image else ' no-image')+'" id="finding-'+esc(f.get("id",""))+'">'
+            '<div class="card-body"><p class="card-top"><span class="sev">'+esc(word)+'</span>'
+            '<span class="where">'+esc(_where(f))+'</span>'+check+'</p>'
+            +('<p class="sample" lang="'+_lang_of(sample)+'">'+esc(sample)+'</p>' if sample else "")
+            +(('<p class="measured">'+esc(measured)+'</p>') if measured else "")
+            +_sequences(f)+_explanation(f)+_repair(f,folder,before)+details+'</div>'+image+'</article>')
 
 
-def _group(detector, findings, folder, severity):
-    title,description,_=FINDING_COPY.get(detector,("Rendering observation","Measurements available for review.","Inspect this finding."))
-    # One explanation per detector, instead of identical paragraphs on every finding.
-    total=len(findings)
-    preview=esc(next((f.get("sample") for f in findings if f.get("sample")),""))
-    open_attr=" open" if severity!="info" else ""
-    rows="".join(_finding_row(f,folder,i) for i,f in enumerate(findings,1))
-    label="Potential" if severity=="warning" else ("Observation" if severity=="info" else "Error")
-    return ('<details class="issue-group '+esc(severity)+'"'+open_attr+'>'
-            '<summary class="group-summary"><span class="group-accent"></span>'
-            '<span class="group-heading"><span class="group-category">'+esc(label)+'</span>'
-            '<strong>'+esc(title)+'</strong><small>'+esc(description)+'</small></span>'
-            '<span class="group-count">'+_label(total,"occurrence")+'</span>'
-            '<span class="chevron" aria-hidden="true"></span></summary>'
-            '<div class="group-items">'+rows+'</div></details>')
+def _group(detector, findings, folder):
+    title,why,_=FINDING_COPY.get(detector,("Rendering observation","Measurements are available for review.",""))
+    count=(' <span class="count">'+_label(len(findings),"place")+'</span>') if len(findings)>1 else ""
+    return ('<section class="group"><h3>'+esc(title)+count+'</h3><p class="why">'+esc(why)+'</p>'
+            +"".join(_card(f,folder) for f in findings)+'</section>')
+
+
+def _summary_sentence(counts):
+    parts=[]
+    if counts["error"]:
+        parts.append(_label(counts["error"],"problem")+" to fix")
+    if counts["warning"]:
+        parts.append(_label(counts["warning"],"thing")+" to check")
+    if counts["info"]:
+        parts.append(_label(counts["info"],"note"))
+    if not parts:
+        return "Nothing broke in these checks."
+    text=parts[0] if len(parts)==1 else ", ".join(parts[:-1])+" and "+parts[-1]
+    return text[0].upper()+text[1:]+"."
+
+
+def _ai_line(data):
+    ai=data.get("ai") or {}
+    if not ai.get("calls"):
+        return ""
+    tokens=int(ai.get("input_tokens") or 0)+int(ai.get("output_tokens") or 0)
+    return ('<p class="meta">Explanations and repairs by BharatCode <code>'+esc(ai.get("model",""))+'</code>: '
+            +_label(int(ai["calls"]),"call")+(", "+_label(tokens,"token") if tokens else "")
+            +(", "+esc(f'{float(ai.get("seconds") or 0):g}')+" s" if ai.get("seconds") else "")+'.</p>')
+
+
+LOGO=('<svg class="logo" viewBox="0 0 120 120" aria-hidden="true">'
+      '<path d="M49.65 21.36 A40 40 0 1 1 49.65 98.64" fill="none" stroke="#0E6B4E" stroke-width="13" stroke-linecap="round"/>'
+      '<g fill="#D9475A"><circle cx="34.83" cy="91.08" r="6.5"/><circle cx="24.05" cy="77.54" r="6.5"/>'
+      '<circle cx="20" cy="60" r="6.5"/><circle cx="24.05" cy="42.46" r="6.5"/><circle cx="34.83" cy="28.92" r="6.5"/></g></svg>')
+
+CSS=r"""
+@font-face{font-family:'Anek Latin';src:url('font-anek-latin-400.woff2') format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:'Anek Latin';src:url('font-anek-latin-600.woff2') format('woff2');font-weight:600;font-display:swap}
+@font-face{font-family:'Anek Devanagari';src:url('font-anek-devanagari-400.woff2') format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:'Anek Devanagari';src:url('font-anek-devanagari-600.woff2') format('woff2');font-weight:600;font-display:swap}
+@font-face{font-family:'Anek Kannada';src:url('font-anek-kannada-400.woff2') format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:'Anek Kannada';src:url('font-anek-kannada-600.woff2') format('woff2');font-weight:600;font-display:swap}
+:root{color-scheme:only light;--paper:#F6F7F2;--sheet:#FFFEFB;--ink:#1B2440;--soft:#4A5064;--line:#D9DED3;--rule:#DCE6F2;
+--green:#0E6B4E;--green-tint:#E3F1EA;--red:#D9475A;--red-text:#B8323F;--red-tint:#FBE7E9;--amber:#8A5208;--amber-tint:#FBF0DC;
+--font:'Anek Latin','Anek Devanagari','Anek Kannada','Nirmala UI',system-ui,sans-serif;--mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace}
+*{box-sizing:border-box}html{background:var(--paper)}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 var(--font);-webkit-font-smoothing:antialiased}
+:lang(hi){font-family:'Anek Devanagari','Anek Latin',sans-serif}:lang(kn){font-family:'Anek Kannada','Anek Latin',sans-serif}
+a{color:var(--green)}a:focus-visible,summary:focus-visible{outline:3px solid var(--green);outline-offset:3px;border-radius:3px}
+code,pre{font-family:var(--mono);font-size:13px}
+h1,h2,h3,p,dl,dd,ul,ol,figure{margin:0}
+.shell{max-width:980px;margin:0 auto;padding:0 clamp(16px,4vw,32px)}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:68px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:600;text-decoration:none;color:var(--ink)}
+.logo{width:28px;height:28px}
+.downloads{font-size:14px;color:var(--soft)}.downloads a{margin-left:14px}
+.head{padding:40px 0 32px;border-bottom:1px solid var(--line)}
+.head h1{font-size:clamp(24px,3.4vw,32px);line-height:1.2;font-weight:600;letter-spacing:-.01em;overflow-wrap:anywhere}
+.head h1 a{color:inherit;text-decoration:none}.head h1 a:hover{text-decoration:underline;text-underline-offset:5px}
+.verdict{margin-top:14px;font-size:clamp(19px,2.4vw,22px);line-height:1.4}
+.meta{margin-top:8px;color:var(--soft);font-size:15px}.meta code{font-size:13px;color:var(--ink)}
+.notice{margin-top:18px;padding:12px 14px;border-radius:6px;background:var(--amber-tint);color:var(--amber);font-size:15px}
+.notice strong{font-weight:600}
+.band{padding-top:36px}
+.band>h2{display:flex;align-items:baseline;gap:10px;font-size:22px;font-weight:600;padding-bottom:10px;border-bottom:2px solid var(--ink)}
+.band>h2 .n{font-size:16px;color:var(--soft);font-weight:400}
+.group{padding-top:26px}
+.group h3{font-size:19px;font-weight:600}.group h3 .count{font-size:15px;font-weight:400;color:var(--soft);margin-left:6px}
+.why{margin-top:4px;color:var(--soft);max-width:68ch}
+.card{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,300px);gap:24px;margin-top:14px;padding:20px 22px;background:var(--sheet);border:1px solid var(--line);border-radius:10px}
+.card.no-image{grid-template-columns:minmax(0,1fr)}
+.card-top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;font-size:14px;color:var(--soft)}
+.sev{font-weight:600;padding:2px 9px;border-radius:4px;font-size:14px}
+.error .sev{background:var(--red-tint);color:var(--red-text)}.error .sev:before{content:'✗ '}
+.warning .sev{background:var(--amber-tint);color:var(--amber)}
+.info .sev{background:#E8EEF7;color:#3B4F73}
+.tag{font-size:13px;border:1px solid var(--line);border-radius:4px;padding:1px 7px}
+.sample{margin-top:12px;font-size:22px;line-height:1.6;overflow-wrap:anywhere}
+.measured{margin-top:4px;color:var(--soft)}
+.sequences{list-style:none;padding:0;margin-top:10px;display:grid;gap:6px}
+.sequences li{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
+.glyph{font-size:24px;line-height:1.3;min-width:2ch;color:var(--red-text)}
+.sequences code{background:var(--paper);padding:1px 6px;border-radius:3px}
+.seq-why{color:var(--soft);font-size:14px}
+.ai{margin-top:16px;padding:14px 16px;border-radius:8px;background:#F1F4FA}
+.ai-label{font-size:14px;font-weight:600;color:#3B4F73;margin-bottom:4px}
+.ai p+p{margin-top:8px}
+.translation{display:grid;grid-template-columns:4.5em minmax(0,1fr);gap:8px;font-size:16px;line-height:1.65}
+.lang-name{color:var(--soft);font-size:14px;padding-top:2px}
+.repair{margin-top:14px;padding:14px 16px;border-radius:8px;border:1px solid var(--line)}
+.repair-title{font-weight:600}
+.repair.ok{background:var(--green-tint);border-color:transparent}.repair.ok .repair-title{color:var(--green)}
+.repair.bad .repair-title{color:var(--red-text)}
+.repair pre{margin-top:8px;padding:10px 12px;background:#fff;border-radius:6px;white-space:pre-wrap;overflow-wrap:anywhere}
+.repair .next{margin-top:8px}.muted{color:var(--soft);margin-top:6px;font-size:14px}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}.compare.single{grid-template-columns:minmax(0,420px)}
+.compare figure,.capture{background:#fff;border:1px solid var(--line);border-radius:6px;padding:8px}
+.compare img,.capture img{display:block;max-width:100%;height:auto;margin:0 auto}
+figcaption{margin-top:6px;font-size:13px;color:var(--soft);text-align:center}
+.capture{align-self:start}
+.attempts{margin-top:12px}.attempts-title{font-size:14px;color:var(--soft)}
+.attempts ol{list-style:none;padding:0;margin-top:6px;display:grid;gap:4px}
+.attempts li{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;font-size:14px}
+.attempts .mark{font-weight:600}.attempts .ok .mark{color:var(--green)}.attempts .bad .mark{color:var(--red-text)}
+.attempts code{background:#fff;padding:1px 6px;border-radius:3px;overflow-wrap:anywhere}
+.more{margin-top:14px;font-size:14px}.more summary{cursor:pointer;color:var(--green);font-weight:600;width:fit-content}
+.more dl{margin-top:10px;display:grid;gap:6px}.more dl div{display:grid;grid-template-columns:7em minmax(0,1fr);gap:10px}
+.more dt{color:var(--soft)}.more dd{overflow-wrap:anywhere}
+.more pre{margin-top:10px;padding:12px;background:var(--paper);border:1px solid var(--line);border-radius:6px;max-height:240px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+details.notes>summary{cursor:pointer;list-style:none;display:flex;align-items:baseline;gap:10px;font-size:22px;font-weight:600;padding-bottom:10px;border-bottom:2px solid var(--ink)}
+details.notes>summary::-webkit-details-marker{display:none}
+details.notes>summary:after{content:'Show';margin-left:auto;font-size:15px;font-weight:600;color:var(--green)}
+details.notes[open]>summary:after{content:'Hide'}
+details.notes>summary .n{font-size:16px;color:var(--soft);font-weight:400}
+.clean{margin-top:30px;padding:20px;border-radius:10px;background:var(--green-tint);color:var(--green);font-size:18px}
+.foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;margin-top:56px;padding:22px 0 40px;border-top:1px solid var(--line);font-size:14px;color:var(--soft)}
+@media(max-width:720px){.card{grid-template-columns:minmax(0,1fr);gap:14px;padding:16px}.capture{order:-1;max-width:420px}
+.compare{grid-template-columns:1fr}.downloads a{margin-left:10px}.translation{grid-template-columns:1fr;gap:0}.more dl div{grid-template-columns:1fr;gap:0}}
+@media print{.downloads,.more summary{display:none}.card{break-inside:avoid}details.notes>.group{display:block}}
+"""
 
 
 def _html_report(data,folder):
-    from collections import defaultdict
-    counts=Counter(f.get("severity","info") for f in data.get("findings",[]))
+    findings=data.get("findings",[])
+    counts=Counter(f.get("severity","info") for f in findings)
     target=data.get("target","")
-    groups=defaultdict(list)
-    for f in data.get("findings",[]):
-        groups[(f.get("severity","info"),f.get("detector","unknown"))].append(f)
-    priority={"error":0,"warning":1,"info":2}
-    parts=[]
-    for (severity,detector),findings in sorted(groups.items(),key=lambda pair:(priority.get(pair[0][0],3),-len(pair[1]),pair[0][1])):
-        parts.append(_group(detector,findings,folder,severity))
-    content="\n".join(parts) or (
-        '<div class="empty"><span class="empty-icon" aria-hidden="true">✓</span>'
-        '<h2>No issues detected by these checks</h2><p>This does not guarantee complete rendering correctness.</p></div>'
-    )
+    groups=defaultdict(lambda:defaultdict(list))
+    for f in findings:
+        groups[f.get("severity","info")][f.get("detector","unknown")].append(f)
+    bands=[]
+    for severity in ORDER:
+        if severity not in groups:
+            continue
+        detectors=sorted(groups[severity].items(),key=lambda pair:(-len(pair[1]),pair[0]))
+        body="".join(_group(d,items,folder) for d,items in detectors)
+        title=SEVERITY[severity][1]
+        number='<span class="n">'+str(counts[severity])+'</span>'
+        if severity=="info":
+            bands.append('<section class="band"><details class="notes"><summary>'+title+' '+number+'</summary>'+body+'</details></section>')
+        else:
+            bands.append('<section class="band"><h2>'+title+' '+number+'</h2>'+body+'</section>')
+    if not bands:
+        bands.append('<p class="clean">✓ Nothing broke in these checks. That covers this page at these widths, not every page on the site.</p>')
+
     notices=[]
     if data.get("demo_mode"):
-        notices.append('<div class="notice danger"><strong>Offline development demo</strong> No BharatCode model call was made. Sample repairs are predefined rules.</div>')
+        notices.append('<p class="notice"><strong>Offline development demo.</strong> No BharatCode model call was made. Sample repairs are predefined rules.</p>')
     if any("error" in page for page in data.get("pages",[])):
-        notices.append('<div class="notice danger"><strong>Incomplete scan</strong> Some pages or viewports could not be checked. Missing data is not clean data.</div>')
+        notices.append('<p class="notice"><strong>Incomplete scan.</strong> Some pages or screen widths could not be checked. Missing data is not clean data.</p>')
     if not data.get("engine_version"):
-        notices.append('<div class="notice subtle"><strong>Earlier scan data.</strong> This report has the latest design, but the recorded findings use an earlier scanner. Run a fresh scan to apply the latest detection rules.</div>')
-    logo=(
-        '<svg class="logo" viewBox="0 0 120 120" aria-hidden="true">'
-        '<path d="M49.65 21.36 A40 40 0 1 1 49.65 98.64" fill="none" stroke="#0E6B4E" stroke-width="13" stroke-linecap="round"/>'
-        '<g fill="#D9475A"><circle cx="34.83" cy="91.08" r="6.5"/>'
-        '<circle cx="24.05" cy="77.54" r="6.5"/><circle cx="20" cy="60" r="6.5"/>'
-        '<circle cx="24.05" cy="42.46" r="6.5"/><circle cx="34.83" cy="28.92" r="6.5"/></g></svg>'
-    )
-    css=r"""
-@import url('https://fonts.googleapis.com/css2?family=Anek+Latin:wght@400;500;600;700;800&family=Anek+Devanagari:wght@400;500;600;700;800&family=Anek+Kannada:wght@400;500;600;700;800&display=swap');
-:root{--paper:#F8FAF7;--ink:#1B2440;--muted:#56627A;--navy:#141B30;--line:#D8E4F0;--green:#0E6B4E;--red:#B8323F;--pale:#EAF5EF;--font:'Anek Latin','Anek Devanagari','Anek Kannada','Nirmala UI',system-ui,sans-serif}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 var(--font);-webkit-font-smoothing:antialiased}
-a{color:inherit}button,summary{font:inherit}a:focus-visible,summary:focus-visible{outline:3px solid var(--green);outline-offset:4px}
-.shell{max-width:1140px;margin:0 auto;padding:0 clamp(18px,3vw,38px)}
-.topbar{background:#fff;border-bottom:1px solid var(--line)}.topbar-inner{min-height:80px;display:flex;justify-content:space-between;align-items:center;gap:20px}
-.brand{display:flex;align-items:center;gap:12px;min-width:0}.logo{width:40px;height:40px;flex:none}
-.brand-name{font-size:25px;font-weight:800;letter-spacing:-.025em;line-height:1.05}
-.brand-sub{display:flex;gap:10px;font-size:12px;color:var(--muted);margin-top:3px;line-height:1.2}
-.top-actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
-.top-actions a{font-size:13px;font-weight:650;text-decoration:none;padding:9px 13px;border:1px solid var(--line);border-radius:6px;color:var(--ink);background:#fff}
-.top-actions a:hover{border-color:var(--green);color:var(--green)}
-.hero{background:linear-gradient(117deg,#F3F7F2 0%,#F8FAF7 68%);border-bottom:1px solid var(--line)}
-.hero-content{display:grid;grid-template-columns:minmax(0,1fr) minmax(288px,340px);gap:clamp(24px,4vw,48px);align-items:center;padding-top:36px;padding-bottom:38px}
-.hero-copy{min-width:0;padding-left:19px;border-left:3px solid #A9D3C0}
-.kicker{display:flex;align-items:center;gap:9px;font-size:11px;color:var(--green);font-weight:800;letter-spacing:.105em;margin:0 0 9px}
-.kicker:before{content:"";display:block;width:7px;height:7px;border-radius:50%;background:#30A57E;flex:none}
-.hero h1{font-size:clamp(32px,3.25vw,43px);letter-spacing:-.032em;line-height:1.14;margin:0 0 11px;font-weight:780}
-.subtitle{color:var(--muted);font-size:14px;line-height:1.56;margin:0;max-width:60ch}
-.scan-meta{display:flex;flex-direction:column;align-items:flex-start;gap:3px;margin-top:18px}
-.scan-meta-label{font-size:10px;line-height:1.2;letter-spacing:.09em;font-weight:800;color:#748098}
-.scanned-url{display:block;font-size:13px;font-weight:650;line-height:1.5;color:var(--green);overflow-wrap:anywhere;word-break:break-word;text-underline-offset:3px}
-.scanned-url a:hover{color:#07553D}
-.generated{display:block;font-size:11px;color:var(--muted);line-height:1.4;margin-top:3px}
-.score-panel{min-width:0;align-self:center;background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px 20px 13px;box-shadow:0 10px 30px rgba(27,36,64,.045)}
-.score-heading{font-size:10px;letter-spacing:.09em;font-weight:800;color:var(--muted);margin-bottom:13px}
-.score{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
-.score-item{text-align:center;padding:3px 6px 6px;border-right:1px solid var(--line)}
-.score-item:last-child{border-right:0}
-.score-num{display:block;font-size:33px;font-weight:800;line-height:1.08;font-variant-numeric:tabular-nums}
-.score-num.error{color:var(--red)}.score-num.error.zero{color:var(--green)}.score-num.warning{color:#925516}.score-num.info{color:var(--green)}
-.score-label{display:block;font-size:12px;font-weight:650;color:var(--muted);margin-top:6px}
-.score-footnote{border-top:1px solid #E8EEF1;margin:12px 0 0;padding-top:10px;color:var(--muted);font-size:11px;line-height:1.4}
-.main{padding-top:32px;padding-bottom:55px}
-.intro{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:22px}
-.intro h2{font-size:23px;letter-spacing:-.025em;line-height:1.2;margin:0 0 5px;font-weight:800}
-.intro p{color:var(--muted);font-size:14px;margin:0;max-width:670px}
-.count-note{display:inline-flex;align-items:center;gap:9px;white-space:nowrap;font-size:12px;color:var(--green);font-weight:750;padding-top:4px}
-.count-note:before{content:"";width:8px;height:8px;border-radius:50%;background:var(--green)}
-.issue-group{margin:14px 0;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 4px 15px rgba(27,36,64,.025);overflow:hidden}
-.group-summary{display:flex;align-items:center;gap:17px;list-style:none;cursor:pointer;padding:18px 22px;min-height:100px}
-.group-summary::-webkit-details-marker{display:none}.group-summary:hover{background:#FCFDFB}
-.group-accent{width:3px;height:51px;border-radius:2px;flex:none;background:#F2AE5D}.issue-group.error .group-accent{background:#D9475A}.issue-group.info .group-accent{background:#87BFB1}
-.group-heading{min-width:0;display:flex;flex-direction:column;flex:1;gap:1px}
-.group-category{color:#975B13;font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
-.issue-group.error .group-category{color:#B8323F}.issue-group.info .group-category{color:var(--green)}
-.group-heading strong{font-size:18px;line-height:1.3;letter-spacing:-.015em}
-.group-heading small{font-size:13px;color:var(--muted);line-height:1.45;max-width:750px;font-weight:400}
-.group-count{font-size:12px;white-space:nowrap;color:var(--muted);font-weight:650}
-.chevron{display:inline-flex;align-items:center;justify-content:center;flex:none;width:30px;height:30px;border:1px solid var(--line);border-radius:50%;background:#fff}
-.chevron:after{content:"";width:7px;height:7px;border-right:2px solid var(--green);border-bottom:2px solid var(--green);transform:translateY(-2px) rotate(45deg)}
-.issue-group[open]>.group-summary .chevron:after{transform:translateY(2px) rotate(225deg)}
-.group-items{border-top:1px solid var(--line);padding:0 22px}
-.finding-row{display:grid;grid-template-columns:32px minmax(0,1fr);gap:12px;padding:16px 0;border-bottom:1px solid #E9EFF4}
-.finding-row:last-child{border-bottom:0}
-.finding-number{color:#8793A5;font-size:12px;font-weight:700;padding-top:3px;font-variant-numeric:tabular-nums}
-.finding-top{display:flex;align-items:center;gap:10px;margin-bottom:5px;flex-wrap:wrap}
-.viewport{font-size:12px;font-weight:750;color:var(--ink)}
-.uncertain{font-size:11px;color:#946323;background:#FFF2DF;border-radius:4px;padding:1px 7px}
-.sample{font-size:clamp(16px,2.1vw,21px);line-height:1.6;font-weight:550;overflow-wrap:anywhere;color:var(--ink);margin:0 0 3px}
-.measurement{font-size:13px;color:var(--muted);line-height:1.5}
-.result{display:inline-block;margin:7px 0 0;border-radius:4px;padding:3px 8px;font-size:12px;font-weight:700}
-.result.verified{color:var(--green);background:#E4F3E9}
-.result.failed{color:var(--red);background:#FDEDEE}
-.result.neutral{color:#526077;background:#F0F3F7}
-.technical{margin:7px 0 0}
-.technical summary{font-size:12px;cursor:pointer;color:var(--green);font-weight:750;width:fit-content}
-.technical summary:hover{text-decoration:underline;text-underline-offset:3px}
-.technical-body{margin-top:12px;padding:14px 18px;border:1px solid var(--line);border-radius:7px;background:#FAFCFE}
-.technical-body p{margin:0 0 12px;font-size:13px;line-height:1.55}
-.technical-body strong{display:block;color:var(--ink);font-size:12px;margin-bottom:3px}
-.technical-line span{overflow-wrap:anywhere;color:var(--muted)}
-.technical-line code{font-size:11px;overflow-wrap:anywhere;color:var(--muted)}
-.technical-body pre{background:#F0F5F8;border:1px solid var(--line);padding:12px;font:12px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;overflow:auto;max-height:210px;white-space:pre-wrap;overflow-wrap:anywhere}
-.capture{margin-bottom:12px;display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap}
-.capture .evidence-photo{width:min(100%,250px);border:1px solid var(--line);background:white;padding:6px;border-radius:5px;display:flex;flex-direction:column;gap:4px;text-decoration:none}
-.capture .evidence-photo img{max-width:100%;max-height:150px;object-fit:contain;display:block}
-.capture .evidence-photo span,.capture .screenshot-link{font-size:12px;font-weight:700;color:var(--green);text-decoration:underline}
-.capture .screenshot-link{align-self:center}
-.fix-snippet pre{border-left:3px solid var(--green)}
-.raw-evidence{margin-top:12px}
-.notice{margin:0 0 16px;padding:13px 16px;font-size:13px;background:#F1F5F7;border:1px solid var(--line);border-radius:6px;color:var(--muted)}
-.notice strong{color:var(--ink)}.notice.danger{border-left:3px solid var(--red);background:#FFF3F3}
-.notice.subtle{border-left:3px solid var(--green)}
-.empty{padding:43px 24px;background:white;border:1px solid var(--line);text-align:center;border-radius:10px}
-.empty-icon{display:inline-flex;background:#E9F5EF;color:var(--green);font-size:25px;width:45px;height:45px;align-items:center;justify-content:center;border-radius:50%}
-.empty h2{font-size:23px;margin:14px 0 3px}.empty p{color:var(--muted);margin:0}
-.footer{border-top:1px solid var(--line);padding:23px 0 35px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:20px}
-.footer span:last-child{white-space:nowrap}
-@media(max-width:800px){.hero-content{grid-template-columns:minmax(0,1fr);gap:22px;padding-top:28px;padding-bottom:28px}.score-panel{max-width:440px;width:100%}.topbar-inner{min-height:75px}}
-@media(max-width:520px){.topbar-inner{flex-wrap:wrap;padding-top:12px;padding-bottom:12px}.top-actions{flex-shrink:0}.shell{padding:0 18px}.topbar-inner{min-height:74px;gap:10px}.brand{gap:8px}.logo{width:34px;height:34px}.brand-name{font-size:20px}.brand-sub{gap:5px;font-size:9px}.top-actions a{padding:7px 8px;font-size:11px}.hero-content{padding-top:25px;padding-bottom:27px}.hero-copy{padding-left:13px;border-left-width:2px}.hero h1{font-size:30px}.score-panel{padding:14px 13px 10px}.score-num{font-size:27px}.main{padding-top:24px}.intro{display:block}.count-note{padding-top:12px}.group-summary{padding:14px 13px;gap:11px;min-height:0}.group-accent{height:55px}.group-heading strong{font-size:16px}.group-heading small{font-size:12px}.group-count{display:none}.group-items{padding:0 13px}.finding-row{grid-template-columns:22px minmax(0,1fr);gap:7px;padding:13px 0}.sample{font-size:18px}.technical-body{padding:12px}.footer{flex-wrap:wrap}}
-@media(max-width:390px){.top-actions{width:100%;justify-content:flex-start}.brand-name{font-size:21px}.brand-sub{font-size:10px}}
-@media(print){.topbar{border:0}.top-actions,.technical summary{display:none}.hero{background:#fff}.issue-group:not([open]) .group-items{display:block}.issue-group{break-inside:avoid}.group-summary{min-height:0}.main{padding-top:18px}}
-"""
-    # Styles are embedded so the report works without a frontend build.
-    target_html=_safe_target(target)
-    issued=str(data.get("generated_at") or "").strip()
-    issued=issued.replace("+00:00","Z") if issued else ""
-    issued_line=('<span class="generated">Scanned '+esc(issued)+' UTC</span>') if issued and not issued.endswith("Z") else (
-                '<span class="generated">Scanned '+esc(issued)+'</span>' if issued else "")
-    score=(
-        '<div class="score-panel"><div class="score-heading">FINDINGS SUMMARY</div>'+'<div class="score" role="group" aria-label="Finding counts">'
-        '<div class="score-item"><span class="score-num error'+(' zero' if not counts["error"] else '')+'">'+str(counts["error"])+'</span><span class="score-label">Errors</span></div>'
-        '<div class="score-item"><span class="score-num warning">'+str(counts["warning"])+'</span><span class="score-label">Warnings</span></div>'
-        '<div class="score-item"><span class="score-num info">'+str(counts["info"])+'</span><span class="score-label">Notes</span></div></div><p class="score-footnote">Review warnings before treating them as confirmed defects.</p></div>'
-    )
+        notices.append('<p class="notice"><strong>Earlier scan data.</strong> These findings come from an older scanner. Run a fresh scan to apply the latest detection rules.</p>')
+
+    widths=sorted({w for f in findings for w in (f.get("viewports") or [f.get("viewport")]) if w}
+                  or {p.get("viewport") for p in data.get("pages",[]) if p.get("viewport")})
+    width_text=" and ".join(("phone" if w<=430 else "tablet" if w<=1024 else "desktop")+f" ({w} px)" for w in widths)
+    when=_when(data.get("generated_at"))
+    checked=("Checked in Chromium"+(" at "+width_text if width_text else "")+(" on "+when if when else "")+".")
+    name=_page_name(target)
     return (
         '<!doctype html><html lang="en"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
-        '<meta name="color-scheme" content="light">'
-        '<meta name="description" content="AksharaCheck browser evidence report for Indic text rendering.">'
-        '<title>AksharaCheck | Rendering review</title><style>'+css+'</style></head>'
-        '<body><header class="topbar"><div class="shell topbar-inner">'
-        '<div class="brand">'+logo+'<div><div class="brand-name">AksharaCheck</div>'
-        '<div class="brand-sub"><span lang="hi">अक्षर जाँच</span><span lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ</span></div></div></div>'
-        '<nav class="top-actions" aria-label="Report exports">'
-        '<a href="report.json">JSON</a><a href="report.md">Markdown</a></nav></div></header>'
-        '<section class="hero" aria-labelledby="report-title"><div class="shell hero-content"><div class="hero-copy">'
-        '<p class="kicker">BROWSER RENDERING REVIEW</p>'
-        '<h1 id="report-title">Every letter matters.</h1>'
-        '<p class="subtitle">A focused look at the issues Chromium detected. Warnings are candidates for review, not confirmed faults.</p>'
-        '<div class="scan-meta"><span class="scan-meta-label">SCANNED PAGE</span><div class="scanned-url">'+target_html+'</div>'+issued_line+'</div></div>'+score+'</div></section>'
-        '<main class="shell main">'+''.join(notices)
-        +'<div class="intro"><div><h2>Findings worth reviewing</h2><p>Grouped by issue type, with the measurements and browser captures one click away.</p></div>'
-        +'<div class="count-note">'+_label(len(data.get("findings",[])),"finding")+' recorded</div></div>'
-        +content+'</main><footer class="shell footer"><span>AksharaCheck. Browser measurements, not a full accessibility audit.</span>'
-        '<span>Checked with Chromium</span></footer></body></html>'
+        '<meta name="color-scheme" content="only light">'
+        '<title>'+esc(name)+' | AksharaCheck report</title><style>'+CSS+'</style></head><body>'
+        '<header class="shell"><div class="top"><span class="brand">'+LOGO+'AksharaCheck</span>'
+        '<nav class="downloads" aria-label="Downloads">Download <a href="report.json">JSON</a><a href="report.md">Markdown</a></nav></div></header>'
+        '<main class="shell"><section class="head" aria-labelledby="report-title">'
+        '<h1 id="report-title">'+_safe_link(target,name)+'</h1>'
+        '<p class="verdict">'+esc(_summary_sentence(counts))+'</p>'
+        '<p class="meta">'+esc(checked)+'</p>'+_ai_line(data)+''.join(notices)+'</section>'
+        +"".join(bands)+'</main>'
+        '<footer class="shell"><div class="foot"><span>AksharaCheck measures how Chromium draws the page. It is not a full accessibility audit.</span>'
+        '<span><span lang="hi">अक्षर जाँच</span> · <span lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ</span></span></div></footer></body></html>'
     )
+
+
+def _copy_fonts(folder):
+    for name in FONT_FILES:
+        source=ASSETS/name
+        if source.is_file() and not (folder/name).is_file():
+            shutil.copyfile(source,folder/name)
+
+
+def _markdown(data):
+    findings=data.get("findings",[])
+    counts=Counter(f.get("severity","info") for f in findings)
+    lines=["# AksharaCheck report: "+_page_name(data.get("target","")),"",
+           _summary_sentence(counts),"","Page: "+str(data.get("target","")),""]
+    if data.get("demo_mode"):
+        lines+=["Offline development demo. No BharatCode model was called.",""]
+    ai=data.get("ai") or {}
+    if ai.get("calls"):
+        lines+=[f"Explanations and repairs by BharatCode {ai.get('model','')} ({ai['calls']} calls).",""]
+    for severity in ORDER:
+        items=[f for f in findings if f.get("severity","info")==severity]
+        if not items:
+            continue
+        lines+=["## "+SEVERITY[severity][1],""]
+        for f in items:
+            title,_,action=FINDING_COPY.get(f.get("detector"),("Observation","","Review the element."))
+            fix=f.get("fix") or {}
+            lines+=["### "+SEVERITY[severity][0]+": "+title,""]
+            if f.get("sample"):
+                lines+=["> "+str(f["sample"]),""]
+            measured=_observed(f)
+            if measured:
+                lines+=[measured,""]
+            for item in (f.get("evidence") or {}).get("invalid_sequences") or []:
+                lines.append("- `"+" ".join(item.get("codepoints") or [])+"`: "+str(item.get("reason","")))
+            if f.get("ai_explanation"):
+                lines+=["","BharatCode: "+str(f["ai_explanation"])]
+                for code,label in (("hi","हिंदी"),("kn","ಕನ್ನಡ")):
+                    if f.get("summary_"+code):
+                        lines.append(label+": "+str(f["summary_"+code]))
+            if fix.get("status")=="verified":
+                lines+=["","Fix verified in Chromium at "+str(fix.get("viewport") or f.get("viewport"))+" px:","","```css",_css_text(fix),"```"]
+            elif fix.get("status")=="unverified":
+                lines+=["","No suggested fix passed: "+str(fix.get("reason","")),"","What to change: "+action]
+            else:
+                lines+=["","What to change: "+action]
+            for t in fix.get("attempts") or []:
+                lines.append("- Tried `"+_css_text(t).replace("\n"," ")+"`: "+("passed" if t.get("status")=="verified" else "rejected, "+str(t.get("reason",""))))
+            lines+=["","Element: `"+str(f.get("selector",""))+"` on "+str(f.get("url","")),""]
+    return "\n".join(lines)
 
 
 def write_reports(data,dest):
     folder=Path(dest)
     folder.mkdir(parents=True,exist_ok=True)
     (folder/"report.json").write_text(json.dumps(data,indent=2,ensure_ascii=False),encoding="utf-8")
-    counts=Counter(f.get("severity","info") for f in data.get("findings",[]))
-    lines=["# AksharaCheck browser review","", "Target: "+str(data.get("target","")),
-           "Findings: "+str(counts["error"])+" errors, "+str(counts["warning"])+" warnings, "+
-           str(counts["info"])+" informational.",""]
-    if data.get("demo_mode"):
-        lines.extend(["Offline development demo. No BharatCode model was called.",""])
-    for f in data.get("findings",[]):
-        lines.extend(["## "+str(f.get("severity","info")).upper()+": "+
-                      FINDING_COPY.get(f.get("detector"),("Observation",))[0],
-                      "",str(f.get("sample","")), "",
-                      "Page: "+str(f.get("url","")),
-                      "Element: "+str(f.get("selector","")),
-                      "Browser evidence: "+json.dumps(f.get("evidence") or {},ensure_ascii=False),
-                      "Repair state: "+str((f.get("fix") or {}).get("status","not requested")),""])
-    (folder/"report.md").write_text("\n".join(lines),encoding="utf-8")
+    (folder/"report.md").write_text(_markdown(data),encoding="utf-8")
+    _copy_fonts(folder)
     (folder/"report.html").write_text(_html_report(data,folder),encoding="utf-8")

@@ -48,7 +48,7 @@ async def run_scan(scan_id:str,request:ScanRequest):
         output=ROOT/scan_id
         data=await Scanner(output_dir=output,max_pages=1).scan(request.url,request.lang,progress)
         if request.use_ai and os.getenv('BHARATCODE_API_KEY') and os.getenv('BHARATCODE_API_ENABLED','').strip()=='1':
-            await explain_and_verify(data,progress=progress,max_fixes=5)
+            await explain_and_verify(data,progress=progress,max_fixes=5,output_dir=output)
         write_reports(data,output)
         job.update(status='complete',summary=data['summary'])
     except Exception as exc:
@@ -101,7 +101,10 @@ def report(scan_id:str):
 @app.get('/api/scans/{scan_id}/artifacts/{name}')
 def artifact(scan_id:str,name:str):
     if not re.fullmatch(r'[0-9a-f]{16}',scan_id):raise HTTPException(404,'Unknown scan')
-    if '/' in name or '\\' in name or name not in {'report.html','report.md','report.json'} and not ((name.startswith('page-') or name.startswith('element-')) and name.endswith('.png')):
+    allowed=(name in {'report.html','report.md','report.json'}
+             or (name.startswith(('page-','element-')) and name.endswith('.png'))
+             or re.fullmatch(r'font-anek-[a-z]+-[0-9]{3}\.woff2',name))
+    if '/' in name or '\\' in name or '..' in name or not allowed:
         raise HTTPException(400,'Invalid artifact')
     path=ROOT/scan_id/name
     if not path.is_file():raise HTTPException(404,'Artifact not found')

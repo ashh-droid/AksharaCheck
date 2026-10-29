@@ -1,3 +1,4 @@
+import os
 """End-to-end fixture checks. No external websites or credentials are used."""
 import asyncio
 import sys
@@ -36,7 +37,11 @@ def chromium_available():
     async def probe():
         async with async_playwright() as p:
             try:
-                browser=await p.chromium.launch(headless=True)
+                options={"headless":True}
+                # Same launch options as the scanner, so CI and custom installs are not skipped.
+                if os.getenv("AKSHARA_CHROMIUM_PATH"):
+                    options["executable_path"]=os.environ["AKSHARA_CHROMIUM_PATH"]
+                browser=await p.chromium.launch(**options)
             except Exception as exc:
                 pytest.skip(f"Chromium launch unavailable: {type(exc).__name__}: {str(exc)[:100]}")
             else:

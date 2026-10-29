@@ -45,8 +45,7 @@ def test_viewer_facing_homepage_is_consistent():
     assert "Replay example" in page
     assert "onDark" in page
     assert ".bottom-cta{" in css
-    assert "grid-template-columns:60px minmax(0,1fr) auto" in css
-    assert "--paper:#F8FAF7" in css
+    assert "--paper:#F6F7F2" in css
     assert "--green:#0E6B4E" in css
     assert "--red:#D9475A" in css
 

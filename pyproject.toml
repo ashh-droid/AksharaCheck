@@ -18,6 +18,9 @@ aksharacheck = "aksharacheck.cli:main"
 [tool.setuptools.packages.find]
 include=["aksharacheck*"]
 
+[tool.setuptools.package-data]
+aksharacheck=["assets/*.woff2","assets/OFL.txt"]
+
 [tool.pytest.ini_options]
 testpaths=["tests"]
 asyncio_default_fixture_loop_scope="function"

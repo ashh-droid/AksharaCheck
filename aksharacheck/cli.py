@@ -49,7 +49,7 @@ def main():
         scanner=Scanner(output_dir=args.output,allow_local=args.allow_local,max_pages=args.pages)
         data=await scanner.scan(args.url,args.lang,progress)
         if args.ai:
-            data=await explain_and_verify(data,allow_local=args.allow_local,progress=progress)
+            data=await explain_and_verify(data,allow_local=args.allow_local,progress=progress,output_dir=args.output)
         write_reports(data,args.output)
         if args.json:
             print(json.dumps(data,ensure_ascii=False))

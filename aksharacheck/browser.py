@@ -46,6 +46,22 @@ DOM_JS = r'''(args) => {
 USER_AGENT="AksharaCheck/0.2 (public Indic rendering audit; project on GitHub)"
 SKIP_EXT=re.compile(r"\.(?:pdf|zip|rar|7z|docx?|xlsx?|pptx?|mp[34]|mov|png|jpe?g|gif|svg|webp)(?:$|\?)",re.I)
 
+
+async def element_capture(page, selector, path, pad=16, timeout=1200):
+    """Screenshot one element with breathing room around it, clipped to the viewport."""
+    el=page.locator(selector).first
+    await el.scroll_into_view_if_needed(timeout=timeout)
+    box=await el.bounding_box(timeout=timeout)
+    view=page.viewport_size or {"width":1280,"height":900}
+    if not box or box["width"]<1 or box["height"]<1:
+        return False
+    x=max(0,box["x"]-pad); y=max(0,box["y"]-pad)
+    w=min(view["width"]-x,box["width"]+2*pad); h=min(view["height"]-y,box["height"]+2*pad)
+    if w<24 or h<24:
+        return False
+    await page.screenshot(path=str(path),clip={"x":x,"y":y,"width":w,"height":h},animations="disabled")
+    return True
+
 class Scanner:
     def __init__(self, output_dir="output", *, allow_local=False, max_pages=1, timeout=60):
         self.output_dir=Path(output_dir)
@@ -136,11 +152,11 @@ class Scanner:
                                     f['screenshot']=shot.name
                                     f['bounds']=next((n['bounds'] for n in nodes if n['selector']==f['selector']),None)
                                     if (f['selector']!='document' and f.get('bounds')
-                                            and f['bounds'].get('h',0)>=24 and f['bounds'].get('w',0)>=24):
+                                            and f['bounds'].get('h',0)>=8 and f['bounds'].get('w',0)>=8):
                                         image_name=f'element-{f["id"]}-{viewport}.png'
                                         try:
-                                            await page.locator(f['selector']).first.screenshot(path=str(self.output_dir/image_name),timeout=1200,animations="disabled")
-                                            f['element_screenshot']=image_name
+                                            if await element_capture(page,f['selector'],self.output_dir/image_name):
+                                                f['element_screenshot']=image_name
                                         except Exception:
                                             pass
                                 results.append({"url":page.url,"viewport":viewport,"screenshot":shot.name,"findings":findings,"nodes_checked":len(nodes)})
