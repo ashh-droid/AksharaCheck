@@ -10,6 +10,7 @@ type LetterProblem={index:number;title:string;hint:string;character:string};
 const API=import.meta.env.VITE_API_URL||'';
 const REPO='https://github.com/ashh-droid/AksharaCheck';
 const SAMPLE='सूचना: परीक्षा ह िंदी माध्यम में होगी। अाज शाम तक फ़ॉर्म जमा करें।\nಪರೀಕ್ಷೆ ಮುಂದೂಡಲಾಗ ಿದೆ. ಹೊಸ ದಿನಾಂಕವನ್ನು ಶೀಘ್ರದಲ್ಲೇ ತಿಳಿಸಲಾಗುವುದು.';
+const CLEAN_SAMPLE='किताब सही दिखती है।\nಕನ್ನಡ ಸರಿಯಾಗಿ ಕಾಣುತ್ತದೆ.';
 const detectorNames:Record<string,string>={
  'broken-cluster':'Broken letters','legacy-font':'Legacy encoded fonts','font-load-failed':'Missing web fonts',
  'font-fallback':'Font substitution','possible-clipping':'Cut-off letters','mobile-overflow':'Text beyond the screen',
@@ -57,7 +58,7 @@ function App(){
  const [ai,setAi]=useState(false);const [aiAvailable,setAiAvailable]=useState(false);
  const [busy,setBusy]=useState(false);const [jobId,setJobId]=useState<string|null>(null);
  const [job,setJob]=useState<Job|null>(null);const [report,setReport]=useState<Report|null>(null);const [error,setError]=useState('');
- const [sample,setSample]=useState('');const [sampleFeedback,setSampleFeedback]=useState('');const [replay,setReplay]=useState(0);const [menuOpen,setMenuOpen]=useState(false);
+ const [sample,setSample]=useState(SAMPLE);const [sampleFeedback,setSampleFeedback]=useState('');const [replay,setReplay]=useState(0);const [menuOpen,setMenuOpen]=useState(false);
  const input=useRef<HTMLInputElement>(null);const textInput=useRef<HTMLTextAreaElement>(null);const scanSection=useRef<HTMLElement>(null);
  const issues=checkText(sample);
  useEffect(()=>{fetch(API+'/api/health').then(r=>r.json()).then(d=>setAiAvailable(Boolean(d.ai_available))).catch(()=>setAiAvailable(false))},[]);
@@ -147,7 +148,7 @@ function App(){
    <section className="try-section" id="try"><div className="wrap">
     <div className="section-head"><h2>Check a line of text right here</h2><p>Paste Hindi or Kannada text to check basic Unicode letter sequences. This runs in your browser, and your text is not uploaded.</p></div>
     <div className="try-grid">
-     <div className="copybook text-editor"><div className="sheet-top"><span>Your text</span><button type="button" onClick={()=>{setSample(SAMPLE);setSampleFeedback('Example loaded. Edit the text to watch the results change.');textInput.current?.focus()}}>Load the example</button></div><textarea ref={textInput} aria-label="Hindi or Kannada text to check" placeholder="Paste or type Hindi or Kannada text here" spellCheck={false} value={sample} onChange={e=>{setSample(e.target.value);setSampleFeedback('')}}/><p className="sample-feedback" role="status">{sampleFeedback||'Text is checked locally in this browser.'}</p></div>
+     <div className="copybook text-editor"><div className="sheet-top"><span>Your text</span><button type="button" onClick={()=>{const next=sample===SAMPLE?CLEAN_SAMPLE:SAMPLE;setSample(next);setSampleFeedback(next===SAMPLE?'Broken example loaded. Edit the text to test another sequence.':'Clean example loaded. Compare the results with the broken example.');textInput.current?.focus()}}>{sample===SAMPLE?'Show a clean example':'Show a broken example'}</button></div><textarea ref={textInput} aria-label="Hindi or Kannada text to check" placeholder="Paste or type Hindi or Kannada text here" spellCheck={false} value={sample} onChange={e=>{setSample(e.target.value);setSampleFeedback('')}}/><p className="sample-feedback" role="status">{sampleFeedback||'Text is checked locally in this browser.'}</p></div>
      <div className="try-feedback"><h3 className={issues.length?'red-text':'green-text'}>{issues.length?'× '+issues.length+' possible '+(issues.length===1?'issue':'issues'):sample.trim()?'✓ No malformed letter sequences detected':'Your results appear here'}</h3>
       <p className="rendered-sample">{Array.from(sample).map((ch,i)=><React.Fragment key={i}>{issues.some(x=>x.index===i)?<span className="underline-wrong">{ch}</span>:ch}</React.Fragment>)}</p><p className="try-disclaimer">This quick text check does not test fonts, layout, spelling, or translation. Use the page scan for browser rendering evidence.</p>
       <ol>{issues.map((issue,i)=><li key={i}><strong>{issue.title}</strong> <code>{'U+'+cp(issue.character).toString(16).toUpperCase().padStart(4,'0')}</code><p>{issue.hint}</p></li>)}</ol>
