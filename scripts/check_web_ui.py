@@ -40,8 +40,10 @@ def main():
             assert page.locator(".brand-name").inner_text()=="AksharaCheck"
             assert "अक्षर जाँच" in page.locator(".brand-subtitle").inner_text()
             assert "ಅಕ್ಷರ ಪರಿಶೀಲನೆ" in page.locator(".brand-subtitle").inner_text()
-            assert page.get_by_text("Phone preview").count()==1
-            assert page.get_by_text("390 px").count()==0
+            assert page.get_by_text("390 px example").count()==1
+            assert page.evaluate("document.fonts.check('600 16px \"Anek Latin Variable\"')"),"Locally hosted Anek Latin font not loaded"
+            assert page.evaluate("document.fonts.check('400 16px \"Anek Devanagari Variable\"')"),"Locally hosted Hindi font not loaded"
+            assert page.evaluate("document.fonts.check('400 16px \"Anek Kannada Variable\"')"),"Locally hosted Kannada font not loaded"
             assert page.locator("a[href='#faq']").count()==1
             assert page.locator("a[href='#checks']").count()==1
             for section in ["try","checks","report","faq"]:
