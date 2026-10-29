@@ -165,18 +165,36 @@ Also run `cd web && npm install && npm run build` and test a complete Chromium s
 3. Confirm required file content and any submission-specific deadline with the organizers.
 4. Submit the **main repository URL**, not a branch/file link.
 
-## Reading and refreshing reports
+## Read and verify the redesigned reports
 
-The standalone HTML report is now a compact, grouped review instead of a full-page list of oversized screenshot cards. Each warning is a potential issue to inspect, not a confirmed defect. Tiny element screenshots are omitted, while usable captures and original evidence remain accessible.
+The HTML report is now an evidence review designed to be readable by customers and judges: a slim Attested masthead, clear browser-check summary, grouped findings with affected words, and expandable measurements. It does not claim suspected clipping or intentional font fallback are proven defects.
 
-To refresh the **appearance only** of an existing report after pulling an update:
+An older `report.json` can be **restyled**, but the old findings will not change. It will show an "Earlier scan data" notice. Re-scan to apply the latest clipping thresholds.
 
 ```cmd
+git pull
+.venv\Scripts\python.exe -m pytest -q
 .venv\Scripts\python.exe -m aksharacheck render output\hi-wikipedia\report.json
 start output\hi-wikipedia\report.html
 ```
 
-To retest **detector accuracy** with the new hidden-element and clipping thresholds, rerun the browser scan. Rendering an old JSON file cannot change its original findings.
+Check the report at phone, tablet, and desktop widths. The following automated QA runs a local Chromium review and captures its layout at 360, 390, 768, and 1440 pixels:
+
+```cmd
+.venv\Scripts\python.exe scripts\check_report_ui.py output\hi-wikipedia\report.html
+```
+
+The screenshots are saved under `output\hi-wikipedia\report-visual-qa`.
+
+After reviewing the appearance, make a **fresh scan** to update the findings:
+
+```cmd
+.venv\Scripts\python.exe -m aksharacheck scan https://hi.wikipedia.org/ --pages 1 --output output\hi-wikipedia-fresh
+start output\hi-wikipedia-fresh\report.html
+```
+
+Compare the warning count with the original six and inspect the remaining flags. Never describe a suspected warning as confirmed without checking the page evidence.
+
 
 ## Release preflight without BharatCode API access
 
