@@ -1,10 +1,18 @@
 # AksharaCheck · अक्षर चेक · ಅಕ್ಷರ ಪರಿಶೀಲನೆ
 
-**A real-browser detector for Hindi and Kannada text rendering bugs, with AI-proposed CSS fixes rechecked in Chromium.**
+**Find the letters your website breaks. A real-browser checker for Hindi and Kannada rendering, with evidence-backed repair suggestions.**
 
 > Open a website, find concrete rendering evidence, ask BharatCode to suggest a repair, and only label the repair **verified** after it passes the same deterministic test in a fresh browser. AI never creates findings.
 
 **Status:** Functional MVP undergoing public-demo validation. Browser detection and AI repairs have different verification states; the public report will use only measured findings.
+
+## Website experience
+
+The frontend follows the **Attested school-copybook** identity: paper ground, ruled blue lines, correction red, verified green, fountain-pen blue-black and the circular AksharaCheck mark. The masthead, browser tab title and SVG favicon use this identity.
+
+The React interface includes the URL scanner, a browser-only Hindi/Kannada typing check, four visual detector explanations, a sample evidence card, common questions, and live scan reports with page screenshots and repair status. The typing check runs locally in the visitor's browser. Actual website scans use FastAPI and Playwright.
+
+The new page is authored in `web/src/main.tsx` and `web/src/style.css`. The final Vite build is served by FastAPI from `web/dist`. No second web implementation is required.
 
 ## Quick start (Windows PowerShell)
 
