@@ -38,8 +38,11 @@ def test_viewer_facing_homepage_is_consistent():
     assert "390 px" not in page
     assert 'className="menu-toggle"' in page
     assert 'setMenuOpen(v=>!v)' in page
-    assert 'setSample(SAMPLE)' in page
-    assert "Example loaded." in page
+    assert "setSample(next)" in page
+    assert "Show a clean example" in page
+    assert "Show a broken example" in page
+    assert "Broken example loaded" in page
+    assert "Clean example loaded" in page
     assert "Replay example" in page
     assert "onDark" in page
     assert ".bottom-cta{" in css
