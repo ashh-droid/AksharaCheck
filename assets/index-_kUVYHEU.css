@@ -14,13 +14,13 @@
   --ink-soft:#4A5064;
   --line:#D9DED3;
   --rule:#DCE6F2;
-  --gutter:clamp(22px,3vw,64px);
+  --gutter:clamp(20px,3vw,48px);
   --section:clamp(78px,9vw,116px);
 }
-.wrap{width:calc(100% - 2 * var(--gutter));max-width:1800px}
+.wrap{width:min(calc(100% - 2 * var(--gutter)),1420px);max-width:none;margin-inline:auto}
 body{font-size:16px;line-height:1.55}
 .topbar{background:rgba(246,247,242,.96)}
-.topbar-inner{min-height:90px;gap:28px}
+.topbar-inner{min-height:84px;gap:28px}
 .brand{display:inline-flex;gap:15px;align-items:center;min-width:0}
 .brand .brand-symbol{width:49px;height:49px}
 .brand-lettering{display:flex;flex-direction:column;line-height:1}
@@ -31,10 +31,10 @@ body{font-size:16px;line-height:1.55}
 .topbar .nav-github{display:inline-flex;align-items:center;justify-content:center;min-height:37px;padding:0 14px}
 .menu-toggle{display:none;background:var(--sheet);color:var(--ink);border:1px solid var(--line);border-radius:6px;align-items:center;justify-content:center;gap:7px;min-height:42px;padding:0 12px;font-size:14px;line-height:1.2}
 .menu-toggle span{line-height:1.2}
-.hero{grid-template-columns:minmax(0,1.04fr) minmax(0,.96fr);gap:clamp(42px,4.4vw,86px);padding:clamp(45px,4vw,72px) 0 clamp(72px,7vw,105px);align-items:center}
+.hero{grid-template-columns:minmax(0,1.03fr) minmax(0,.97fr);gap:clamp(42px,4.4vw,76px);padding:clamp(86px,6.5vw,118px) 0 clamp(92px,7vw,120px);align-items:center}
 .hero-copy{min-width:0}
-.hero h1{font-size:clamp(48px,4.2vw,78px);font-weight:750;line-height:1.07;letter-spacing:-.035em;max-width:13ch}
-.lede{font-size:clamp(16px,1.12vw,19px);line-height:1.62;margin-top:23px;max-width:62ch}
+.hero h1{font-size:clamp(48px,4.4vw,80px);font-weight:750;line-height:1.08;letter-spacing:-.035em;max-width:13ch}
+.lede{font-size:clamp(16px,1.12vw,19px);line-height:1.62;margin-top:22px;max-width:57ch}
 .scan-form{max-width:540px;margin-top:24px}
 .scan-input{padding:5px;border:1px solid #829BBC;border-radius:9px;box-shadow:0 8px 20px rgba(27,36,64,.06)}
 .scan-input input{min-height:50px;font-size:15px;padding:0 14px}
@@ -43,7 +43,7 @@ body{font-size:16px;line-height:1.55}
 .scan-options select{min-height:41px;appearance:none;background-color:white;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%231B2440' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:15px;padding:0 36px 0 12px;border:1px solid #92A7C5;border-radius:6px}
 .ai-option{margin-top:10px;line-height:1.45}
 .examples{margin-top:12px}
-.hero-sheet{width:100%;min-height:385px;max-width:760px;justify-self:stretch;transform:rotate(-.25deg);padding:0 19px 30px 0;overflow:visible}
+.hero-sheet{width:100%;min-height:385px;max-width:660px;justify-self:center;transform:none;padding:0 19px 30px 0;overflow:visible}
 .hero-sheet::before{left:49px}
 .hero-sheet .sheet-top{min-height:47px;padding:10px 17px 10px 65px}
 .hero-sheet .paper-line{min-height:53px;padding:6px 9px 0 20px}
