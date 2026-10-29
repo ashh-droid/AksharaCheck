@@ -56,3 +56,13 @@ def test_github_pages_build_uses_repository_base():
     package=(FRONTEND/"package.json").read_text(encoding="utf-8")
     assert "mode === 'pages' ? '/AksharaCheck/' : '/'" in vite
     assert '"build:pages"' in package
+
+def test_pages_preview_does_not_offer_dead_scan_button():
+    source=(FRONTEND/"src"/"main.tsx").read_text(encoding="utf-8")
+    package=(FRONTEND/"package.json").read_text(encoding="utf-8")
+    assert "const PAGES_PREVIEW=" in source
+    assert "disabled={busy||PAGES_PREVIEW}" in source
+    assert "This is a static preview." in source
+    assert '"deploy:pages"' in package
+    assert "gh-pages -d dist" in package
+    assert (FRONTEND/"public"/".nojekyll").exists()
