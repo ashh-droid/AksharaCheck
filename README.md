@@ -102,6 +102,26 @@ cd ..
 
 Then visit http://127.0.0.1:8000. The CLI works without npm; the graphical interface does not. Do not deploy the browser scanner publicly without process isolation, outbound private-network blocking and an external rate limiter.
 
+## Optional GitHub Pages preview
+
+GitHub Pages is **static hosting only**. It can publish this React interface and browser-only text checker, but it cannot run the Python/FastAPI/Chromium website scanner. Do **not** present a GitHub Pages-only deployment as a working end-to-end scan service. A separate secured backend, publicly reachable over HTTPS, is needed for actual URL scans.
+
+The repository is currently private. GitHub Free generally requires a **public repository** for Pages, which is also a hackathon submission requirement. Leave the source private until it has been reviewed for secrets and is ready for publication.
+
+A Pages-ready frontend build uses the correct `/AksharaCheck/` asset prefix, without changing local Vite or the single-server FastAPI build:
+
+```cmd
+cd web
+npm install
+npm run build:pages
+```
+
+When ready to publish the static preview, the compiled `web/dist` folder can be pushed to a dedicated `gh-pages` branch (for example with `npx gh-pages -d dist -b gh-pages`). Then select **Settings > Pages > Deploy from a branch > gh-pages > /(root)**. This approach does not require adding a custom GitHub Actions workflow. GitHub's Pages publishing infrastructure may still run a deployment job.
+
+The expected preview address is `https://ashh-droid.github.io/AksharaCheck/` **after** publishing succeeds. This is not a verified live link yet.
+
+For a real hosted scanner, publish FastAPI + Chromium behind hardened outbound-network rules, a queue and rate limits. Set `VITE_API_URL` to that backend's HTTPS origin before building a separated frontend, and configure `AKSHARA_ORIGINS` for the exact frontend origin. Never expose `BHARATCODE_API_KEY` in Vite or JavaScript. The current code is not yet approved for an unrestricted public URL-scanning endpoint.
+
 ## Frontend and responsive QA
 
 Start Vite from the repository's `web` folder:
