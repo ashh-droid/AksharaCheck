@@ -1,27 +1,66 @@
-import os
-import shutil
-import subprocess
+"""End-to-end fixture checks. No external websites or credentials are used."""
+import asyncio
 import sys
-import time
 from pathlib import Path
+from threading import Thread
+from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
+
 import pytest
+from playwright.async_api import async_playwright
 from aksharacheck.browser import Scanner
 
-@pytest.mark.asyncio
-async def test_fixture_can_scan(tmp_path):
-    from playwright.async_api import async_playwright
-    async with async_playwright() as p:
-        if not os.getenv('AKSHARA_CHROMIUM_PATH') and not (Path.home()/'.cache/ms-playwright').exists():
-            pytest.skip('Chromium not installed')
-    fixture=Path(__file__).parents[1]/'fixtures'/'toota-akshar'
-    server=subprocess.Popen([sys.executable,'-m','http.server','18767','--bind','127.0.0.1','--directory',str(fixture)],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+FIXTURE=Path(__file__).resolve().parents[1]/"fixtures"/"toota-akshar"
+
+
+@pytest.fixture(scope="module")
+def fixture_url():
+    class Handler(SimpleHTTPRequestHandler):
+        def __init__(self,*args,**kwargs):
+            super().__init__(*args,directory=str(FIXTURE),**kwargs)
+        def log_message(self,*args):
+            pass
+    server=ThreadingHTTPServer(("127.0.0.1",0),Handler)
+    worker=Thread(target=server.serve_forever,daemon=True)
+    worker.start()
     try:
-        time.sleep(.5)
-        result=await Scanner(output_dir=tmp_path,allow_local=True,timeout=45).scan('http://127.0.0.1:18767/index.html')
-        kinds={f['detector'] for f in result['findings']}
-        assert 'wrong-lang' in kinds
-        assert 'broken-cluster' in kinds
-        assert 'possible-clipping' in kinds
-        assert 'mobile-overflow' in kinds
-        assert (tmp_path/'page-01-390.png').exists()
-    finally:server.terminate();server.wait(timeout=3)
+        yield f"http://127.0.0.1:{server.server_port}"
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=3)
+
+
+@pytest.fixture(scope="module")
+def chromium_available():
+    # Test actual executable launch, not the Unix-only Playwright cache path.
+    async def probe():
+        async with async_playwright() as p:
+            try:
+                browser=await p.chromium.launch(headless=True)
+            except Exception as exc:
+                pytest.skip(f"Chromium launch unavailable: {type(exc).__name__}: {str(exc)[:100]}")
+            else:
+                await browser.close()
+    asyncio.run(probe())
+    return True
+
+
+@pytest.mark.asyncio
+async def test_broken_page_reports_expected_categories(tmp_path,fixture_url,chromium_available):
+    result=await Scanner(output_dir=tmp_path,allow_local=True,timeout=60).scan(f"{fixture_url}/index.html")
+    kinds={f["detector"] for f in result["findings"]}
+    for detector in ("broken-cluster","wrong-lang","possible-clipping","mobile-overflow"):
+        assert detector in kinds,f"{detector} was not found; actual categories: {sorted(kinds)}"
+    assert (tmp_path/"page-01-390.png").is_file()
+    assert (tmp_path/"page-01-1440.png").is_file()
+    assert result["summary"]["error"]>0
+    assert len({f["id"] for f in result["findings"]})==len(result["findings"])
+    assert any(len(f.get("viewports",[]))>1 for f in result["findings"])
+
+
+@pytest.mark.asyncio
+async def test_clean_page_has_no_errors_or_warnings(tmp_path,fixture_url,chromium_available):
+    result=await Scanner(output_dir=tmp_path,allow_local=True,timeout=60).scan(f"{fixture_url}/clean.html")
+    serious=[f for f in result["findings"] if f["severity"] in {"error","warning"}]
+    assert not serious,[(f["detector"],f["sample"][:80]) for f in serious]
+    assert (tmp_path/"report.json").is_file()
