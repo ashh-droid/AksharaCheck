@@ -55,13 +55,13 @@ function Logo({size=36,onDark=false}:{size?:number;onDark?:boolean}){
 }
 function App(){
  const [url,setUrl]=useState('');const [lang,setLang]=useState('both');
- const [ai,setAi]=useState(false);const [aiAvailable,setAiAvailable]=useState(false);
+ const [ai,setAi]=useState(false);const [aiAvailable,setAiAvailable]=useState(false);const [backendOnline,setBackendOnline]=useState<boolean|null>(null);
  const [busy,setBusy]=useState(false);const [jobId,setJobId]=useState<string|null>(null);
  const [job,setJob]=useState<Job|null>(null);const [report,setReport]=useState<Report|null>(null);const [error,setError]=useState('');
  const [sample,setSample]=useState(SAMPLE);const [sampleFeedback,setSampleFeedback]=useState('');const [replay,setReplay]=useState(0);const [menuOpen,setMenuOpen]=useState(false);
  const input=useRef<HTMLInputElement>(null);const textInput=useRef<HTMLTextAreaElement>(null);const scanSection=useRef<HTMLElement>(null);
  const issues=checkText(sample);
- useEffect(()=>{fetch(API+'/api/health').then(r=>r.json()).then(d=>setAiAvailable(Boolean(d.ai_available))).catch(()=>setAiAvailable(false))},[]);
+ useEffect(()=>{fetch(API+'/api/health').then(r=>{if(!r.ok)throw Error('Backend unavailable');return r.json()}).then(d=>{setBackendOnline(true);setAiAvailable(Boolean(d.ai_available))}).catch(()=>{setBackendOnline(false);setAiAvailable(false)})},[]);
  useEffect(()=>{
   if(!jobId)return;
   let active=true;let timer:number|undefined;
@@ -97,7 +97,7 @@ function App(){
    if(!data.id)throw Error('The scanner did not return a scan ID. Check the backend service.');
    setJobId(data.id);
    window.setTimeout(()=>scanSection.current?.scrollIntoView({behavior:'smooth',block:'start'}),50);
-  }catch(e){setError(e instanceof Error?e.message:String(e));setBusy(false)}
+  }catch(e){if(e instanceof TypeError){setBackendOnline(false);setError(window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1'?'Cannot reach the scanner. Start the Python backend on port 8000 and reload this page.':'The scanner service is currently unreachable. Please try again.')}else{setError(e instanceof Error?e.message:String(e))}setBusy(false)}
  }
  const reportArtifact=(file:string)=>API+'/api/scans/'+(reportId.current||'')+'/artifacts/'+encodeURIComponent(file);
  const reportId=useRef<string|null>(null);
@@ -123,6 +123,7 @@ function App(){
       <div className="scan-input"><input ref={input} id="url" type="text" placeholder="https://your-site.in" value={url} onChange={e=>setUrl(e.target.value)} required spellCheck={false}/><button type="submit" disabled={busy}>{busy?'Checking…':'Check this page'}</button></div>
       <div className="scan-options"><label>Language <select value={lang} onChange={e=>setLang(e.target.value)} disabled={busy}><option value="both">Hindi and Kannada</option><option value="hi">Hindi only</option><option value="kn">Kannada only</option></select></label></div>
       <label className="ai-option"><input type="checkbox" checked={ai} onChange={e=>setAi(e.target.checked)} disabled={!aiAvailable||busy}/> Also suggest CSS fixes with BharatCode AI {!aiAvailable&&<span>(not set up on this server)</span>}</label>
+      {backendOnline===false&&<p className="backend-note" role="status">{['localhost','127.0.0.1'].includes(window.location.hostname)?'The local scanner backend is not connected. Start it on port 8000 to enable scans.':'The scan service is temporarily offline. The local text checker below still works.'}</p>}
       <p className="examples">Or try <button type="button" onClick={()=>{setUrl('https://hi.wikipedia.org/');input.current?.focus()}}>hi.wikipedia.org</button>, <button type="button" onClick={()=>{setUrl('https://kn.wikipedia.org/');input.current?.focus()}}>kn.wikipedia.org</button> or <button type="button" onClick={()=>{setUrl('https://www.india.gov.in/');input.current?.focus()}}>india.gov.in</button></p>
      </form>
     </div>
@@ -148,9 +149,9 @@ function App(){
        {report.findings.filter(f=>f.detector===type).map(f=><article className="audit-card" key={f.id}>
         <header><span className={'audit-severity '+f.severity}>{f.severity}</span><strong>{detectorNames[f.detector]||f.detector}</strong><small>{(f.viewports||[f.viewport]).map(w=>w<=430?'Phone':'Desktop').join(' + ')}</small></header>
         <p className="audit-sample">{f.sample}</p><div className="audit-card-content">
-         {(f.element_screenshot||f.screenshot)&&<a href={reportArtifact(f.element_screenshot||f.screenshot||'')} target="_blank" rel="noreferrer"><img src={reportArtifact(f.element_screenshot||f.screenshot||'')} alt={'Browser capture for '+f.detector}/></a>}
+         
          <div><p>{f.ai_explanation||'This finding comes from the browser measurement.'}</p>{f.fix&&<p className={f.fix.status==='verified'?'verified-note':'unverified-note'}>{f.fix.status==='verified'?'✓ Fix verified in Chromium':f.fix.status==='not-applicable'?'Manual repair needed':'Not verified: '+(f.fix.reason||'Review the change')}</p>}{(f.fix?.css||f.fix?.attributes)&&<pre>{Object.entries({...f.fix.css,...f.fix.attributes}).map(([k,v])=>k+': '+v+';').join('\n')}</pre>}</div></div>
-        <details><summary>Measured evidence</summary><pre>{JSON.stringify(f.evidence,null,2)}</pre><p className="audit-target">Page: {f.url}<br/>Element: {f.selector}</p></details>
+        <details><summary>View evidence and suggested next step</summary>{(f.element_screenshot||f.screenshot)&&<p><a className="audit-screenshot-link" href={reportArtifact(f.element_screenshot||f.screenshot||'')} target="_blank" rel="noopener noreferrer">Open browser screenshot</a></p>}<pre>{JSON.stringify(f.evidence,null,2)}</pre><p className="audit-target">Page: {f.url}<br/>Element: {f.selector}</p></details>
        </article>)}</div>)}
       </div>}
    </section>
