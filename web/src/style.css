@@ -453,3 +453,21 @@ body{font-size:16px;line-height:1.6}
 @media(prefers-reduced-motion:reduce){
  .hero-sheet .paper-line,.hero-sheet .handnote{animation:none!important}
 }
+
+/* Final visual acceptance details */
+.check-card{display:flex;flex-direction:column;min-width:0}
+.check-card h3{min-height:46px;display:flex;align-items:center;line-height:1.25}
+.check-card>p{flex:1}
+.hero-sheet .handnote.good{max-width:calc(100% - 175px)}
+.hero-sheet .paper-line p{min-width:0;max-width:100%;overflow-wrap:anywhere;word-break:normal}
+.scan-input button:focus-visible,.bottom-cta a:focus-visible{outline-offset:3px}
+.sample-report-top{justify-content:flex-start}
+.sample-error{vertical-align:middle}
+@media(max-width:720px){
+ .hero-sheet .handnote.good{max-width:calc(100% - 150px)}
+ .check-card h3{min-height:0}
+}
+@media(max-width:480px){
+ .hero-sheet .handnote.good{max-width:calc(100% - 115px)}
+ .hero-sheet .paper-line p{font-size:19px}
+}
