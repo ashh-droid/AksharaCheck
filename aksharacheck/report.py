@@ -268,11 +268,12 @@ a{color:inherit}button,summary{font:inherit}a:focus-visible,summary:focus-visibl
 .kicker{font-size:12px;color:var(--green);font-weight:750;letter-spacing:.04em;margin:0 0 8px}
 .hero h1{font-size:clamp(31px,3.65vw,46px);letter-spacing:-.035em;line-height:1.12;margin:0 0 11px;font-weight:800}
 .subtitle{color:var(--muted);font-size:15px;line-height:1.55;margin:0;max-width:600px}
+.generated{display:block;font-size:11px;color:var(--muted);margin-top:5px}
 .scanned-url{display:block;font-size:13px;font-weight:650;margin-top:14px;color:var(--green);overflow-wrap:anywhere;text-underline-offset:3px}
 .score{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));background:#fff;border:1px solid var(--line);border-radius:9px;padding:17px 10px;box-shadow:0 6px 16px #1B244006}
 .score-item{text-align:center;padding:2px 7px;border-right:1px solid var(--line)}.score-item:last-child{border-right:0}
 .score-num{font-size:29px;font-weight:800;line-height:1.15;font-variant-numeric:tabular-nums}
-.score-num.error{color:var(--red)}.score-num.warning{color:#925516}.score-num.info{color:var(--green)}
+.score-num.error{color:var(--red)}.score-num.error.zero{color:var(--green)}.score-num.warning{color:#925516}.score-num.info{color:var(--green)}
 .score-label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-top:4px}
 .main{padding-top:30px;padding-bottom:55px}
 .intro{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:22px}
@@ -335,11 +336,15 @@ a{color:inherit}button,summary{font:inherit}a:focus-visible,summary:focus-visibl
 @media(max-width:390px){.top-actions{width:100%;justify-content:flex-start}.brand-name{font-size:21px}.brand-sub{font-size:10px}}
 @media(print){.topbar{border:0}.top-actions,.technical summary{display:none}.hero{background:#fff}.issue-group:not([open]) .group-items{display:block}.issue-group{break-inside:avoid}.group-summary{min-height:0}.main{padding-top:18px}}
 """
-    # Use a local stylesheet in the standalone HTML, avoiding missing assets.
+    # Styles are embedded so the report works without a frontend build.
     target_html=_safe_target(target)
+    issued=str(data.get("generated_at") or "").strip()
+    issued=issued.replace("+00:00","Z") if issued else ""
+    issued_line=('<span class="generated">Scanned '+esc(issued)+' UTC</span>') if issued and not issued.endswith("Z") else (
+                '<span class="generated">Scanned '+esc(issued)+'</span>' if issued else "")
     score=(
         '<div class="score" role="group" aria-label="Finding counts">'
-        '<div class="score-item"><span class="score-num error">'+str(counts["error"])+'</span><span class="score-label">Errors</span></div>'
+        '<div class="score-item"><span class="score-num error'+(' zero' if not counts["error"] else '')+'">'+str(counts["error"])+'</span><span class="score-label">Errors</span></div>'
         '<div class="score-item"><span class="score-num warning">'+str(counts["warning"])+'</span><span class="score-label">Warnings</span></div>'
         '<div class="score-item"><span class="score-num info">'+str(counts["info"])+'</span><span class="score-label">Notes</span></div></div>'
     )
@@ -358,7 +363,7 @@ a{color:inherit}button,summary{font:inherit}a:focus-visible,summary:focus-visibl
         '<p class="kicker">BROWSER RENDERING REVIEW</p>'
         '<h1>Every letter matters.</h1>'
         '<p class="subtitle">A focused look at the issues Chromium detected. Warnings are candidates for review, not confirmed faults.</p>'
-        '<div class="scanned-url">'+target_html+'</div></div>'+score+'</div></section>'
+        '<div class="scanned-url">'+target_html+'</div>'+issued_line+'</div>'+score+'</div></section>'
         '<main class="shell main">'+''.join(notices)
         +'<div class="intro"><div><h2>Findings worth reviewing</h2><p>Grouped by issue type, with the measurements and browser captures one click away.</p></div>'
         +'<div class="count-note">'+_label(len(data.get("findings",[])),"finding")+' recorded</div></div>'
