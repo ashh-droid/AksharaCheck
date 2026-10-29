@@ -80,3 +80,11 @@ def test_self_hosted_anek_variable_fonts_and_accessible_controls():
     assert "'Anek Kannada Variable'" in css
     assert "appearance:none" in css
     assert "Scanner preview only" not in page
+
+def test_full_desktop_layout_and_larger_company_brand():
+    css=(FRONTEND/"src"/"style.css").read_text(encoding="utf-8")
+    assert "max-width:1800px" in css
+    assert "--gutter:clamp(22px,3vw,64px)" in css
+    assert ".brand-name{font-size:clamp(27px,2vw,35px)" in css
+    assert ".footer-brand strong{font-size:clamp(22px,1.65vw,30px)" in css
+    assert ".hero-sheet{width:100%;min-height:385px;max-width:760px" in css
