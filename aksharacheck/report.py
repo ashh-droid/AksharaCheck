@@ -249,8 +249,8 @@ def _html_report(data,folder):
         '<circle cx="24.05" cy="42.46" r="6.5"/><circle cx="34.83" cy="28.92" r="6.5"/></g></svg>'
     )
     css=r"""
-@import url('https://fonts.googleapis.com/css2?family=Anek:wght@400;500;600;700;800&family=Anek+Devanagari:wght@400;500;600;700&family=Anek+Kannada:wght@400;500;600;700&display=swap');
-:root{--paper:#F8FAF7;--ink:#1B2440;--muted:#56627A;--navy:#141B30;--line:#D8E4F0;--green:#0E6B4E;--red:#B8323F;--pale:#EAF5EF;--font:'Anek','Anek Devanagari','Anek Kannada','Nirmala UI',system-ui,sans-serif}
+@import url('https://fonts.googleapis.com/css2?family=Anek+Latin:wght@400;500;600;700;800&family=Anek+Devanagari:wght@400;500;600;700;800&family=Anek+Kannada:wght@400;500;600;700;800&display=swap');
+:root{--paper:#F8FAF7;--ink:#1B2440;--muted:#56627A;--navy:#141B30;--line:#D8E4F0;--green:#0E6B4E;--red:#B8323F;--pale:#EAF5EF;--font:'Anek Latin','Anek Devanagari','Anek Kannada','Nirmala UI',system-ui,sans-serif}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 var(--font);-webkit-font-smoothing:antialiased}
 a{color:inherit}button,summary{font:inherit}a:focus-visible,summary:focus-visible{outline:3px solid var(--green);outline-offset:4px}
 .shell{max-width:1140px;margin:0 auto;padding:0 clamp(18px,3vw,38px)}
