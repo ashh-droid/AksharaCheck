@@ -471,3 +471,11 @@ body{font-size:16px;line-height:1.6}
  .hero-sheet .handnote.good{max-width:calc(100% - 115px)}
  .hero-sheet .paper-line p{font-size:19px}
 }
+
+/* Final rhythm across full-width sections and the first viewport. */
+:root{--section:clamp(72px,8vw,108px)}
+@media(min-width:721px){
+ .hero{padding-top:clamp(30px,3vw,52px);padding-bottom:clamp(56px,6vw,90px)}
+ .checks-section{padding:94px 0}
+ .report-section{padding:100px 0}
+}
