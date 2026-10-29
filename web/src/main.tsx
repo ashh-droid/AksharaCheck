@@ -57,8 +57,8 @@ function App(){
  const [ai,setAi]=useState(false);const [aiAvailable,setAiAvailable]=useState(false);
  const [busy,setBusy]=useState(false);const [jobId,setJobId]=useState<string|null>(null);
  const [job,setJob]=useState<Job|null>(null);const [report,setReport]=useState<Report|null>(null);const [error,setError]=useState('');
- const [sample,setSample]=useState(SAMPLE);const [replay,setReplay]=useState(0);
- const input=useRef<HTMLInputElement>(null);const scanSection=useRef<HTMLElement>(null);
+ const [sample,setSample]=useState('');const [sampleFeedback,setSampleFeedback]=useState('');const [replay,setReplay]=useState(0);const [menuOpen,setMenuOpen]=useState(false);
+ const input=useRef<HTMLInputElement>(null);const textInput=useRef<HTMLTextAreaElement>(null);const scanSection=useRef<HTMLElement>(null);
  const issues=checkText(sample);
  useEffect(()=>{fetch(API+'/api/health').then(r=>r.json()).then(d=>setAiAvailable(Boolean(d.ai_available))).catch(()=>setAiAvailable(false))},[]);
  useEffect(()=>{
@@ -96,13 +96,17 @@ function App(){
  return <div id="top">
   <a className="skip" href="#main">Skip to content</a>
   <header className="topbar"><div className="wrap topbar-inner">
-   <a className="brand" href="#top" aria-label="AksharaCheck home"><Logo size={32}/><span>AksharaCheck</span></a>
-   <nav aria-label="Main navigation"><a href="#try">Try it</a><a href="#checks">What it checks</a><a href="#report">Reports</a><a href="#faq">Questions</a><a className="nav-github" href={REPO} target="_blank" rel="noopener noreferrer">GitHub</a></nav>
+   <a className="brand" href="#top" aria-label="AksharaCheck, back to top" onClick={()=>setMenuOpen(false)}>
+    <Logo size={51}/>
+    <span className="brand-lettering"><strong className="brand-name">AksharaCheck</strong><span className="brand-subtitle"><span lang="hi">अक्षर जाँच</span><span lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ</span></span></span>
+   </a>
+   <button className="menu-toggle" type="button" aria-label={menuOpen?'Close navigation':'Open navigation'} aria-controls="site-menu" aria-expanded={menuOpen} onClick={()=>setMenuOpen(v=>!v)}><span aria-hidden="true">{menuOpen?'×':'☰'}</span><span>Menu</span></button>
+   <nav id="site-menu" className={menuOpen?'is-open':''} aria-label="Main navigation"><a href="#try" onClick={()=>setMenuOpen(false)}>Try it</a><a href="#checks" onClick={()=>setMenuOpen(false)}>What it checks</a><a href="#report" onClick={()=>setMenuOpen(false)}>Reports</a><a href="#faq" onClick={()=>setMenuOpen(false)}>Questions</a><a className="nav-github" href={REPO} target="_blank" rel="noopener noreferrer">GitHub</a></nav>
   </div></header>
   <main id="main">
-   <section className="hero wrap">
+   <section className="hero wrap" aria-labelledby="hero-title">
     <div className="hero-copy">
-     <h1>Every letter<br/>should render<br/>right<span className="tiny-green">.</span></h1>
+     <h1 id="hero-title">Every letter<br/>should render<br/>right<span className="tiny-green">.</span></h1>
      <p className="lede">Your site may look fine in English. AksharaCheck opens it in a real browser, finds the <span lang="hi">हिंदी</span> and <span lang="kn">ಕನ್ನಡ</span> text that comes out broken, and tests every fix in that same browser before calling it done.</p>
      <form onSubmit={scan} className="scan-form">
       <label htmlFor="url" className="sr-only">Website address</label>
@@ -112,16 +116,16 @@ function App(){
       <p className="examples">Or try <button type="button" onClick={()=>{setUrl('https://hi.wikipedia.org/');input.current?.focus()}}>hi.wikipedia.org</button>, <button type="button" onClick={()=>{setUrl('https://kn.wikipedia.org/');input.current?.focus()}}>kn.wikipedia.org</button> or <button type="button" onClick={()=>{setUrl('https://www.india.gov.in/');input.current?.focus()}}>india.gov.in</button></p>
      </form>
     </div>
-    <figure key={replay} className={'copybook hero-sheet anim-'+replay} aria-label="Example rendering problems and verified correction">
-     <div className="sheet-top"><span>your-site.in/notices</span><span>390 px</span></div>
+    <figure key={replay} className="copybook hero-sheet" aria-label="Illustration of a broken Hindi letter and a corrected Kannada layout">
+     <div className="sheet-top"><span>Example page</span><span>Phone preview</span></div>
      <div className="paper-line"><span className="margin-icon bad">×</span><p lang="hi">परीक्षा <span className="underline-wrong">ह िंदी</span> में होगी</p></div>
      <p className="handnote bad">The ि comes after a space, so it has nothing to attach to. Browsers draw a dotted circle.</p>
      <div className="paper-line"><span className="margin-icon bad">×</span><p lang="kn" className="crop-text">ಪರೀಕ್ಷೆ ಮುಂದೂಡಲಾಗಿದೆ</p></div>
      <p className="handnote bad"><code>line-height: 1</code> and <code>overflow: hidden</code> can cut the tops off letters.</p>
      <div className="paper-line"><span className="margin-icon good">✓</span><p lang="kn" className="good">ಪರೀಕ್ಷೆ ಮುಂದೂಡಲಾಗಿದೆ</p></div>
-     <p className="handnote good">With <code>line-height: 1.6</code> the whole letter shows. Rechecked at phone and desktop width.</p>
-     <div className="verified-stamp"><span>✓</span><small>VERIFIED IN BROWSER</small></div>
-     <button className="play-again" type="button" onClick={()=>setReplay(v=>v+1)}>Play again</button>
+     <p className="handnote good">A more comfortable line height lets the entire word show.</p>
+     <div className="verified-stamp"><span>✓</span><small>EXAMPLE REPAIR</small></div>
+     <button className="play-again" type="button" onClick={()=>setReplay(v=>v+1)}>Replay example</button>
     </figure>
    </section>
    <section ref={scanSection} id="scan" className="live-results wrap" hidden={!busy&&!report&&!error}>
@@ -141,11 +145,11 @@ function App(){
       </div>}
    </section>
    <section className="try-section" id="try"><div className="wrap">
-    <div className="section-head"><h2>Check a line of text right here</h2><p>Paste Hindi or Kannada text and the letter rules run as you type. It all happens in your browser, so nothing is uploaded.</p></div>
+    <div className="section-head"><h2>Check a line of text right here</h2><p>Paste Hindi or Kannada text to check basic Unicode letter sequences. This runs in your browser, and your text is not uploaded.</p></div>
     <div className="try-grid">
-     <div className="copybook text-editor"><div className="sheet-top"><span>Your text</span><button type="button" onClick={()=>setSample(SAMPLE)}>Load the example</button></div><textarea aria-label="Hindi or Kannada text to check" spellCheck={false} value={sample} onChange={e=>setSample(e.target.value)}/></div>
-     <div className="try-feedback"><h3 className={issues.length?'red-text':'green-text'}>{issues.length?'× '+issues.length+' broken '+(issues.length===1?'letter':'letters'):sample.trim()?'✓ No broken letters found':'Paste text to check it'}</h3>
-      <p className="rendered-sample">{Array.from(sample).map((ch,i)=><React.Fragment key={i}>{issues.some(x=>x.index===i)?<span className="underline-wrong">{ch}</span>:ch}</React.Fragment>)}</p>
+     <div className="copybook text-editor"><div className="sheet-top"><span>Your text</span><button type="button" onClick={()=>{setSample(SAMPLE);setSampleFeedback('Example loaded. Edit the text to watch the results change.');textInput.current?.focus()}}>Load the example</button></div><textarea ref={textInput} aria-label="Hindi or Kannada text to check" placeholder="Paste or type Hindi or Kannada text here" spellCheck={false} value={sample} onChange={e=>{setSample(e.target.value);setSampleFeedback('')}}/><p className="sample-feedback" role="status">{sampleFeedback||'Text is checked locally in this browser.'}</p></div>
+     <div className="try-feedback"><h3 className={issues.length?'red-text':'green-text'}>{issues.length?'× '+issues.length+' possible '+(issues.length===1?'issue':'issues'):sample.trim()?'✓ No malformed letter sequences detected':'Your results appear here'}</h3>
+      <p className="rendered-sample">{Array.from(sample).map((ch,i)=><React.Fragment key={i}>{issues.some(x=>x.index===i)?<span className="underline-wrong">{ch}</span>:ch}</React.Fragment>)}</p><p className="try-disclaimer">This quick text check does not test fonts, layout, spelling, or translation. Use the page scan for browser rendering evidence.</p>
       <ol>{issues.map((issue,i)=><li key={i}><strong>{issue.title}</strong> <code>{'U+'+cp(issue.character).toString(16).toUpperCase().padStart(4,'0')}</code><p>{issue.hint}</p></li>)}</ol>
      </div>
     </div></div></section>
@@ -160,10 +164,10 @@ function App(){
    <section className="report-section" id="report"><div className="wrap"><div className="section-head"><h2>Every finding comes with its evidence</h2><p>Each finding shows what broke, where it is on the page and what the browser measured, so a developer can go straight to the fix.</p></div>
     <div className="report-grid">
      <article className="sample-report">
-      <div className="sample-report-top"><span>× Error</span><strong>Broken letter</strong><small>390 px</small></div>
+      <div className="sample-report-top"><span className="sample-error">× Error</span><strong>Broken letter</strong><small>Phone example</small></div>
       <p className="sample-report-word" lang="hi">सूचना: परीक्षा <span className="underline-wrong">ह िंदी</span> माध्यम में होगी</p>
       <div className="sample-evidence"><p><span>Characters</span><code>ह U+0939</code> <code>space U+0020</code> <code>ि U+093F</code></p><p><span>Rule</span>A vowel sign must follow a consonant.</p><p><span>Element</span><code>main &gt; article p:nth-of-type(2)</code></p><p><span>Font</span>Mukta, the page's own web font</p></div>
-      <div className="sample-fix"><strong>Suggested fix</strong><p>Remove the space between ह and ि in the page text. This is a typing mistake, so CSS cannot fix it and none is suggested.</p></div>
+      <div className="sample-fix"><strong>What to change</strong><p>Remove the extra space between ह and ि in the page text. This is a text error, not a CSS issue.</p></div>
      </article>
      <div className="report-notes"><div><h3>The exact characters</h3><p>Each finding lists the Unicode code points, so you can search for the mistake in your CMS or code.</p></div><div><h3>CSS only where CSS helps</h3><p>BharatCode AI drafts CSS for layout and font problems. A typing mistake is reported as a typing mistake.</p></div><div><h3>Every fix is tested</h3><p>The change runs in a fresh browser. If it hides the text, shrinks it or pushes it off screen, it is rejected.</p></div></div>
     </div>
@@ -175,9 +179,9 @@ function App(){
     <details><summary>Can it check pages behind a login?</summary><p>Not yet. It checks public pages only. Local and private network addresses are not supported by the hosted scanner.</p></details>
     <details><summary>Is it open source?</summary><p>Yes. The scanner, rules, and website source are available in the <a href={REPO} target="_blank" rel="noreferrer">GitHub repository</a>.</p></details>
    </div></section>
-   <section className="bottom-cta wrap"><Logo size={46}/><h2>Find the broken letters before<br/>your readers do.</h2><a href="#top">Check a page</a></section>
+   <section className="bottom-cta wrap" aria-labelledby="cta-heading"><Logo size={52}/><h2 id="cta-heading">Find the broken letters before<br/>your readers do.</h2><a href="#top" onClick={()=>{window.setTimeout(()=>input.current?.focus(),100)}}>Check a page</a></section>
   </main>
-  <footer className="footer wrap"><div className="footer-brand"><Logo size={22}/><strong>AksharaCheck</strong><span lang="hi">अक्षर जाँच</span><span lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ</span></div><div><a href={REPO} target="_blank" rel="noreferrer">GitHub</a><a href="https://bharatcode.ai/hackathon" target="_blank" rel="noreferrer">BharatCode Build League 2026</a></div></footer>
+  <footer className="footer wrap"><div className="footer-brand"><Logo size={29}/><strong>AksharaCheck</strong><span lang="hi">अक्षर जाँच</span><span lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ</span></div><div><a href={REPO} target="_blank" rel="noreferrer">GitHub</a><a href="https://bharatcode.ai/hackathon" target="_blank" rel="noreferrer">BharatCode Build League 2026</a></div></footer>
  </div>
 }
 createRoot(document.getElementById('root')!).render(<React.StrictMode><App/></React.StrictMode>);
