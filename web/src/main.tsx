@@ -85,7 +85,16 @@ function App(){
    const u=new URL(target);if(!u.hostname.includes('.'))throw Error('Enter a valid public website URL.');
    setUrl(u.href);setBusy(true);
    const response=await fetch(API+'/api/scans',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:u.href,lang,use_ai:ai&&aiAvailable})});
-   const data=await response.json().catch(()=>({}));if(!response.ok)throw Error(data.detail||'The scan could not be started.');
+   const data=await response.json().catch(()=>({}));
+   if(!response.ok){
+    const local=['localhost','127.0.0.1'].includes(window.location.hostname);
+    const detail=typeof data.detail==='string'?data.detail:'';
+    if(response.status>=500&&!detail){
+     throw Error(local?'Scanner backend unavailable. Start the Python backend on port 8000, then try again.':'Scanner service is temporarily unavailable. Please try again.');
+    }
+    throw Error(detail||('Scanner request failed (HTTP '+response.status+').'));
+   }
+   if(!data.id)throw Error('The scanner did not return a scan ID. Check the backend service.');
    setJobId(data.id);
    window.setTimeout(()=>scanSection.current?.scrollIntoView({behavior:'smooth',block:'start'}),50);
   }catch(e){setError(e instanceof Error?e.message:String(e));setBusy(false)}
