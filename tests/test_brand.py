@@ -83,8 +83,15 @@ def test_self_hosted_anek_variable_fonts_and_accessible_controls():
 
 def test_full_desktop_layout_and_larger_company_brand():
     css=(FRONTEND/"src"/"style.css").read_text(encoding="utf-8")
-    assert "max-width:1800px" in css
-    assert "--gutter:clamp(22px,3vw,64px)" in css
+    assert "1420px" in css
+    assert "--gutter:clamp(20px,3vw,48px)" in css
+    assert "max-width:1800px" not in css
     assert ".brand-name{font-size:clamp(27px,2vw,35px)" in css
     assert ".footer-brand strong{font-size:clamp(22px,1.65vw,30px)" in css
-    assert ".hero-sheet{width:100%;min-height:385px;max-width:760px" in css
+    assert ".hero-sheet{width:100%;min-height:385px;max-width:660px" in css
+
+def test_editorial_desktop_frame_uses_single_centered_width():
+    css=(FRONTEND/"src"/"style.css").read_text(encoding="utf-8")
+    assert ".wrap{width:min(calc(100% - 2 * var(--gutter)),1420px);max-width:none;margin-inline:auto}" in css
+    assert ".hero{grid-template-columns:minmax(0,1.03fr) minmax(0,.97fr)" in css
+    assert "padding:clamp(86px,6.5vw,118px)" in css
