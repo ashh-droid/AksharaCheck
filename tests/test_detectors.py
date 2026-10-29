@@ -29,3 +29,36 @@ def test_ssrf_blocks_localhost():
 
 def test_rejects_url_credentials():
     with pytest.raises(UnsafeURL):validate_url('http://user:pass@example.com')
+
+def test_hidden_single_pixel_navigation_does_not_count_as_clipping():
+    result=detectors(node(
+        text="सामग्री पर जाएँ",
+        fontSize=16,clientHeight=1,scrollHeight=63,
+        clientWidth=200,overflowY="hidden",bounds={"x":10,"y":20,"w":200,"h":1}
+    ))
+    assert not any(f["detector"]=="possible-clipping" for f in result)
+
+
+def test_trivial_ink_overhang_does_not_count_as_clipping():
+    result=detectors(node(
+        fontSize=18,clientHeight=28,scrollHeight=32,
+        clientWidth=200,overflowY="hidden",bounds={"x":10,"y":20,"w":200,"h":28}
+    ))
+    assert not any(f["detector"]=="possible-clipping" for f in result)
+
+
+def test_real_truncated_text_still_flagged():
+    result=detectors(node(
+        fontSize=24,clientHeight=18,scrollHeight=38,
+        clientWidth=220,overflowY="hidden",bounds={"x":10,"y":20,"w":220,"h":18}
+    ))
+    assert any(f["detector"]=="possible-clipping" for f in result)
+
+
+def test_hidden_offscreen_navigation_not_flagged():
+    result=detectors(node(
+        fontSize=16,clientHeight=24,scrollHeight=75,
+        clientWidth=200,overflowY="hidden",offscreen=True,
+        bounds={"x":-300,"y":20,"w":200,"h":24}
+    ))
+    assert not any(f["detector"]=="possible-clipping" for f in result)
