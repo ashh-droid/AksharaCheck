@@ -52,6 +52,24 @@ def main():
             assert overflow["root"]<=width+2 and overflow["body"]<=width+2,(
                 f"{width}px: horizontal overflow: {overflow}"
             )
+            geometry=page.evaluate("""() => {
+                const r=s=>document.querySelector(s).getBoundingClientRect();
+                const center=o=>(o.top+o.bottom)/2;
+                const wrap=r('.hero.wrap'),cta=r('.bottom-cta'),button=r('.bottom-cta a');
+                const badge=r('.sample-report-top .sample-error'),title=r('.sample-report-top strong');
+                return {left:wrap.left,right:innerWidth-wrap.right,
+                        brand:r('.brand').width,
+                        ctaOffset:Math.abs(center(cta)-center(button)),
+                        badgeOffset:Math.abs(center(badge)-center(title))};
+            }""")
+            assert abs(geometry["left"]-geometry["right"])<3,(
+                f"{width}px: page frame is not centered: {geometry}"
+            )
+            assert geometry["brand"]>180,f"{width}px: brand lockup too small"
+            if width>720:
+                assert geometry["ctaOffset"]<18,f"{width}px: closing action not vertically centered"
+                assert geometry["badgeOffset"]<10,f"{width}px: sample status badge not aligned"
+
             # The formerly inert link must visibly populate an editable textbox.
             textarea=page.get_by_role("textbox",name="Hindi or Kannada text to check")
             assert textarea.input_value()==""
@@ -64,6 +82,9 @@ def main():
             assert "सूचना" in textarea.input_value()
             page.get_by_role("button",name="Replay example").click()
             assert page.locator(".hero-sheet").count()==1
+            page.get_by_role("button",name="hi.wikipedia.org").click()
+            assert page.locator("#url").input_value()=="https://hi.wikipedia.org/"
+            page.locator("#url").fill("")
             assert page.locator(".sample-report-top .sample-error").is_visible()
             assert page.locator(".bottom-cta a").is_visible()
             if width<=720:
