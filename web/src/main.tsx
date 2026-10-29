@@ -89,12 +89,10 @@ function App(){
    window.setTimeout(()=>scanSection.current?.scrollIntoView({behavior:'smooth',block:'start'}),50);
   }catch(e){setError(e instanceof Error?e.message:String(e));setBusy(false)}
  }
- const artifact=(file:string)=>API+'/api/scans/'+(jobId||'')+'/artifacts/'+encodeURIComponent(file);
  const reportArtifact=(file:string)=>API+'/api/scans/'+(reportId.current||'')+'/artifacts/'+encodeURIComponent(file);
  const reportId=useRef<string|null>(null);
  useEffect(()=>{if(jobId)reportId.current=jobId},[jobId]);
  const startOver=()=>{setJobId(null);reportId.current=null;setJob(null);setReport(null);setError('');setBusy(false);input.current?.focus()};
- const highlighted=(text:string,problemIndex:number)=>{const chars=Array.from(text);return <>{chars.map((ch,i)=><React.Fragment key={i}>{i===problemIndex?<span className="underline-wrong">{ch}</span>:ch}</React.Fragment>)}</>};
  return <div id="top">
   <a className="skip" href="#main">Skip to content</a>
   <header className="topbar"><div className="wrap topbar-inner">
@@ -114,7 +112,7 @@ function App(){
       <p className="examples">Or try <button type="button" onClick={()=>{setUrl('https://hi.wikipedia.org/');input.current?.focus()}}>hi.wikipedia.org</button>, <button type="button" onClick={()=>{setUrl('https://kn.wikipedia.org/');input.current?.focus()}}>kn.wikipedia.org</button> or <button type="button" onClick={()=>{setUrl('https://www.india.gov.in/');input.current?.focus()}}>india.gov.in</button></p>
      </form>
     </div>
-    <figure className={'copybook hero-sheet anim-'+replay} aria-label="Example rendering problems and verified correction">
+    <figure key={replay} className={'copybook hero-sheet anim-'+replay} aria-label="Example rendering problems and verified correction">
      <div className="sheet-top"><span>your-site.in/notices</span><span>390 px</span></div>
      <div className="paper-line"><span className="margin-icon bad">×</span><p lang="hi">परीक्षा <span className="underline-wrong">ह िंदी</span> में होगी</p></div>
      <p className="handnote bad">The ि comes after a space, so it has nothing to attach to. Browsers draw a dotted circle.</p>
