@@ -44,4 +44,7 @@ def test_render_reuses_saved_browser_data(tmp_path):
     assert result.returncode==0,result.stderr
     assert (tmp_path/"report.html").is_file()
     assert (tmp_path/"report.md").is_file()
-    assert "What the browser found." in (tmp_path/"report.html").read_text(encoding="utf-8")
+    html=(tmp_path/"report.html").read_text(encoding="utf-8")
+    assert "Every letter matters." in html
+    assert "No issues detected by these checks" in html
+    assert "AksharaCheck | Rendering review" in html
