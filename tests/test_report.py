@@ -126,3 +126,25 @@ def test_timestamp_and_zero_errors_are_not_alarm_colored(tmp_path):
                   generated_at="2026-10-29T14:00:00+00:00")
     assert "Scanned 2026-10-29T14:00:00Z" in page
     assert 'class="score-num error zero"' in page
+
+
+def test_report_overview_is_clean_and_accessible(tmp_path):
+    page = render(tmp_path, [
+        finding(),
+        finding(id="info-example", severity="info", detector="font-fallback",
+                evidence={"requested": "Linux Libertine"}),
+    ], generated_at="2026-10-29T14:00:00+00:00")
+    assert '<section class="hero" aria-labelledby="report-title">' in page
+    assert '<h1 id="report-title">Every letter matters.</h1>' in page
+    assert 'class="hero-copy"' in page
+    assert 'class="score-panel"' in page
+    assert 'class="scan-meta"' in page
+    assert 'class="score-heading">FINDINGS SUMMARY</div>' in page
+    assert 'class="scan-meta-label">SCANNED PAGE</span>' in page
+    assert 'Scanned 2026-10-29T14:00:00Z' in page
+    assert page.count('class="score-item"') == 3
+    assert 'Review warnings before treating them as confirmed defects.' in page
+    # The notebook illustration should not sit behind report text.
+    assert '.hero:before{' not in page
+    assert '.hero:after{' not in page
+    assert 'repeating-linear-gradient' not in page
