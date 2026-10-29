@@ -4,7 +4,7 @@
 
 > Open a website, find concrete rendering evidence, ask BharatCode to suggest a repair, and only label the repair **verified** after it passes the same deterministic test in a fresh browser. AI never creates findings.
 
-**Stage:** v0.1 working MVP. This is deliberately narrower than the long-term build plan. Not yet a hackathon-final production deployment.
+**Status:** Functional MVP undergoing public-demo validation. Browser detection and AI repairs have different verification states; the public report will use only measured findings.
 
 ## Quick start (Windows PowerShell)
 
@@ -48,7 +48,7 @@ aksharacheck scan https://www.india.gov.in/ --ai --output output
 - Each prompt contains only the finding record; page text is explicitly untrusted.
 - CSS property/value whitelist prevents external URLs and arbitrary CSS from being injected.
 - AI explanations/suggestions are not findings; repairs are retested before `verified`.
-- With no valid API key, deterministic detection still works. AI calls are **not tested in this distribution**.
+- With no valid API key, deterministic detection still works. The live BharatCode request and structured-output compatibility still require a server-side integration test with a valid key.
 
 ## Web app
 
@@ -64,7 +64,17 @@ npm run dev
 
 Open http://127.0.0.1:5173. The Vite dev server proxies `/api` to the local backend.
 
-**Fastest no-npm route:** after Python installation, run `aksharacheck serve --port 8000` and open http://127.0.0.1:8000. A standalone, dependency-free interface is included in `web/dist` and served by FastAPI. The React/Vite source in `web/src` is available for further development. If you run `npm run build`, Vite will replace the standalone fallback with its compiled React app. A production deployment needs HTTPS, an external rate limiter, cleanup jobs, persistent job queue, monitored browser resource limits, and a privacy review.
+**One frontend:** React/Vite is the only web UI. The `web/dist` directory is generated locally and is not committed. To serve the compiled UI from FastAPI, build it first:
+
+```powershell
+cd web
+npm install
+npm run build
+cd ..
+.venv\Scripts\python.exe -m aksharacheck serve --port 8000
+```
+
+Then visit http://127.0.0.1:8000. The CLI works without npm; the graphical interface does not. Do not deploy the browser scanner publicly without process isolation, outbound private-network blocking and an external rate limiter.
 
 ## What is checked?
 
@@ -87,13 +97,13 @@ Two widths: 390 and 1440 px. JSON, Markdown and HTML reports with screenshots. `
 
 ```bash
 pip install -e '.[test]'
-pytest -q tests/test_detectors.py
+pytest -q tests/test_detectors.py tests/test_regressions.py
 # Browser integration (requires Chromium)
 pip install pytest-asyncio
 pytest -q tests/test_browser_integration.py
 ```
 
-No automatic GitHub Actions workflow is enabled (avoids spending runner minutes). Run checks locally before publishing.
+Also run `cd web && npm install && npm run build` and test a complete Chromium scan. CI is not enabled while the repository is private; do not merge a PR without these checks.
 
 ## Repo and hackathon
 
@@ -104,6 +114,6 @@ No automatic GitHub Actions workflow is enabled (avoids spending runner minutes)
 
 ## Next milestone
 
-Manual verification of the real-site validation sample, screenshot crop comparisons, stronger Unicode syllable validation, multi-page browser evidence, secured production queue, public research methodology, and a 60-second demo. Do not claim 90% detection precision or completed 100-site scans until those are actually measured.
+Run the updated golden tests, test the React build and a live BharatCode API call, validate on a small real-site sample, then deploy and record a 60-second demonstration. Do not claim 90% detection precision or completed 100-site scans until those are actually measured.
 
-AI-assisted development disclosure: Some initial code and text were drafted with ChatGPT; all security, precision, and compatibility claims require developer review/testing before public deployment.
+**Development disclosure:** ChatGPT assisted with architecture, implementation, testing plans and interface design. The team independently reviewed the original MVP and identified detector and verifier defects that are being corrected in PR #1. A real browser and BharatCode API run is required before calling this release fully validated.
