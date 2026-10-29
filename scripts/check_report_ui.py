@@ -38,6 +38,29 @@ def check(path):
                 assert page.locator(".brand-sub span").count()==2
                 assert page.locator(".finding-row").count()>=0
                 assert page.locator(".hero h1").is_visible()
+                layout=page.evaluate("""() => {
+                    const box=s=>document.querySelector(s).getBoundingClientRect();
+                    const hero=box('.hero'),title=box('.hero-copy'),
+                          summary=box('.score-panel'),header=box('.topbar');
+                    return {heroHeight:hero.height,titleRight:title.right,
+                            titleBottom:title.bottom,summaryLeft:summary.left,
+                            summaryTop:summary.top,summaryBottom:summary.bottom,
+                            headerBottom:header.bottom,heroTop:hero.top};
+                }""")
+                assert abs(layout["heroTop"]-layout["headerBottom"]) < 3,(
+                    f"{width}px: gap between header and report overview: {layout}"
+                )
+                if width > 800:
+                    assert layout["titleRight"] + 16 <= layout["summaryLeft"],(
+                        f"{width}px: report heading and summary overlap: {layout}"
+                    )
+                    assert layout["heroHeight"] < 410,(
+                        f"{width}px: report overview uses excessive vertical space: {layout}"
+                    )
+                else:
+                    assert layout["summaryTop"] >= layout["titleBottom"] - 3,(
+                        f"{width}px: stacked report summary overlaps heading: {layout}"
+                    )
                 assert page.locator(".issue-group").count()>=1 or page.locator(".empty").count()==1
                 overflow=page.evaluate("""() => ({
                     page: document.documentElement.scrollWidth,
