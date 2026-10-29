@@ -34,8 +34,7 @@ def test_viewer_facing_homepage_is_consistent():
     css=(FRONTEND/"src"/"style.css").read_text(encoding="utf-8")
     assert 'className="brand-subtitle"' in page
     assert "अक्षर जाँच" in page and "ಅಕ್ಷರ ಪರಿಶೀಲನೆ" in page
-    assert "Phone preview" in page
-    assert "390 px" not in page
+    assert "390 px example" in page
     assert 'className="menu-toggle"' in page
     assert 'setMenuOpen(v=>!v)' in page
     assert "setSample(next)" in page
@@ -61,8 +60,23 @@ def test_pages_preview_does_not_offer_dead_scan_button():
     source=(FRONTEND/"src"/"main.tsx").read_text(encoding="utf-8")
     package=(FRONTEND/"package.json").read_text(encoding="utf-8")
     assert "const PAGES_PREVIEW=" in source
-    assert "disabled={busy||PAGES_PREVIEW}" in source
-    assert "This is a static preview." in source
+    assert 'href="#try">Try the text checker' in source
+    assert "if(PAGES_PREVIEW)return;" in source
+    assert 'PAGES_PREVIEW ? <div className="preview-entry"' in source
     assert '"deploy:pages"' in package
     assert "gh-pages -d dist" in package
     assert (FRONTEND/"public"/".nojekyll").exists()
+
+def test_self_hosted_anek_variable_fonts_and_accessible_controls():
+    package=(FRONTEND/"package.json").read_text(encoding="utf-8")
+    page=(FRONTEND/"src"/"main.tsx").read_text(encoding="utf-8")
+    css=(FRONTEND/"src"/"style.css").read_text(encoding="utf-8")
+    for font in ("anek-latin","anek-devanagari","anek-kannada"):
+        assert "@fontsource-variable/"+font in package
+        assert "@fontsource-variable/"+font+"/wght.css" in page
+    assert "fonts.googleapis.com" not in css
+    assert "'Anek Latin Variable'" in css
+    assert "'Anek Devanagari Variable'" in css
+    assert "'Anek Kannada Variable'" in css
+    assert "appearance:none" in css
+    assert "Scanner preview only" not in page
