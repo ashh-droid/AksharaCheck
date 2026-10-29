@@ -86,26 +86,26 @@ Then visit http://127.0.0.1:8000. The CLI works without npm; the graphical inter
 
 ## Frontend and responsive QA
 
-Start Vite from the repository's \`web\` folder:
+Start Vite from the repository's `web` folder:
 
-\`\`\`powershell
+```powershell
 cd web
 npm install
 npm run build
 npm run dev
-\`\`\`
+```
 
 In a second terminal, at the repository root:
 
-\`\`\`powershell
+```powershell
 .venv\Scripts\python.exe scripts/check_web_ui.py --url http://127.0.0.1:5173
-\`\`\`
+```
 
 The check visits 360, 390, 768, 1024, 1440 and 1920 pixel widths and checks
 the browser header and subtitle, navigation (including the phone menu), the
 sample-text button, replay button, evidence example, horizontal overflow and
 uncaught JavaScript errors. Full-page screenshots are written to
-\`output/visual-qa/\`.
+`output/visual-qa/`.
 
 This is a visual smoke test, not a substitute for manual screenshot review or
 a real FastAPI scanner run. Do not claim a passed build until these commands
