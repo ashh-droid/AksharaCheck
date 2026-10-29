@@ -212,7 +212,7 @@ function App(){
     <details><summary>Which languages does it support?</summary><p>Hindi and Kannada. The rules also recognize other languages written in the Devanagari and Kannada scripts, including Marathi, Nepali, Sanskrit and Tulu.</p></details>
     <details><summary>Do I need the AI to use it?</summary><p>No. Browser detectors generate findings without AI. BharatCode AI is optional for explanations and repair suggestions.</p></details>
     <details><summary>Can it check pages behind a login?</summary><p>Not yet. It checks public pages only. Local and private network addresses are not supported by the hosted scanner.</p></details>
-    <details><summary>Is it open source?</summary><p>Yes. The scanner, rules, and website source are available in the <a href={REPO} target="_blank" rel="noreferrer">GitHub repository</a>.</p></details>
+    <details><summary>Is the source code available?</summary><p>Yes. The scanner, rules, and website source are publicly viewable in the <a href={REPO} target="_blank" rel="noreferrer">GitHub repository</a>. Reuse terms will be specified in the repository license.</p></details>
    </div></section>
    <section className="bottom-cta wrap" aria-labelledby="cta-heading"><Logo size={52} onDark/><h2 id="cta-heading">Find the broken letters before your readers do.</h2>{PAGES_PREVIEW?<a href="#try">Try text checker</a>:<a href="#top" onClick={()=>{window.setTimeout(()=>input.current?.focus(),100)}}>Check a page</a>}</section>
   </main>
