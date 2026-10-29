@@ -505,3 +505,11 @@ body{font-size:16px;line-height:1.6}
 .verified-stamp span{line-height:1;display:block}
 .scan-options select:focus-visible{outline:3px solid var(--green);outline-offset:3px}
 @media(max-width:480px){.brand-subtitle{font-size:12px}.hero-sheet .verified-stamp{width:60px;height:60px}.hero h1{font-size:clamp(41px,10vw,52px)}}
+
+/* Approved recorded reports appear only when the catalog contains genuine scans. */
+.recorded-list{margin-top:18px;max-width:520px;border:1px solid var(--line);background:var(--sheet);border-radius:7px;padding:13px 16px;display:flex;flex-direction:column;gap:0}
+.recorded-list>strong{font-size:13px;color:var(--ink);padding-bottom:9px}
+.recorded-list a{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:9px 0;border-top:1px solid var(--line);font-size:14px;font-weight:600;text-decoration:none;overflow-wrap:anywhere}
+.recorded-list a span{font-size:11px;color:var(--green);font-weight:700;white-space:nowrap}
+.recorded-list a:hover{color:var(--green)}
+@media(max-width:480px){.recorded-list a{flex-direction:column;align-items:flex-start;gap:3px}}
