@@ -20,3 +20,4 @@ include=["aksharacheck*"]
 
 [tool.pytest.ini_options]
 testpaths=["tests"]
+asyncio_default_fixture_loop_scope="function"
