@@ -67,6 +67,17 @@ def main():
             assert abs(geometry["left"]-geometry["right"])<3,(
                 f"{width}px: page frame is not centered: {geometry}"
             )
+            if width>=1440:
+                desktop=page.evaluate("""() => ({
+                    frame:document.querySelector('.hero.wrap').getBoundingClientRect().width,
+                    brand:parseFloat(getComputedStyle(document.querySelector('.brand-name')).fontSize),
+                    footerBrand:parseFloat(getComputedStyle(document.querySelector('.footer-brand strong')).fontSize),
+                    sheet:document.querySelector('.hero-sheet').getBoundingClientRect().width
+                })""")
+                assert desktop["frame"]/width>=.88,f"{width}px: layout too narrow: {desktop}"
+                assert desktop["brand"]>=27,f"{width}px: company name too small: {desktop}"
+                assert desktop["footerBrand"]>=22,f"{width}px: footer name too small: {desktop}"
+                assert desktop["sheet"]>=500,f"{width}px: hero art too narrow: {desktop}"
             assert geometry["brand"]>(150 if width<=480 else 180),f"{width}px: brand lockup too small"
             if width>720:
                 assert geometry["ctaOffset"]<18,f"{width}px: closing action not vertically centered"
