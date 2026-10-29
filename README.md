@@ -165,6 +165,33 @@ Also run `cd web && npm install && npm run build` and test a complete Chromium s
 3. Confirm required file content and any submission-specific deadline with the organizers.
 4. Submit the **main repository URL**, not a branch/file link.
 
+## Release preflight without BharatCode API access
+
+BharatCode API generation currently returns HTTP 402 on accounts without a qualifying entitlement. This does not block the Chromium detector, reports or local repair verification tests.
+
+From the repository root on Windows:
+
+```cmd
+git pull
+.venv\Scripts\python.exe -m pytest -q
+cd web
+npm run build
+cd ..
+.venv\Scripts\python.exe -m aksharacheck --version
+```
+
+For one small, authorized real-site scan, use the CLI against a publicly accessible page you are permitted to audit:
+
+```cmd
+.venv\Scripts\python.exe -m aksharacheck scan https://hi.wikipedia.org/ --pages 1 --output output/hi-wikipedia
+```
+
+Open `output/hi-wikipedia/report.html`. Record any errors, warnings and false positives. Scan just one page at first, and respect the site's robots rules and rate limits.
+
+For a machine-readable report with diagnostic progress on stderr, add `--json`. The CLI defaults to localhost-only serving; `serve --host 0.0.0.0` is intended only for infrastructure that isolates Chromium, blocks private-network egress, and limits public requests.
+
+Do not publish a 100-site claim until the methodology and finding accuracy are reviewed. Do not claim live BharatCode integration success until `scripts/check_bharatcode.py` returns HTTP 200 for generation.
+
 ## Next milestone
 
 Run the updated golden tests, test the React build and a live BharatCode API call, validate on a small real-site sample, then deploy and record a 60-second demonstration. Do not claim 90% detection precision or completed 100-site scans until those are actually measured.
