@@ -234,10 +234,10 @@ pre{overflow:auto;max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere}
   --ink-soft:#4A5064;
   --line:#D9DED3;
   --rule:#DCE6F2;
-  --gutter:clamp(20px,3vw,48px);
+  --gutter:clamp(16px,1.25vw,28px);
   --section:clamp(78px,9vw,116px);
 }
-.wrap{width:min(calc(100% - 2 * var(--gutter)),1420px);max-width:none;margin-inline:auto}
+.wrap{width:calc(100% - 2 * var(--gutter));max-width:none;margin-inline:auto}
 body{font-size:16px;line-height:1.55}
 .topbar{background:rgba(246,247,242,.96)}
 .topbar-inner{min-height:84px;gap:28px}
@@ -263,7 +263,7 @@ body{font-size:16px;line-height:1.55}
 .scan-options select{min-height:41px;appearance:none;background-color:white;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%231B2440' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:15px;padding:0 36px 0 12px;border:1px solid #92A7C5;border-radius:6px}
 .ai-option{margin-top:10px;line-height:1.45}
 .examples{margin-top:12px}
-.hero-sheet{width:100%;min-height:385px;max-width:660px;justify-self:center;transform:none;padding:0 19px 30px 0;overflow:visible}
+.hero-sheet{width:100%;min-height:385px;max-width:none;justify-self:stretch;transform:none;padding:0 19px 30px 0;overflow:visible}
 .hero-sheet::before{left:49px}
 .hero-sheet .sheet-top{min-height:47px;padding:10px 17px 10px 65px}
 .hero-sheet .paper-line{min-height:53px;padding:6px 9px 0 20px}
