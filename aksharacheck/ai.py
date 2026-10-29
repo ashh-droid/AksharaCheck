@@ -66,6 +66,11 @@ def preserve_visible_text(before, after, viewport):
 
 
 def parse_response(body):
+    """Reject partial or failed generations before parsing structured output."""
+    status=body.get("status")
+    if status in {"failed","incomplete"}:
+        reason=body.get("incomplete_details") or body.get("error") or status
+        raise ValueError(f"BharatCode response {status}: {str(reason)[:120]}")
     texts=[]
     for item in body.get("output",[]):
         for c in item.get("content",[]):
@@ -118,7 +123,14 @@ class BharatCodeClient:
                 except (httpx.TimeoutException, httpx.TransportError) as exc:
                     if attempt == 2:break
                     await asyncio.sleep(2**(attempt+1))
-                except (httpx.HTTPStatusError,ValueError,KeyError,json.JSONDecodeError):
+                except httpx.HTTPStatusError as exc:
+                    code=exc.response.status_code
+                    if code == 402:
+                        return {"explanation":"BharatCode API access is not enabled for this account (HTTP 402). An eligible student account or an active Lite/Pro plan is required.", "css":{}, "attributes":{}, "status":"unavailable"}
+                    if code == 401:
+                        return {"explanation":"BharatCode API authentication was rejected (HTTP 401).", "css":{}, "attributes":{}, "status":"unavailable"}
+                    break
+                except (ValueError,KeyError,json.JSONDecodeError):
                     break
         return {"explanation":"BharatCode unavailable; browser findings remain available","css":{},"attributes":{},"status":"unavailable"}
 
