@@ -26,6 +26,9 @@ DOM_JS = r'''(args) => {
    const cs=getComputedStyle(el);if(cs.display==='none'||cs.visibility==='hidden'||parseFloat(cs.opacity)<0.5)continue;
    const selector='ak-'+hash(path(el)+'|'+direct.slice(0,300));el.setAttribute('data-akshara-id',selector);index++;
    const rect=el.getBoundingClientRect();
+   const isOffscreen=rect.right<=0 || rect.left>=innerWidth || rect.width<2 || rect.height<2;
+   const isAriaHidden=!!el.closest('[aria-hidden="true"],[inert]');
+   if(isAriaHidden)continue;
    let p=el,lang='';while(p){if(p.getAttribute?.('lang')){lang=p.getAttribute('lang');break}p=p.parentElement}
    const fs=parseFloat(cs.fontSize)||0; const lh=cs.lineHeight==='normal'?0:(parseFloat(cs.lineHeight)||0);
    out.push({selector:`[data-akshara-id="${selector}"]`, text:direct.slice(0,600), font:cs.fontFamily,
@@ -33,6 +36,7 @@ DOM_JS = r'''(args) => {
     clientHeight:el.clientHeight,scrollHeight:el.scrollHeight,overflowX:cs.overflowX,
     overflowY:cs.overflowY,lineCount:fs?Math.max(1,Math.round(rect.height/(lh||fs*1.2))):1,
     intentionalClamp:cs.webkitLineClamp!=='none'||cs.textOverflow==='ellipsis',
+    offscreen:isOffscreen,ariaHidden:isAriaHidden,
     bounds:{x:Math.round(rect.x),y:Math.round(rect.y),w:Math.round(rect.width),h:Math.round(rect.height)}});
  }
  return out;
@@ -130,7 +134,8 @@ class Scanner:
                                 for f in findings:
                                     f['screenshot']=shot.name
                                     f['bounds']=next((n['bounds'] for n in nodes if n['selector']==f['selector']),None)
-                                    if f['selector']!='document':
+                                    if (f['selector']!='document' and f.get('bounds')
+                                            and f['bounds'].get('h',0)>=24 and f['bounds'].get('w',0)>=24):
                                         image_name=f'element-{f["id"]}-{viewport}.png'
                                         try:
                                             await page.locator(f['selector']).first.screenshot(path=str(self.output_dir/image_name),timeout=1200,animations="disabled")
