@@ -1,5 +1,8 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
+import '@fontsource-variable/anek-latin/wght.css';
+import '@fontsource-variable/anek-devanagari/wght.css';
+import '@fontsource-variable/anek-kannada/wght.css';
 import './style.css';
 
 type Fix={status:string;css?:Record<string,string>;attributes?:Record<string,string>;reason?:string};
@@ -62,7 +65,13 @@ function App(){
  const [sample,setSample]=useState(SAMPLE);const [sampleFeedback,setSampleFeedback]=useState('');const [replay,setReplay]=useState(0);const [menuOpen,setMenuOpen]=useState(false);
  const input=useRef<HTMLInputElement>(null);const textInput=useRef<HTMLTextAreaElement>(null);const scanSection=useRef<HTMLElement>(null);
  const issues=checkText(sample);
- useEffect(()=>{fetch(API+'/api/health').then(r=>{if(!r.ok)throw Error('Backend unavailable');return r.json()}).then(d=>{setBackendOnline(true);setAiAvailable(Boolean(d.ai_available))}).catch(()=>{setBackendOnline(false);setAiAvailable(false)})},[]);
+ useEffect(()=>{
+  // GitHub Pages has no /api endpoint. Avoid a guaranteed 404 and a broken promise.
+  if(PAGES_PREVIEW)return;
+  fetch(API+'/api/health').then(r=>{if(!r.ok)throw Error('Backend unavailable');return r.json()})
+   .then(d=>{setBackendOnline(true);setAiAvailable(Boolean(d.ai_available))})
+   .catch(()=>{setBackendOnline(false);setAiAvailable(false)})
+ },[]);
  useEffect(()=>{
   if(!jobId)return;
   let active=true;let timer:number|undefined;
@@ -119,25 +128,25 @@ function App(){
     <div className="hero-copy">
      <h1 id="hero-title">Every letter<br/>should render<br/>right<span className="tiny-green">.</span></h1>
      <p className="lede">Your site may look fine in English. AksharaCheck opens it in a real browser, finds the <span lang="hi">हिंदी</span> and <span lang="kn">ಕನ್ನಡ</span> text that comes out broken, and rechecks supported repairs in Chromium before calling them verified.</p>
-     <form onSubmit={scan} className="scan-form">
+     {PAGES_PREVIEW ? <div className="preview-entry"><a className="preview-start" href="#try">Try the text checker <span aria-hidden="true">↗</span></a><p>Explore a real-time Hindi and Kannada character check in your browser. Full website scans require the separate scanner service.</p></div> : <form onSubmit={scan} className="scan-form">
       <label htmlFor="url" className="sr-only">Website address</label>
       <div className="scan-input"><input ref={input} id="url" type="text" placeholder="https://your-site.in" value={url} onChange={e=>setUrl(e.target.value)} required spellCheck={false}/><button type="submit" disabled={busy||PAGES_PREVIEW}>{PAGES_PREVIEW?'Scanner preview only':busy?'Checking…':'Check this page'}</button></div>
       <div className="scan-options"><label>Language <select value={lang} onChange={e=>setLang(e.target.value)} disabled={busy}><option value="both">Hindi and Kannada</option><option value="hi">Hindi only</option><option value="kn">Kannada only</option></select></label></div>
-      <label className="ai-option"><input type="checkbox" checked={ai} onChange={e=>setAi(e.target.checked)} disabled={!aiAvailable||busy}/> Also suggest CSS fixes with BharatCode AI {!aiAvailable&&<span>(not set up on this server)</span>}</label>
+      {aiAvailable&&<label className="ai-option"><input type="checkbox" checked={ai} onChange={e=>setAi(e.target.checked)} disabled={busy}/> Also suggest CSS fixes with BharatCode AI</label>}
       {PAGES_PREVIEW&&<p className="backend-note pages-preview" role="status">This is a static preview. Full website scans require the Python scanner service. <a href="#try">Try the Hindi and Kannada text checker below.</a></p>}
       {!PAGES_PREVIEW&&backendOnline===false&&<p className="backend-note" role="status">{['localhost','127.0.0.1'].includes(window.location.hostname)?'The local scanner backend is not connected. Start it on port 8000 to enable scans.':'The scan service is temporarily offline. The local text checker below still works.'}</p>}
       <p className="examples">Or try <button type="button" onClick={()=>{setUrl('https://hi.wikipedia.org/');input.current?.focus()}}>hi.wikipedia.org</button>, <button type="button" onClick={()=>{setUrl('https://kn.wikipedia.org/');input.current?.focus()}}>kn.wikipedia.org</button> or <button type="button" onClick={()=>{setUrl('https://www.india.gov.in/');input.current?.focus()}}>india.gov.in</button></p>
-     </form>
+     </form>}
     </div>
     <figure key={replay} className="copybook hero-sheet" aria-label="Illustration of a broken Hindi letter and a corrected Kannada layout">
-     <div className="sheet-top"><span>Example page</span><span>Phone preview</span></div>
+     <div className="sheet-top"><span>Example page</span><span>390 px example</span></div>
      <div className="paper-line"><span className="margin-icon bad">×</span><p lang="hi">परीक्षा <span className="underline-wrong">ह िंदी</span> में होगी</p></div>
      <p className="handnote bad">The ि comes after a space, so it has nothing to attach to. Browsers draw a dotted circle.</p>
      <div className="paper-line"><span className="margin-icon bad">×</span><p lang="kn" className="crop-text">ಪರೀಕ್ಷೆ ಮುಂದೂಡಲಾಗಿದೆ</p></div>
      <p className="handnote bad"><code>line-height: 1</code> and <code>overflow: hidden</code> can cut the tops off letters.</p>
      <div className="paper-line"><span className="margin-icon good">✓</span><p lang="kn" className="good">ಪರೀಕ್ಷೆ ಮುಂದೂಡಲಾಗಿದೆ</p></div>
      <p className="handnote good">A more comfortable line height lets the entire word show.</p>
-     <div className="verified-stamp"><span>✓</span><small>EXAMPLE REPAIR</small></div>
+     <div className="verified-stamp" aria-label="Example of a corrected line"><span aria-hidden="true">✓</span></div>
      <button className="play-again" type="button" onClick={()=>setReplay(v=>v+1)}>Replay example</button>
     </figure>
    </section>
@@ -192,7 +201,7 @@ function App(){
     <details><summary>Can it check pages behind a login?</summary><p>Not yet. It checks public pages only. Local and private network addresses are not supported by the hosted scanner.</p></details>
     <details><summary>Is it open source?</summary><p>Yes. The scanner, rules, and website source are available in the <a href={REPO} target="_blank" rel="noreferrer">GitHub repository</a>.</p></details>
    </div></section>
-   <section className="bottom-cta wrap" aria-labelledby="cta-heading"><Logo size={52} onDark/><h2 id="cta-heading">Find the broken letters before<br/>your readers do.</h2><a href="#top" onClick={()=>{window.setTimeout(()=>input.current?.focus(),100)}}>Check a page</a></section>
+   <section className="bottom-cta wrap" aria-labelledby="cta-heading"><Logo size={52} onDark/><h2 id="cta-heading">Find the broken letters before your readers do.</h2>{PAGES_PREVIEW?<a href="#try">Try text checker</a>:<a href="#top" onClick={()=>{window.setTimeout(()=>input.current?.focus(),100)}}>Check a page</a>}</section>
   </main>
   <footer className="footer wrap"><div className="footer-brand"><Logo size={29}/><strong>AksharaCheck</strong><span lang="hi">अक्षर जाँच</span><span lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ</span></div><div><a href={REPO} target="_blank" rel="noreferrer">GitHub</a><a href="https://bharatcode.ai/hackathon" target="_blank" rel="noreferrer">BharatCode Build League 2026</a></div></footer>
  </div>
