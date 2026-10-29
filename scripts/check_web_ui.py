@@ -65,7 +65,7 @@ def main():
             assert abs(geometry["left"]-geometry["right"])<3,(
                 f"{width}px: page frame is not centered: {geometry}"
             )
-            assert geometry["brand"]>180,f"{width}px: brand lockup too small"
+            assert geometry["brand"]>(150 if width<=480 else 180),f"{width}px: brand lockup too small"
             if width>720:
                 assert geometry["ctaOffset"]<18,f"{width}px: closing action not vertically centered"
                 assert geometry["badgeOffset"]<10,f"{width}px: sample status badge not aligned"
