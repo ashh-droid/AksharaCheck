@@ -13,7 +13,7 @@ from .security import validate_url, UnsafeURL
 
 API_URL="https://bharatcode.ai/api/model/v1/responses"
 MODEL="qwen-3.8-27b"
-ALLOWED_CSS={"font-family", "font-size", "line-height", "white-space", "overflow-wrap", "word-break", "min-height", "height", "max-width", "width", "flex-wrap", "padding", "padding-top", "padding-bottom", "box-sizing"}
+ALLOWED_CSS={"font-family", "line-height", "white-space", "overflow-wrap", "word-break", "min-height", "height", "max-width", "width", "flex-wrap", "padding", "padding-top", "padding-bottom", "box-sizing"}
 
 
 def safe_declarations(raw, detector=None):
