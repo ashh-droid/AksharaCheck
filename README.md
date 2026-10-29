@@ -165,6 +165,19 @@ Also run `cd web && npm install && npm run build` and test a complete Chromium s
 3. Confirm required file content and any submission-specific deadline with the organizers.
 4. Submit the **main repository URL**, not a branch/file link.
 
+## Reading and refreshing reports
+
+The standalone HTML report is now a compact, grouped review instead of a full-page list of oversized screenshot cards. Each warning is a potential issue to inspect, not a confirmed defect. Tiny element screenshots are omitted, while usable captures and original evidence remain accessible.
+
+To refresh the **appearance only** of an existing report after pulling an update:
+
+```cmd
+.venv\Scripts\python.exe -m aksharacheck render output\hi-wikipedia\report.json
+start output\hi-wikipedia\report.html
+```
+
+To retest **detector accuracy** with the new hidden-element and clipping thresholds, rerun the browser scan. Rendering an old JSON file cannot change its original findings.
+
 ## Release preflight without BharatCode API access
 
 BharatCode API generation currently returns HTTP 402 on accounts without a qualifying entitlement. This does not block the Chromium detector, reports or local repair verification tests.
