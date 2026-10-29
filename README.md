@@ -58,6 +58,24 @@ aksharacheck scan https://www.india.gov.in/ --ai --output output
 - AI explanations/suggestions are not findings; repairs are retested before `verified`.
 - With no valid API key, deterministic detection still works. The live BharatCode request and structured-output compatibility still require a server-side integration test with a valid key.
 
+## Live BharatCode smoke test and local AI demo
+
+Use an API key from [your BharatCode account](https://bharatcode.ai/account). Never paste a key into a chat, issue, commit, browser frontend or screenshot. The smoke test below prompts for a key without showing the characters if `BHARATCODE_API_KEY` is not set:
+
+```cmd
+.venv\Scripts\python.exe scripts\check_bharatcode.py
+```
+
+A passing result confirms an authenticated API request and structured English, Hindi and Kannada response fields. It does **not** prove the browser repair loop yet.
+
+After that, test the complete bundled broken-page flow with a private key prompt:
+
+```cmd
+.venv\Scripts\python.exe scripts\run_ai_demo.py
+```
+
+This starts a temporary localhost fixture server, runs Chromium, makes real BharatCode calls, and saves `output/ai-demo/report.html`. Read the repair status on each finding. Never present a suggested fix as verified unless the independent browser recheck passes.
+
 ## Web app
 
 ```powershell
