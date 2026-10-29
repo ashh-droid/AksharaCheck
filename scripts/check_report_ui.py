@@ -33,6 +33,11 @@ def check(path):
                 assert page.title().startswith("AksharaCheck"),"Report tab title incorrect"
                 assert page.locator(".brand-name").inner_text()=="AksharaCheck"
                 assert page.locator(".score-item").count()==3
+                assert page.get_by_role("link",name="JSON").get_attribute("href")=="report.json"
+                assert page.get_by_role("link",name="Markdown").get_attribute("href")=="report.md"
+                assert page.locator(".brand-sub span").count()==2
+                assert page.locator(".finding-row").count()>=0
+                assert page.locator(".hero h1").is_visible()
                 assert page.locator(".issue-group").count()>=1 or page.locator(".empty").count()==1
                 overflow=page.evaluate("""() => ({
                     page: document.documentElement.scrollWidth,
@@ -54,6 +59,10 @@ def check(path):
                     detail.locator("summary").click()
                     assert detail.get_attribute("open") is not None
                     assert row.locator(".technical-body").is_visible()
+                    broken=page.evaluate("""() => [...document.querySelectorAll('.capture img')]
+                        .filter(image => image.complete && image.naturalWidth === 0)
+                        .map(image => image.getAttribute('src'))""")
+                    assert not broken,f"{width}px: broken screenshot previews {broken}"
                     detail.locator("summary").click()
                 assert not errors,f"{width}px JavaScript errors: {errors}"
                 page.screenshot(path=str(dest/f"report-{width}px.png"),full_page=True,animations="disabled")
