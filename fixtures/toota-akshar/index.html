@@ -1,0 +1,14 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Toota Akshar · Intentionally broken Hindi and Kannada</title><style>
+@font-face{font-family:'BrokenLocal';src:url('/fonts/does-not-exist.woff2') format('woff2')}
+*{box-sizing:border-box}body{font-family:system-ui,sans-serif;margin:0;background:#f8faf5;color:#132b26}header{background:#143831;color:white;padding:28px}main{max-width:1000px;padding:28px;margin:auto}.card{background:white;padding:24px;margin:18px 0;border:1px solid #ddd;border-radius:10px}h1{margin:0}.small{font-size:13px;color:#647772}.broken-wrap{width:240px;white-space:nowrap;overflow:visible;border:1px dashed #d89;padding:5px}.clipped{height:18px;overflow:hidden;font-size:24px;line-height:1.2}.tight{font-size:24px;line-height:26px;width:205px}.legacy{font-family:'KrutiDev 010',serif}.broken-font{font-family:'BrokenLocal',serif}.clean{line-height:1.8;font-size:19px}a{color:#085986}
+</style></head><body><header><h1>टूटा अक्षर · ತುಂಡಾದ ಅಕ್ಷರ</h1><p>Intentionally broken Indic test pages / परीक्षण पृष्ठ</p></header><main>
+<div class="card"><h2>1. Wrong document language</h2><p>यह हिन्दी में लिखा गया नमूना पाठ है जो सही भाषा घोषित नहीं करता है।</p><p>ಇದು ಕನ್ನಡದಲ್ಲಿ ಬರೆದಿರುವ ಉದಾಹರಣೆ ಪಠ್ಯವಾಗಿದ್ದು ಅದರ ಭಾಷೆಯನ್ನು ಘೋಷಿಸಿಲ್ಲ.</p></div>
+<div class="card"><h2>2. Broken dependent marks</h2><p lang="hi">यह एक मााित्रा त्रुटि का परीक्षण है</p><p lang="kn">ಇದು ಕಾಿ ತಪ್ಪಾದ ಗುರುತುಗಳ ಪರೀಕ್ಷೆ</p></div>
+<div class="card"><h2>3. Mobile overflow</h2><p class="broken-wrap" lang="hi">नमस्तेहिन्दीवेबसाइटकीयहबहुतलंबीएकलपंक्तिहैजिसमेंअलगकरनेवालीजगहनहींहै</p></div>
+<div class="card"><h2>4. Clipped marks / lines</h2><p class="clipped" lang="hi">कृपया हिन्दी और कन्नड़ में पूरा पाठ दिखाएं</p></div>
+<div class="card"><h2>5. Tight line height</h2><p class="tight" lang="kn">ಇದೊಂದು ಬಹಳ ಉದ್ದವಾದ ಕನ್ನಡ ಪರೀಕ್ಷಾ ಪಠ್ಯವಾಗಿದೆ. ಎರಡು ಸಾಲುಗಳ ನಡುವೆ ಸಾಕಷ್ಟು ಜಾಗವಿಲ್ಲ.</p></div>
+<div class="card"><h2>6. Missing font request</h2><p class="broken-font" lang="hi">यह फ़ॉन्ट फ़ाइल उपलब्ध नहीं है और फ़ॉलबैक हो सकता है।</p></div>
+<div class="card"><h2>7. Legacy encoded example (review needed)</h2><p class="legacy">Hkkjr ds yksx Hkk"kk dk vknj djrs gSa</p></div>
+<div class="card"><h2>8. Valid control sample</h2><p class="clean" lang="hi">भारत में कई भाषाएँ बोली जाती हैं। यह परीक्षण के लिए सही यूनिकोड पाठ है।</p><p class="clean" lang="kn">ಕನ್ನಡ ಭಾಷೆಯು ಸುಂದರವಾಗಿದೆ. ಇದು ಯುನಿಕೋಡ್‌ನಲ್ಲಿ ಸರಿಯಾಗಿ ಬರೆಯಲಾಗಿದೆ.</p></div>
+<a href="/clean.html">Clean example →</a>
+</main></body></html>

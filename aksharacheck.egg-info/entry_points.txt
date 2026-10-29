@@ -1,0 +1,2 @@
+[console_scripts]
+aksharacheck = aksharacheck.cli:main
