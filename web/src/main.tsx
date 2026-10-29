@@ -49,8 +49,8 @@ function checkText(text:string):LetterProblem[]{
  });
  return problems.slice(0,30);
 }
-function Logo({size=36}:{size?:number}){
- return <svg className="brand-symbol" width={size} height={size} viewBox="0 0 120 120" aria-hidden="true" focusable="false"><path d="M49.65 21.36 A40 40 0 1 1 49.65 98.64" fill="none" stroke="#0E6B4E" strokeWidth="13" strokeLinecap="round"/><circle cx="34.83" cy="91.08" r="6.5" fill="#D9475A"/><circle cx="24.05" cy="77.54" r="6.5" fill="#D9475A"/><circle cx="20" cy="60" r="6.5" fill="#D9475A"/><circle cx="24.05" cy="42.46" r="6.5" fill="#D9475A"/><circle cx="34.83" cy="28.92" r="6.5" fill="#D9475A"/></svg>;
+function Logo({size=36,onDark=false}:{size?:number;onDark?:boolean}){
+ return <svg className="brand-symbol" width={size} height={size} viewBox="0 0 120 120" aria-hidden="true" focusable="false"><path d="M49.65 21.36 A40 40 0 1 1 49.65 98.64" fill="none" stroke={onDark?"#3FB58A":"#0E6B4E"} strokeWidth="13" strokeLinecap="round"/><circle cx="34.83" cy="91.08" r="6.5" fill={onDark?"#F07A88":"#D9475A"}/><circle cx="24.05" cy="77.54" r="6.5" fill={onDark?"#F07A88":"#D9475A"}/><circle cx="20" cy="60" r="6.5" fill={onDark?"#F07A88":"#D9475A"}/><circle cx="24.05" cy="42.46" r="6.5" fill={onDark?"#F07A88":"#D9475A"}/><circle cx="34.83" cy="28.92" r="6.5" fill={onDark?"#F07A88":"#D9475A"}/></svg>;
 }
 function App(){
  const [url,setUrl]=useState('');const [lang,setLang]=useState('both');
@@ -107,7 +107,7 @@ function App(){
    <section className="hero wrap" aria-labelledby="hero-title">
     <div className="hero-copy">
      <h1 id="hero-title">Every letter<br/>should render<br/>right<span className="tiny-green">.</span></h1>
-     <p className="lede">Your site may look fine in English. AksharaCheck opens it in a real browser, finds the <span lang="hi">हिंदी</span> and <span lang="kn">ಕನ್ನಡ</span> text that comes out broken, and tests every fix in that same browser before calling it done.</p>
+     <p className="lede">Your site may look fine in English. AksharaCheck opens it in a real browser, finds the <span lang="hi">हिंदी</span> and <span lang="kn">ಕನ್ನಡ</span> text that comes out broken, and rechecks supported repairs in Chromium before calling them verified.</p>
      <form onSubmit={scan} className="scan-form">
       <label htmlFor="url" className="sr-only">Website address</label>
       <div className="scan-input"><input ref={input} id="url" type="text" placeholder="https://your-site.in" value={url} onChange={e=>setUrl(e.target.value)} required spellCheck={false}/><button type="submit" disabled={busy}>{busy?'Checking…':'Check this page'}</button></div>
@@ -136,11 +136,11 @@ function App(){
       {!report.findings.length&&<p className="clean-result">No issues were detected by the implemented checks. This is not proof of complete correctness.</p>}
       {Array.from(new Set(report.findings.map(f=>f.detector))).map(type=><div className="audit-group" key={type}><h3>{detectorNames[type]||type} <span>{report.findings.filter(f=>f.detector===type).length}</span></h3>
        {report.findings.filter(f=>f.detector===type).map(f=><article className="audit-card" key={f.id}>
-        <header><span className={'audit-severity '+f.severity}>{f.severity}</span><strong>{detectorNames[f.detector]||f.detector}</strong><small>{(f.viewports||[f.viewport]).map(w=>w+' px').join(' / ')}</small></header>
+        <header><span className={'audit-severity '+f.severity}>{f.severity}</span><strong>{detectorNames[f.detector]||f.detector}</strong><small>{(f.viewports||[f.viewport]).map(w=>w<=430?'Phone':'Desktop').join(' + ')}</small></header>
         <p className="audit-sample">{f.sample}</p><div className="audit-card-content">
          {(f.element_screenshot||f.screenshot)&&<a href={reportArtifact(f.element_screenshot||f.screenshot||'')} target="_blank" rel="noreferrer"><img src={reportArtifact(f.element_screenshot||f.screenshot||'')} alt={'Browser capture for '+f.detector}/></a>}
          <div><p>{f.ai_explanation||'This finding comes from the browser measurement.'}</p>{f.fix&&<p className={f.fix.status==='verified'?'verified-note':'unverified-note'}>{f.fix.status==='verified'?'✓ Fix verified in Chromium':f.fix.status==='not-applicable'?'Manual repair needed':'Not verified: '+(f.fix.reason||'Review the change')}</p>}{(f.fix?.css||f.fix?.attributes)&&<pre>{Object.entries({...f.fix.css,...f.fix.attributes}).map(([k,v])=>k+': '+v+';').join('\n')}</pre>}</div></div>
-        <details><summary>Measured evidence</summary><pre>{JSON.stringify(f.evidence,null,2)}</pre><p className="audit-target">{f.url}</p></details>
+        <details><summary>Measured evidence</summary><pre>{JSON.stringify(f.evidence,null,2)}</pre><p className="audit-target">Page: {f.url}<br/>Element: {f.selector}</p></details>
        </article>)}</div>)}
       </div>}
    </section>
@@ -153,7 +153,7 @@ function App(){
       <ol>{issues.map((issue,i)=><li key={i}><strong>{issue.title}</strong> <code>{'U+'+cp(issue.character).toString(16).toUpperCase().padStart(4,'0')}</code><p>{issue.hint}</p></li>)}</ol>
      </div>
     </div></div></section>
-   <section className="checks-section wrap" id="checks"><div className="section-head"><h2>What it checks</h2><p>Four problems that make Hindi and Kannada pages hard to read. Each one is measured in Chromium at phone and desktop widths.</p></div>
+   <section className="checks-section wrap" id="checks"><div className="section-head"><h2>What it checks</h2><p>Four common issues that can affect Hindi and Kannada pages. Website scans collect Chromium evidence at phone and desktop widths.</p></div>
     <div className="checks-grid">
      <article className="check-card"><div className="rule-preview" lang="hi"><span className="underline-wrong">ह िंदी</span></div><h3>Broken letters</h3><p>A vowel sign, virama or nukta with nothing to attach to. Browsers draw it on a dotted circle.</p></article>
      <article className="check-card"><div className="rule-preview"><span className="tofu">□□□□</span></div><h3>Missing fonts</h3><p>Chromium reports which font drew each letter, so it can reveal unexpected fallback or empty boxes.</p></article>
@@ -163,13 +163,13 @@ function App(){
    </section>
    <section className="report-section" id="report"><div className="wrap"><div className="section-head"><h2>Every finding comes with its evidence</h2><p>Each finding shows what broke, where it is on the page and what the browser measured, so a developer can go straight to the fix.</p></div>
     <div className="report-grid">
-     <article className="sample-report">
-      <div className="sample-report-top"><span className="sample-error">× Error</span><strong>Broken letter</strong><small>Phone example</small></div>
+     <article className="sample-report" aria-label="Illustrative example of an AksharaCheck finding">
+      <div className="sample-report-top"><span className="sample-error">× Error</span><strong>Broken letter</strong><small>Example report</small></div>
       <p className="sample-report-word" lang="hi">सूचना: परीक्षा <span className="underline-wrong">ह िंदी</span> माध्यम में होगी</p>
       <div className="sample-evidence"><p><span>Characters</span><code>ह U+0939</code> <code>space U+0020</code> <code>ि U+093F</code></p><p><span>Rule</span>A vowel sign must follow a consonant.</p><p><span>Element</span><code>main &gt; article p:nth-of-type(2)</code></p><p><span>Font</span>Mukta, the page's own web font</p></div>
       <div className="sample-fix"><strong>What to change</strong><p>Remove the extra space between ह and ि in the page text. This is a text error, not a CSS issue.</p></div>
      </article>
-     <div className="report-notes"><div><h3>The exact characters</h3><p>Each finding lists the Unicode code points, so you can search for the mistake in your CMS or code.</p></div><div><h3>CSS only where CSS helps</h3><p>BharatCode AI drafts CSS for layout and font problems. A typing mistake is reported as a typing mistake.</p></div><div><h3>Every fix is tested</h3><p>The change runs in a fresh browser. If it hides the text, shrinks it or pushes it off screen, it is rejected.</p></div></div>
+     <div className="report-notes"><div><h3>The exact characters</h3><p>Each finding lists the Unicode code points, so you can search for the mistake in your CMS or code.</p></div><div><h3>CSS only where CSS helps</h3><p>BharatCode AI drafts CSS for layout and font problems. A typing mistake is reported as a typing mistake.</p></div><div><h3>Verified means rechecked</h3><p>A proposed repair is tested again in Chromium. Hiding the text, shrinking it or moving it off screen does not count as a fix.</p></div></div>
     </div>
    </div></section>
    <section className="faq-section wrap" id="faq"><h2>Questions</h2><div className="faq-list">
@@ -179,7 +179,7 @@ function App(){
     <details><summary>Can it check pages behind a login?</summary><p>Not yet. It checks public pages only. Local and private network addresses are not supported by the hosted scanner.</p></details>
     <details><summary>Is it open source?</summary><p>Yes. The scanner, rules, and website source are available in the <a href={REPO} target="_blank" rel="noreferrer">GitHub repository</a>.</p></details>
    </div></section>
-   <section className="bottom-cta wrap" aria-labelledby="cta-heading"><Logo size={52}/><h2 id="cta-heading">Find the broken letters before<br/>your readers do.</h2><a href="#top" onClick={()=>{window.setTimeout(()=>input.current?.focus(),100)}}>Check a page</a></section>
+   <section className="bottom-cta wrap" aria-labelledby="cta-heading"><Logo size={52} onDark/><h2 id="cta-heading">Find the broken letters before<br/>your readers do.</h2><a href="#top" onClick={()=>{window.setTimeout(()=>input.current?.focus(),100)}}>Check a page</a></section>
   </main>
   <footer className="footer wrap"><div className="footer-brand"><Logo size={29}/><strong>AksharaCheck</strong><span lang="hi">अक्षर जाँच</span><span lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ</span></div><div><a href={REPO} target="_blank" rel="noreferrer">GitHub</a><a href="https://bharatcode.ai/hackathon" target="_blank" rel="noreferrer">BharatCode Build League 2026</a></div></footer>
  </div>
