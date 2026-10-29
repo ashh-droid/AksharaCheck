@@ -1,14 +1,20 @@
 import pytest
 import httpx
-from aksharacheck.api import app
+from aksharacheck.api import app, WEB_DIST
 
 @pytest.mark.asyncio
 async def test_api_health_and_frontend():
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='http://testserver') as client:
         r=await client.get('/api/health');assert r.status_code==200
         assert r.json()['name']=='AksharaCheck'
-        page=await client.get('/');assert page.status_code==200
-        assert 'Every letter' in page.text
+        page=await client.get('/')
+        if WEB_DIST.is_dir():
+            assert page.status_code==200
+            assert 'AksharaCheck' in page.text
+            assert '<div id="root"></div>' in page.text
+        else:
+            # Fresh clones contain React source, not generated Vite dist files.
+            assert page.status_code==404
 
 @pytest.mark.asyncio
 async def test_api_rejects_internal_target():
