@@ -120,3 +120,9 @@ def test_partial_scan_warns_reader(tmp_path):
                           "error": "navigation timeout"}])
     assert "Incomplete scan" in page
     assert "Missing data is not clean data" in page
+
+def test_timestamp_and_zero_errors_are_not_alarm_colored(tmp_path):
+    page = render(tmp_path, [finding()],
+                  generated_at="2026-10-29T14:00:00+00:00")
+    assert "Scanned 2026-10-29T14:00:00Z" in page
+    assert 'class="score-num error zero"' in page
