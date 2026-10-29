@@ -14,10 +14,10 @@
   --ink-soft:#4A5064;
   --line:#D9DED3;
   --rule:#DCE6F2;
-  --gutter:clamp(16px,1.25vw,28px);
+  --gutter:clamp(20px,3vw,48px);
   --section:clamp(78px,9vw,116px);
 }
-.wrap{width:calc(100% - 2 * var(--gutter));max-width:none;margin-inline:auto}
+.wrap{width:min(calc(100% - 2 * var(--gutter)),1420px);max-width:none;margin-inline:auto}
 body{font-size:16px;line-height:1.55}
 .topbar{background:rgba(246,247,242,.96)}
 .topbar-inner{min-height:84px;gap:28px}
@@ -31,7 +31,7 @@ body{font-size:16px;line-height:1.55}
 .topbar .nav-github{display:inline-flex;align-items:center;justify-content:center;min-height:37px;padding:0 14px}
 .menu-toggle{display:none;background:var(--sheet);color:var(--ink);border:1px solid var(--line);border-radius:6px;align-items:center;justify-content:center;gap:7px;min-height:42px;padding:0 12px;font-size:14px;line-height:1.2}
 .menu-toggle span{line-height:1.2}
-.hero{grid-template-columns:minmax(0,1.03fr) minmax(0,.97fr);gap:clamp(42px,4.4vw,76px);padding:clamp(86px,6.5vw,118px) 0 clamp(92px,7vw,120px);align-items:center}
+.hero{grid-template-columns:minmax(0,1.03fr) minmax(0,.97fr);gap:clamp(40px,4.2vw,70px);min-height:calc(100svh - 84px);padding:clamp(48px,7vh,82px) 0;align-items:center}
 .hero-copy{min-width:0}
 .hero h1{font-size:clamp(48px,4.4vw,80px);font-weight:750;line-height:1.08;letter-spacing:-.035em;max-width:13ch}
 .lede{font-size:clamp(16px,1.12vw,19px);line-height:1.62;margin-top:22px;max-width:57ch}
@@ -43,7 +43,7 @@ body{font-size:16px;line-height:1.55}
 .scan-options select{min-height:41px;appearance:none;background-color:white;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%231B2440' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:15px;padding:0 36px 0 12px;border:1px solid #92A7C5;border-radius:6px}
 .ai-option{margin-top:10px;line-height:1.45}
 .examples{margin-top:12px}
-.hero-sheet{width:100%;min-height:385px;max-width:none;justify-self:stretch;transform:none;padding:0 19px 30px 0;overflow:visible}
+.hero-sheet{width:100%;min-height:385px;max-width:660px;justify-self:center;transform:none;padding:0 19px 30px 0;overflow:visible}
 .hero-sheet::before{left:49px}
 .hero-sheet .sheet-top{min-height:47px;padding:10px 17px 10px 65px}
 .hero-sheet .paper-line{min-height:53px;padding:6px 9px 0 20px}
@@ -109,7 +109,7 @@ body{font-size:16px;line-height:1.55}
  .topbar nav.is-open{display:flex}
  .topbar nav a,.topbar nav a:not(.nav-github){display:flex;min-height:45px;align-items:center;padding:10px 12px;font-size:15px}
  .topbar nav .nav-github{width:100%;justify-content:flex-start}
- .hero{grid-template-columns:1fr;gap:42px;padding:42px 0 85px}
+ .hero{grid-template-columns:1fr;gap:42px;min-height:0;padding:42px 0 85px}
  .hero h1{font-size:clamp(45px,8vw,65px)}
  .lede{font-size:17px}
  .hero-sheet{max-width:650px;width:100%;margin:auto;justify-self:center;min-height:355px}
