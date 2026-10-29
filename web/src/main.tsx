@@ -161,12 +161,12 @@ function App(){
      <article className="check-card"><div className="rule-preview code-preview"><code>&lt;html lang=<span className="underline-wrong">"en"</span>&gt;</code></div><h3>Wrong language tag</h3><p>Hindi marked as English can be misread by assistive technology and may use a different font.</p></article>
     </div>
    </section>
-   <section className="report-section" id="report"><div className="wrap"><div className="section-head"><h2>Every finding comes with its evidence</h2><p>Each finding shows what broke, where it is on the page and what the browser measured, so a developer can go straight to the fix.</p></div>
+   <section className="report-section" id="report"><div className="wrap"><div className="section-head"><h2>Every finding comes with its evidence</h2><p>See the text, its location, the browser evidence and whether a suggested repair passed verification. The card below illustrates a report.</p></div>
     <div className="report-grid">
      <article className="sample-report" aria-label="Illustrative example of an AksharaCheck finding">
       <div className="sample-report-top"><span className="sample-error">× Error</span><strong>Broken letter</strong><small>Example report</small></div>
       <p className="sample-report-word" lang="hi">सूचना: परीक्षा <span className="underline-wrong">ह िंदी</span> माध्यम में होगी</p>
-      <div className="sample-evidence"><p><span>Characters</span><code>ह U+0939</code> <code>space U+0020</code> <code>ि U+093F</code></p><p><span>Rule</span>A vowel sign must follow a consonant.</p><p><span>Element</span><code>main &gt; article p:nth-of-type(2)</code></p><p><span>Font</span>Mukta, the page's own web font</p></div>
+      <div className="sample-evidence"><p><span>Characters</span><code>ह U+0939</code> <code>space U+0020</code> <code>ि U+093F</code></p><p><span>Rule</span>A vowel sign must follow a consonant.</p><p><span>Where</span>A notice paragraph on a sample page</p><p><span>Font evidence</span>Actual font names appear in live scan reports.</p></div>
       <div className="sample-fix"><strong>What to change</strong><p>Remove the extra space between ह and ि in the page text. This is a text error, not a CSS issue.</p></div>
      </article>
      <div className="report-notes"><div><h3>The exact characters</h3><p>Each finding lists the Unicode code points, so you can search for the mistake in your CMS or code.</p></div><div><h3>CSS only where CSS helps</h3><p>BharatCode AI drafts CSS for layout and font problems. A typing mistake is reported as a typing mistake.</p></div><div><h3>Verified means rechecked</h3><p>A proposed repair is tested again in Chromium. Hiding the text, shrinking it or moving it off screen does not count as a fix.</p></div></div>
