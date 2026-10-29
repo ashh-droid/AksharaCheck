@@ -479,3 +479,16 @@ body{font-size:16px;line-height:1.6}
  .checks-section{padding:94px 0}
  .report-section{padding:100px 0}
 }
+
+/* Live results follow the compact grouped evidence report, not screenshot grids. */
+.backend-note{padding:10px 13px;margin:15px 0 0;border-left:3px solid #B8323F;background:#FCEDEE;color:#74303A;font-size:13px;line-height:1.5}
+.audit-card-content{display:block;margin:12px 0 5px}
+.audit-card-content>div{max-width:850px}
+.audit-card-content p{font-size:14px;line-height:1.55}
+.audit-card{padding:18px 0}
+.audit-card .audit-sample{margin:8px 0;font-size:clamp(17px,2vw,21px);line-height:1.5}
+.audit-card header{gap:9px;align-items:center}
+.audit-card details{border-top:1px solid var(--line);padding-top:10px;margin-top:12px}
+.audit-card details summary{font-weight:700}
+.audit-screenshot-link{color:var(--green);font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.audit-group>h3{margin-top:25px}
