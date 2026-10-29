@@ -1,4 +1,4 @@
-# AksharaCheck · अक्षर चेक · ಅಕ್ಷರ ಪರಿಶೀಲನೆ
+# AksharaCheck · अक्षर जाँच · ಅಕ್ಷರ ಪರಿಶೀಲನೆ
 
 **Find the letters your website breaks. A real-browser checker for Hindi and Kannada rendering, with evidence-backed repair suggestions.**
 
@@ -8,7 +8,7 @@
 
 ## Website experience
 
-The frontend follows the **Attested school-copybook** identity: paper ground, ruled blue lines, correction red, verified green, fountain-pen blue-black and the circular AksharaCheck mark. The masthead, browser tab title and SVG favicon use this identity.
+The frontend follows the **Attested school-copybook** identity: paper ground, ruled blue lines, correction red, verified green, fountain-pen blue-black and the circular AksharaCheck mark. Fonts are bundled from Fontsource's Anek Latin, Devanagari and Kannada variable families so visitors do not depend on a Google Fonts request. The masthead, browser tab title and SVG favicon use this identity.
 
 The React interface includes the URL scanner, a browser-only Hindi/Kannada typing check, four visual detector explanations, a sample evidence card, common questions, and live scan reports with page screenshots and repair status. The typing check runs locally in the visitor's browser. Actual website scans use FastAPI and Playwright.
 
@@ -122,6 +122,23 @@ For local production preview before publishing, run `npm run build:pages` follow
 
 The real URL-scanning backend must be deployed independently with Chromium isolation, rate limiting and outbound private-network blocking. Keep `BHARATCODE_API_KEY` server-side. Set `VITE_API_URL` to an authorized HTTPS backend before building a full-stack separated deployment.
 
+
+## Record a real scan for GitHub Pages
+
+GitHub Pages cannot run Chromium. The static homepage therefore offers a working browser-only Hindi/Kannada text check and links to real recorded Chromium reports **only once files have been reviewed and published**. No fake reports are included.
+
+1. Scan an authorized public page locally: `.venv\Scripts\python.exe -m aksharacheck scan https://hi.wikipedia.org/ --pages 1 --output output\hi-wikipedia-v2`
+2. Open `output\hi-wikipedia-v2\report.html`, verify each finding and ensure the report contains no sensitive information, private URLs or unexpected user text.
+3. Export that approved report and its screenshots:
+
+```cmd
+.venv\Scripts\python.exe scripts\publish_recorded_scan.py output\hi-wikipedia-v2 --slug hindi-wikipedia --title "Hindi Wikipedia" --reviewed-public-content
+```
+
+4. Inspect the generated files under `web\public\samples\` and the updated `catalog.json`. Only commit and publish files that you have personally reviewed for privacy and accuracy.
+5. Build and deploy the Pages frontend with `cd web && npm install && npm run deploy:pages`. The saved report becomes accessible under `/AksharaCheck/samples/hindi-wikipedia/report.html` and appears in the homepage's recorded-scan section.
+
+A recorded scan is evidence of the browser results at its stated date, not a live scan or an AI-produced fix. **Do not add BharatCode AI explanations until real authorized model calls succeed.**
 
 ## Frontend and responsive QA
 
