@@ -126,7 +126,7 @@ def _photo(finding,folder):
     shot=_asset(finding.get("screenshot"),folder)
     if crop:
         width,height=_png_size(folder/crop)
-        if width>=40 and height>=40:
+        if width>=90 and height>=55 and width/height<=12:
             return ('<a class="evidence-photo" href="'+esc(crop)+'" target="_blank" rel="noopener noreferrer">'
                     '<img src="'+esc(crop)+'" alt="Captured text from the browser" loading="lazy">'
                     '<span>Enlarge capture <span aria-hidden="true">↗</span></span></a>')
