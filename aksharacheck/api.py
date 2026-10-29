@@ -4,6 +4,7 @@ import os
 import re
 import time
 import uuid
+import shutil
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
@@ -21,6 +22,19 @@ app=FastAPI(title='AksharaCheck',version='0.1.0')
 app.add_middleware(CORSMiddleware,allow_origins=os.getenv('AKSHARA_ORIGINS','http://localhost:5173,http://127.0.0.1:5173').split(','),allow_methods=['GET','POST'],allow_headers=['Content-Type'])
 JOBS={}
 ACTIVE_LIMIT=2
+RUNNING_TASKS=set()
+RETENTION_SECONDS=7*24*3600
+
+def cleanup_expired():
+    cutoff=time.time()-RETENTION_SECONDS
+    for scan_id,job in list(JOBS.items()):
+        if job.get("status")!="running" and job.get("ended",job["created"])<cutoff:
+            shutil.rmtree(ROOT/scan_id,ignore_errors=True)
+            del JOBS[scan_id]
+    for child in ROOT.iterdir():
+        if child.is_dir() and child.name not in JOBS and child.stat().st_mtime<cutoff:
+            shutil.rmtree(child,ignore_errors=True)
+
 class ScanRequest(BaseModel):
     url:str=Field(min_length=10,max_length=2048)
     lang:str='both'
@@ -46,6 +60,7 @@ def health():return {"ok":True,"name":"AksharaCheck","version":"0.1.0","ai_avail
 
 @app.post('/api/scans',status_code=202)
 async def start(req:ScanRequest,request:Request):
+    cleanup_expired()
     if req.lang not in {'both','hi','kn'}:raise HTTPException(400,'Invalid language')
     try:validate_url(req.url)
     except (UnsafeURL,ValueError) as exc:raise HTTPException(400,str(exc))
@@ -56,7 +71,9 @@ async def start(req:ScanRequest,request:Request):
     if len(recent)>=5:raise HTTPException(429,'Limit: five scans per hour per visitor')
     scan_id=uuid.uuid4().hex[:16]
     JOBS[scan_id]={"status":"running","events":["Scan queued"],"created":time.time(),"ip":client}
-    asyncio.create_task(run_scan(scan_id,req))
+    task=asyncio.create_task(run_scan(scan_id,req))
+    RUNNING_TASKS.add(task)
+    task.add_done_callback(RUNNING_TASKS.discard)
     return {"id":scan_id,"status":"running"}
 
 @app.get('/api/scans/{scan_id}')
@@ -76,7 +93,7 @@ def report(scan_id:str):
 @app.get('/api/scans/{scan_id}/artifacts/{name}')
 def artifact(scan_id:str,name:str):
     if not re.fullmatch(r'[0-9a-f]{16}',scan_id):raise HTTPException(404,'Unknown scan')
-    if '/' in name or '\\' in name or name not in {'report.html','report.md','report.json'} and not (name.startswith('page-') and name.endswith('.png')):
+    if '/' in name or '\\' in name or name not in {'report.html','report.md','report.json'} and not ((name.startswith('page-') or name.startswith('element-')) and name.endswith('.png')):
         raise HTTPException(400,'Invalid artifact')
     path=ROOT/scan_id/name
     if not path.is_file():raise HTTPException(404,'Artifact not found')
