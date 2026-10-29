@@ -7,7 +7,7 @@ FRONTEND=ROOT/"web"
 def test_browser_tab_branding():
     head=(FRONTEND/"index.html").read_text(encoding="utf-8")
     assert "AksharaCheck | Find the letters your website breaks" in head
-    assert 'href="/favicon.svg"' in head
+    assert 'href="%BASE_URL%favicon.svg"' in head
     assert 'name="theme-color" content="#F8FAF7"' in head
 
 def test_reference_sections_and_navigation():
@@ -50,3 +50,9 @@ def test_viewer_facing_homepage_is_consistent():
     assert "--paper:#F8FAF7" in css
     assert "--green:#0E6B4E" in css
     assert "--red:#D9475A" in css
+
+def test_github_pages_build_uses_repository_base():
+    vite=(FRONTEND/"vite.config.ts").read_text(encoding="utf-8")
+    package=(FRONTEND/"package.json").read_text(encoding="utf-8")
+    assert "mode === 'pages' ? '/AksharaCheck/' : '/'" in vite
+    assert '"build:pages"' in package
