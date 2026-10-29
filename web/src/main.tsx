@@ -10,6 +10,8 @@ type Finding={id:string;url:string;viewport:number;viewports?:number[];selector:
 type Report={target:string;summary:{error:number;warning:number;info:number};findings:Finding[];pages:{url:string;viewport:number;error?:string}[]};
 type Job={status:string;events:string[];error?:string};
 type LetterProblem={index:number;title:string;hint:string;character:string};
+type RecordedSample={slug:string;title:string;scanned_at:string;target:string;counts?:{error?:number;warning?:number;info?:number}};
+const staticReportUrl=(slug:string)=>import.meta.env.BASE_URL+'samples/'+encodeURIComponent(slug)+'/report.html';
 const API=import.meta.env.VITE_API_URL||'';
 const PAGES_PREVIEW=window.location.hostname.endsWith('.github.io')&&!import.meta.env.VITE_API_URL;
 const REPO='https://github.com/ashh-droid/AksharaCheck';
@@ -62,9 +64,17 @@ function App(){
  const [ai,setAi]=useState(false);const [aiAvailable,setAiAvailable]=useState(false);const [backendOnline,setBackendOnline]=useState<boolean|null>(null);
  const [busy,setBusy]=useState(false);const [jobId,setJobId]=useState<string|null>(null);
  const [job,setJob]=useState<Job|null>(null);const [report,setReport]=useState<Report|null>(null);const [error,setError]=useState('');
+ const [recordedScans,setRecordedScans]=useState<RecordedSample[]>([]);
  const [sample,setSample]=useState(SAMPLE);const [sampleFeedback,setSampleFeedback]=useState('');const [replay,setReplay]=useState(0);const [menuOpen,setMenuOpen]=useState(false);
  const input=useRef<HTMLInputElement>(null);const textInput=useRef<HTMLTextAreaElement>(null);const scanSection=useRef<HTMLElement>(null);
  const issues=checkText(sample);
+ useEffect(()=>{
+  if(!PAGES_PREVIEW)return;
+  fetch(import.meta.env.BASE_URL+'samples/catalog.json')
+   .then(r=>r.ok?r.json():{scans:[]})
+   .then(d=>setRecordedScans(Array.isArray(d.scans)?d.scans.filter((item:RecordedSample)=>typeof item.slug==='string'&&/^[a-z0-9-]+$/.test(item.slug)&&typeof item.title==='string'):[]))
+   .catch(()=>setRecordedScans([]));
+ },[]);
  useEffect(()=>{
   // GitHub Pages has no /api endpoint. Avoid a guaranteed 404 and a broken promise.
   if(PAGES_PREVIEW)return;
@@ -128,7 +138,11 @@ function App(){
     <div className="hero-copy">
      <h1 id="hero-title">Every letter<br/>should render<br/>right<span className="tiny-green">.</span></h1>
      <p className="lede">Your site may look fine in English. AksharaCheck opens it in a real browser, finds the <span lang="hi">हिंदी</span> and <span lang="kn">ಕನ್ನಡ</span> text that comes out broken, and rechecks supported repairs in Chromium before calling them verified.</p>
-     {PAGES_PREVIEW ? <div className="preview-entry"><a className="preview-start" href="#try">Try the text checker <span aria-hidden="true">↗</span></a><p>Explore a real-time Hindi and Kannada character check in your browser. Full website scans require the separate scanner service.</p></div> : <form onSubmit={scan} className="scan-form">
+     {PAGES_PREVIEW ? <div className="preview-entry">
+      {recordedScans.length>0?<a className="preview-start" href={staticReportUrl(recordedScans[0].slug)}>Explore a recorded browser scan <span aria-hidden="true">↗</span></a>:<a className="preview-start" href="#try">Try the text checker <span aria-hidden="true">↗</span></a>}
+      <p>{recordedScans.length>0?'Open a genuine saved Chromium audit, or try the live local text checker below.':'Explore a real-time Hindi and Kannada character check in your browser. Full website scans require the separate scanner service.'}</p>
+      {recordedScans.length>0&&<div className="recorded-list"><strong>Recorded page audits</strong>{recordedScans.map(item=><a key={item.slug} href={staticReportUrl(item.slug)}>{item.title} <span>Browser evidence ↗</span></a>)}</div>}
+     </div> : <form onSubmit={scan} className="scan-form">
       <label htmlFor="url" className="sr-only">Website address</label>
       <div className="scan-input"><input ref={input} id="url" type="text" placeholder="https://your-site.in" value={url} onChange={e=>setUrl(e.target.value)} required spellCheck={false}/><button type="submit" disabled={busy||PAGES_PREVIEW}>{PAGES_PREVIEW?'Scanner preview only':busy?'Checking…':'Check this page'}</button></div>
       <div className="scan-options"><label>Language <select value={lang} onChange={e=>setLang(e.target.value)} disabled={busy}><option value="both">Hindi and Kannada</option><option value="hi">Hindi only</option><option value="kn">Kannada only</option></select></label></div>
