@@ -68,18 +68,33 @@ def preserve_visible_text(before, after, viewport):
 
 def parse_response(body):
     """Reject partial or failed generations before parsing structured output."""
+    if not isinstance(body,dict):
+        raise ValueError("Invalid BharatCode response object")
     status=body.get("status")
     if status in {"failed","incomplete"}:
-        reason=body.get("incomplete_details") or body.get("error") or status
-        raise ValueError(f"BharatCode response {status}: {str(reason)[:120]}")
+        # Only report a safe provider reason code, never raw model/site content.
+        details=body.get("incomplete_details") or {}
+        reason=details.get("reason") if isinstance(details,dict) else ""
+        suffix=f" ({reason})" if reason in {"max_output_tokens","content_filter"} else ""
+        raise ValueError(f"BharatCode response {status}{suffix}")
     texts=[]
-    for item in body.get("output",[]):
-        for c in item.get("content",[]):
-            if c.get("type") in {"output_text","text"} and isinstance(c.get("text"),str):texts.append(c["text"])
+    for item in body.get("output") or []:
+        if not isinstance(item,dict):
+            continue
+        for c in item.get("content") or []:
+            if isinstance(c,dict) and c.get("type") in {"output_text","text"} and isinstance(c.get("text"),str):
+                texts.append(c["text"])
+    if not texts and isinstance(body.get("output_text"),str):
+        texts.append(body["output_text"])
     result="\n".join(texts).strip()
+    if not result:
+        raise ValueError("BharatCode returned no output text")
     if result.startswith("```"):
         result=re.sub(r"^```(?:json)?\s*|\s*```$","",result,flags=re.I)
-    return json.loads(result)
+    obj=json.loads(result)
+    if not isinstance(obj,dict):
+        raise ValueError("BharatCode output was not a JSON object")
+    return obj
 
 
 class BharatCodeClient:
@@ -106,46 +121,83 @@ class BharatCodeClient:
             cached=json.loads(cache_file.read_text(encoding='utf-8'))
             cached["cached"]=True
             return cached
-        payload={"model":MODEL,"input":prompt,"store":False,"max_output_tokens":1300,"reasoning":{"effort":"none"},
+        payload={"model":MODEL,"input":prompt,"store":False,"max_output_tokens":2500,"reasoning":{"effort":"none"},
                  "text":{"format":{"type":"json_schema","name":"fix","strict":True,
                      "schema":{"type":"object","properties":{"finding_id":{"type":"string"},"explanation":{"type":"string"},
                      "summary_hi":{"type":"string"},"summary_kn":{"type":"string"},"css":{"type":"object","additionalProperties":{"type":"string"}},"attributes":{"type":"object","additionalProperties":{"type":"string"}}},
                      "required":["finding_id","explanation","summary_hi","summary_kn","css","attributes"],"additionalProperties":False}}}}
-        async with httpx.AsyncClient(timeout=30) as client:
+
+        # Model capacity can queue requests, and complex multilingual output
+        # can be cut short at a small token budget (HTTP 200 is not sufficient).
+        last_issue="No usable model response"
+        timeout=httpx.Timeout(connect=15.0,read=90.0,write=20.0,pool=15.0)
+        async with httpx.AsyncClient(timeout=timeout,follow_redirects=False) as client:
             for attempt in range(3):
                 try:
                     started=time.monotonic()
                     resp=await client.post(API_URL,headers={"Authorization":f"Bearer {self.key}"},json=payload)
-                    if resp.status_code in {429, 503}:
-                        if attempt == 2:break
-                        await asyncio.sleep(2**(attempt+1));continue
-                    resp.raise_for_status()
+                    if resp.status_code in {429,503}:
+                        last_issue=f"HTTP {resp.status_code}: model busy or rate limited"
+                        if attempt < 2:
+                            await asyncio.sleep(2**(attempt+1))
+                            continue
+                        break
+                    if resp.status_code != 200:
+                        code=resp.status_code
+                        messages={
+                            400:"HTTP 400: request rejected; inspect payload/schema",
+                            401:"HTTP 401: API authentication rejected",
+                            402:"HTTP 402: model generation not enabled for account",
+                            403:"HTTP 403: model request forbidden",
+                            404:"HTTP 404: model or route not found",
+                            422:"HTTP 422: request validation failed",
+                        }
+                        last_issue=messages.get(code,f"HTTP {code}: provider returned an error")
+                        break
                     body=resp.json()
-                    result=parse_response(body)
-                    if result.get("finding_id")!=finding["id"]:raise ValueError("AI returned unrelated finding ID")
-                    answer={"explanation":str(result.get("explanation",""))[:1200],
-                            "summary_hi":str(result.get("summary_hi",""))[:600],
-                            "summary_kn":str(result.get("summary_kn",""))[:600],
-                            "css":safe_declarations(result.get("css"),finding["detector"]),
-                            "attributes":safe_attributes(result.get("attributes"),finding["detector"]),"status":"proposed",
+                    try:
+                        result=parse_response(body)
+                    except (ValueError,TypeError,KeyError) as exc:
+                        diagnostic=str(exc)
+                        if "incomplete" in diagnostic and "max_output_tokens" in diagnostic:
+                            last_issue="HTTP 200, incomplete output: max_output_tokens reached"
+                        elif "no output text" in diagnostic:
+                            last_issue="HTTP 200, no output text"
+                        else:
+                            last_issue="HTTP 200, unusable structured JSON output"
+                        break
+                    if result.get("finding_id")!=finding["id"]:
+                        last_issue="HTTP 200, model returned a different finding ID"
+                        break
+                    required=("explanation","summary_hi","summary_kn","css","attributes")
+                    if not all(isinstance(result.get(k),str) and result[k].strip() for k in required[:3]):
+                        last_issue="HTTP 200, multilingual explanations missing"
+                        break
+                    if not isinstance(result.get("css"),dict) or not isinstance(result.get("attributes"),dict):
+                        last_issue="HTTP 200, repair fields were not JSON objects"
+                        break
+                    answer={"explanation":result["explanation"][:1200],
+                            "summary_hi":result["summary_hi"][:600],
+                            "summary_kn":result["summary_kn"][:600],
+                            "css":safe_declarations(result["css"],finding["detector"]),
+                            "attributes":safe_attributes(result["attributes"],finding["detector"]),"status":"proposed",
                             "usage":{"input_tokens":int((body.get("usage") or {}).get("input_tokens") or 0),
                                      "output_tokens":int((body.get("usage") or {}).get("output_tokens") or 0),
                                      "seconds":round(time.monotonic()-started,2)}}
-                    cache_file.write_text(json.dumps(answer,ensure_ascii=False),encoding='utf-8')
+                    cache_file.write_text(json.dumps(answer,ensure_ascii=False),encoding="utf-8")
                     return answer
-                except (httpx.TimeoutException, httpx.TransportError) as exc:
-                    if attempt == 2:break
-                    await asyncio.sleep(2**(attempt+1))
-                except httpx.HTTPStatusError as exc:
-                    code=exc.response.status_code
-                    if code == 402:
-                        return {"explanation":"BharatCode API access is not enabled for this account (HTTP 402). An eligible student account or an active Lite/Pro plan is required.", "css":{}, "attributes":{}, "status":"unavailable"}
-                    if code == 401:
-                        return {"explanation":"BharatCode API authentication was rejected (HTTP 401).", "css":{}, "attributes":{}, "status":"unavailable"}
+                except (httpx.TimeoutException,httpx.TransportError):
+                    last_issue="Network or queue timeout"
+                    if attempt<2:
+                        await asyncio.sleep(2**(attempt+1))
+                        continue
                     break
-                except (ValueError,KeyError,json.JSONDecodeError):
+                except (ValueError,KeyError,TypeError):
+                    last_issue="Provider response could not be decoded"
                     break
-        return {"explanation":"BharatCode unavailable; browser findings remain available","css":{},"attributes":{},"status":"unavailable"}
+        # Do not display fallback text as AI work or log credentials/page text.
+        return {"explanation":"","css":{},"attributes":{},"status":"unavailable","error_code":last_issue}
+
 
 
 async def verify_patch(finding, patch, *, allow_local=False, after_shot=None):
@@ -247,13 +299,21 @@ async def explain_and_verify(report, allow_local=False, max_fixes=8, progress=No
             stats["output_tokens"]+=int(usage.get("output_tokens") or 0)
             stats["seconds"]=round(stats["seconds"]+float(usage.get("seconds") or 0),2)
 
-    for f in [f for f in report['findings'] if f['severity']!='info'][:max_fixes]:
+    # Put browser-fixable findings first so a one-finding test exercises the
+    # entire model-to-Chromium repair loop rather than a manual text correction.
+    candidates=[f for f in report["findings"] if f["severity"]!="info"]
+    candidates.sort(key=lambda f: (0 if f["detector"] in PATCHABLE else 1))
+    for f in candidates[:max_fixes]:
         if progress:await progress(f"BharatCode is analysing {f['detector']}")
         proposal=await client.propose(f)
         account(proposal)
         if proposal.get("status")=="unavailable":
-            f["fix"]={"status":"unavailable","reason":proposal.get("explanation","")}
-            continue
+            reason=proposal.get("error_code") or "BharatCode request was unavailable"
+            f["fix"]={"status":"unavailable","reason":reason}
+            if progress:await progress(f"BharatCode could not process this finding: {reason}")
+            # One failed request is enough to diagnose a provider/payload issue.
+            # Avoid sending the remaining findings into an unknown failure.
+            break
         f['ai_explanation']=proposal['explanation']
         f['summary_hi']=proposal.get('summary_hi','')
         f['summary_kn']=proposal.get('summary_kn','')
