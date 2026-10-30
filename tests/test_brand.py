@@ -81,3 +81,12 @@ def test_no_generated_template_habits():
 def test_one_frontend_only():
     assert not (WEB / "src" / "legacy.js").exists()
     assert (WEB / "src" / "letters.ts").is_file()
+
+def test_footer_restoration_and_desktop_hero_viewport():
+    css = (WEB / "src" / "style.css").read_text(encoding="utf-8")
+    assert "Restore the earlier compact, stacked trilingual footer lockup" in css
+    assert "grid-template-columns: 32px max-content max-content" in css
+    assert ".footer-brand strong { grid-column: 2 / 4; grid-row: 1; font-size: 22px" in css
+    assert "min-height: calc(100svh - 88px)" in css
+    assert ".hero h1 { font-size: clamp(46px, 5.55vw, 80px); }" in css
+    assert ".demo-glyphs { font-size: clamp(44px, 4.7vw, 70px); }" in css
