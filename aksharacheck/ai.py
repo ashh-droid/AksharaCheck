@@ -119,10 +119,86 @@ def mostly_script(text,low,high):
     return sum(low<=ord(c)<=high for c in letters)/len(letters)>=.6
 
 
+async def read_bharatcode_stream(response):
+    """Collect official Responses SSE events; only completed output can be used.
+
+    Shared-capacity queues send keepalive comments on streaming connections.
+    Incremental text is accumulated but never trusted as complete until the
+    response.completed event arrives. Do not log raw events or model content.
+    """
+    event=""
+    data_lines=[]
+    chunks=[]
+    completed=None
+    total_chars=0
+
+    def handle_event(name, source):
+        if not isinstance(source,dict):
+            raise ValueError("Unexpected BharatCode streaming event")
+        kind=source.get("type") or name
+        if kind=="response.output_text.delta":
+            delta=source.get("delta","")
+            if isinstance(delta,str):
+                chunks.append(delta)
+        elif kind in {"response.completed","response.incomplete","response.failed"}:
+            body=source.get("response")
+            if not isinstance(body,dict):
+                body={"status":kind.removeprefix("response.")}
+            if kind!="response.completed":
+                # Incomplete/failed is never treated as verified AI output.
+                parse_response(body)
+                raise ValueError("BharatCode response not completed")
+            return body
+        elif kind=="error":
+            raise ValueError("BharatCode streaming provider error")
+        return None
+
+    async for line in response.aiter_lines():
+        total_chars+=len(line)
+        if total_chars>350_000:
+            raise ValueError("BharatCode streaming output exceeded safe size limit")
+        if line.startswith(":"):
+            continue  # Documented queue keepalive.
+        if line.startswith("event:"):
+            event=line[6:].strip()
+            continue
+        if line.startswith("data:"):
+            data_lines.append(line[5:].strip())
+            continue
+        if line=="" and data_lines:
+            raw="\\n".join(data_lines)
+            data_lines=[]
+            name=event
+            event=""
+            if raw=="[DONE]":
+                break
+            try:
+                payload=json.loads(raw)
+            except (TypeError,ValueError):
+                raise ValueError("Invalid BharatCode streaming JSON event") from None
+            completed=handle_event(name,payload)
+            if completed is not None:
+                break
+
+    if completed is None and data_lines:
+        raw="\\n".join(data_lines)
+        if raw!="[DONE]":
+            try:
+                completed=handle_event(event,json.loads(raw))
+            except (TypeError,ValueError):
+                raise ValueError("Invalid BharatCode final streaming event") from None
+    if completed is None:
+        raise ValueError("BharatCode stream ended without response.completed")
+    if chunks and not completed.get("output"):
+        completed={**completed,"output_text":"".join(chunks)}
+    return completed
+
+
 class BharatCodeClient:
-    def __init__(self, cache_dir=".cache/aksharacheck", *, use_cache=True):
+    def __init__(self, cache_dir=".cache/aksharacheck", *, use_cache=True, stream=False):
         self.key=os.getenv("BHARATCODE_API_KEY","")
         self.use_cache=use_cache
+        self.stream=stream
         self.cache=Path(cache_dir)
         if self.use_cache:
             self.cache.mkdir(parents=True,exist_ok=True)
@@ -165,15 +241,28 @@ class BharatCodeClient:
             for attempt in range(3):
                 try:
                     started=time.monotonic()
-                    resp=await client.post(API_URL,headers={"Authorization":f"Bearer {self.key}"},json=payload)
-                    if resp.status_code in {429,503}:
-                        last_issue=f"HTTP {resp.status_code}: model busy or rate limited"
+                    if self.stream:
+                        async with client.stream(
+                            "POST",API_URL,headers={"Authorization":f"Bearer {self.key}",
+                                                    "Accept":"text/event-stream"},
+                            json={**payload,"stream":True},
+                        ) as resp:
+                            status=status
+                            request_id=resp.headers.get("x-request-id","")
+                            body=await asyncio.wait_for(read_bharatcode_stream(resp),timeout=300) if status==200 else None
+                    else:
+                        resp=await client.post(API_URL,headers={"Authorization":f"Bearer {self.key}"},json=payload)
+                        status=status
+                        request_id=resp.headers.get("x-request-id","")
+                        body=resp.json() if status==200 else None
+                    if status in {429,503}:
+                        last_issue=f"HTTP {status}: model busy or rate limited"
                         if attempt < 2:
                             await asyncio.sleep(2**(attempt+1))
                             continue
                         break
-                    if resp.status_code != 200:
-                        code=resp.status_code
+                    if status != 200:
+                        code=status
                         messages={
                             400:"HTTP 400: request rejected; inspect payload/schema",
                             401:"HTTP 401: API authentication rejected",
@@ -183,8 +272,9 @@ class BharatCodeClient:
                             422:"HTTP 422: request validation failed",
                         }
                         last_issue=messages.get(code,f"HTTP {code}: provider returned an error")
+                        if isinstance(request_id,str) and re.fullmatch(r"[A-Za-z0-9_-]{3,80}",request_id):
+                            last_issue+=f"; request ID: {request_id}"
                         break
-                    body=resp.json()
                     try:
                         result=parse_response(body)
                     except (ValueError,TypeError,KeyError) as exc:
@@ -217,11 +307,24 @@ class BharatCodeClient:
                     if self.use_cache:
                         cache_file.write_text(json.dumps(answer,ensure_ascii=False),encoding="utf-8")
                     return answer
-                except (httpx.TimeoutException,httpx.TransportError):
-                    last_issue="Network or queue timeout"
-                    if attempt<2:
-                        await asyncio.sleep(2**(attempt+1))
-                        continue
+                except httpx.ConnectTimeout:
+                    last_issue="Connection timeout reaching BharatCode"
+                    break
+                except httpx.ReadTimeout:
+                    last_issue="Read timeout: no model output or queue keepalive received"
+                    # Do not repeatedly resend a possibly queued generation.
+                    break
+                except httpx.WriteTimeout:
+                    last_issue="Upload/write timeout sending BharatCode request"
+                    break
+                except httpx.PoolTimeout:
+                    last_issue="HTTP connection pool timeout"
+                    break
+                except httpx.TransportError:
+                    last_issue="Network transport failure"
+                    break
+                except TimeoutError:
+                    last_issue="BharatCode model stream exceeded the bounded request duration"
                     break
                 except (ValueError,KeyError,TypeError):
                     last_issue="Provider response could not be decoded"
@@ -311,14 +414,14 @@ async def verify_css(finding, css, *, allow_local=False):
     return await verify_patch(finding, {"css":css}, allow_local=allow_local)
 
 
-async def explain_and_verify(report, allow_local=False, max_fixes=8, progress=None, output_dir=None, max_attempts=3, use_cache=True, on_completed=None):
+async def explain_and_verify(report, allow_local=False, max_fixes=8, progress=None, output_dir=None, max_attempts=3, use_cache=True, on_completed=None, stream=False):
     """Ask BharatCode for an explanation and a repair, then let Chromium judge it.
 
     A rejected repair goes back to the model with the browser's reason, up to
     max_attempts times. Every attempt is kept, so the report shows the whole
     trail and not only the winner.
     """
-    client=BharatCodeClient(use_cache=use_cache)
+    client=BharatCodeClient(use_cache=use_cache,stream=stream)
     if not client.key:raise ValueError("Set BHARATCODE_API_KEY on the server to use --ai")
     stats={"model":MODEL,"calls":0,"input_tokens":0,"output_tokens":0,"seconds":0.0}
 
