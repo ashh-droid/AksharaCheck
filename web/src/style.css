@@ -315,7 +315,7 @@ figcaption { margin-top: 6px; text-align: center; font-size: 13px; color: var(--
 .check-card p { margin: 6px 20px 22px; font-size: 16px; color: var(--ink-soft); }
 
 /* Run it */
-.run { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: clamp(28px, 5vw, 64px); align-items: center; padding-top: var(--section); }
+.run { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: clamp(28px, 5vw, 64px); align-items: center; padding-top: var(--section); margin-top: clamp(12px, 2vw, 24px); }
 .run-copy p { margin-top: 14px; font-size: 18px; color: var(--ink-soft); max-width: 44ch; }
 .run-copy p.muted { font-size: 15px; }
 .run-copy .btn { margin-top: 22px; }
