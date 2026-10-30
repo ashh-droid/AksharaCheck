@@ -104,3 +104,10 @@ def test_closing_banner_is_modestly_compact_without_changing_footer_or_hero():
     assert ".cta .btn { margin-left: auto; min-height: 44px; padding-inline: 20px; }" in css
     assert "Restore the earlier compact, stacked trilingual footer lockup" in css
     assert "min-height: calc(100svh - 88px)" in css
+
+def test_desktop_hero_content_is_lifted_without_reflow():
+    css=(WEB / "src" / "style.css").read_text(encoding="utf-8")
+    assert "Slight optical lift:" in css
+    assert ".hero > .hero-copy,\n  .hero > .demo" in css
+    assert "top: -clamp(12px, 2.5vh, 24px);" in css
+    assert "min-height: calc(100svh - 88px)" in css

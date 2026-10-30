@@ -437,3 +437,14 @@ figcaption { margin-top: 6px; text-align: center; font-size: 13px; color: var(--
   .hero h1 { font-size: clamp(46px, 5.55vw, 80px); }
   .demo-glyphs { font-size: clamp(44px, 4.7vw, 70px); }
 }
+
+/* Slight optical lift: the desktop hero fills the viewport, but its two
+   columns sit just above mathematical center for a more balanced first fold.
+   Keep the grid, sizes, section height, and phone/tablet flow unchanged. */
+@media (min-width: 1025px) {
+  .hero > .hero-copy,
+  .hero > .demo {
+    position: relative;
+    top: -clamp(12px, 2.5vh, 24px);
+  }
+}

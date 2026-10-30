@@ -52,7 +52,9 @@ def check(page, width, height):
             return {headerBottom: header.bottom, heroTop: stage.top,
                     heroBottom: stage.bottom, heroHeight: stage.height,
                     nextTop: next.top, viewportHeight: innerHeight,
-                    copyWidth: box('.hero-copy').width, demoWidth: box('.demo').width};
+                    copyWidth: box('.hero-copy').width, demoWidth: box('.demo').width,
+                    copyTop: box('.hero-copy').top, copyBottom: box('.hero-copy').bottom,
+                    demoTop: box('.demo').top, demoBottom: box('.demo').bottom};
         }""")
         assert hero["nextTop"] >= height - 3, (
             f"{width}px: next section is visible beneath the hero: {hero}")
@@ -61,6 +63,13 @@ def check(page, width, height):
         assert abs(hero["heroTop"] - hero["headerBottom"]) <= 3, (
             f"{width}px: unexpected gap below the header: {hero}")
         assert hero["copyWidth"] > 0 and hero["demoWidth"] > 0
+        # Both columns move together slightly above the viewport's
+        # mathematical center; their horizontal layout is unchanged.
+        expected_lift=max(12,min(height*.025,24))
+        hero_center=(hero["heroTop"]+hero["heroBottom"])/2
+        content_center=(min(hero["copyTop"],hero["demoTop"])+max(hero["copyBottom"],hero["demoBottom"]))/2
+        assert abs((hero_center-content_center)-expected_lift)<6, (
+            f"{width}px: hero content isn't optically lifted by {expected_lift:g}px: {hero}")
 
     # Footer: the English identity sits above the two Indic names.
     footer = page.evaluate("""() => {
