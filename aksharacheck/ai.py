@@ -311,7 +311,7 @@ async def verify_css(finding, css, *, allow_local=False):
     return await verify_patch(finding, {"css":css}, allow_local=allow_local)
 
 
-async def explain_and_verify(report, allow_local=False, max_fixes=8, progress=None, output_dir=None, max_attempts=3, use_cache=True):
+async def explain_and_verify(report, allow_local=False, max_fixes=8, progress=None, output_dir=None, max_attempts=3, use_cache=True, on_completed=None):
     """Ask BharatCode for an explanation and a repair, then let Chromium judge it.
 
     A rejected repair goes back to the model with the browser's reason, up to
@@ -335,6 +335,9 @@ async def explain_and_verify(report, allow_local=False, max_fixes=8, progress=No
     candidates=[f for f in report["findings"] if f["severity"]!="info"]
     candidates.sort(key=lambda f: (0 if f["detector"] in PATCHABLE else 1))
     for f in candidates[:max_fixes]:
+        if f.get("ai_resumed") and f.get("ai_explanation") and (f.get("fix") or {}).get("status") in {"verified","not-applicable"}:
+            if progress:await progress(f"Reusing earlier BharatCode explanation for {f['detector']} (browser rechecked if repairable)")
+            continue
         if progress:await progress(f"BharatCode is analysing {f['detector']}")
         proposal=await client.propose(f)
         account(proposal)
@@ -350,6 +353,9 @@ async def explain_and_verify(report, allow_local=False, max_fixes=8, progress=No
         f['summary_kn']=proposal.get('summary_kn','')
         if f["detector"] not in PATCHABLE:
             f["fix"]={"status":"not-applicable","reason":"No automatic repair for this detector"}
+            if on_completed:
+                result_cb=on_completed(f)
+                if asyncio.iscoroutine(result_cb):await result_cb
             continue
         attempts=[]
         result={"status":"unverified","reason":"No eligible repair"}
@@ -368,5 +374,8 @@ async def explain_and_verify(report, allow_local=False, max_fixes=8, progress=No
             if proposal.get("status")!="proposed":
                 break
         f["fix"]={**result,"attempts":attempts}
-    report["ai"]=stats
+        if on_completed and result["status"]=="verified" and f.get("summary_hi") and f.get("summary_kn"):
+            result_cb=on_completed(f)
+            if asyncio.iscoroutine(result_cb):await result_cb
+    report["ai"]={**stats,"resumed_findings":sum(bool(f.get("ai_resumed")) for f in report["findings"])}
     return report
