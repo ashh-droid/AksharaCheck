@@ -81,7 +81,9 @@ Once that succeeds, run the full AI demonstration:
 start output\ai-demo\report.html
 ```
 
-The demo starts a temporary localhost fixture server, runs Chromium, makes real BharatCode calls, and saves `output/ai-demo/report.html`. If a model request fails, the terminal now reports a safe diagnostic such as HTTP 400, incomplete output, or queue timeout, without printing the key, untrusted site content, or full provider response. Read the repair status on each finding. Never present a suggested fix as verified unless the independent browser recheck passes.
+The demo starts a temporary localhost fixture server, runs Chromium, makes **fresh** BharatCode calls (it bypasses the local answer cache), and saves `output/ai-demo/report.html` **only after a successful complete run**. A failed model request never replaces a previous successful HTML/JSON/Markdown report. If a request fails, the terminal reports a safe diagnostic such as HTTP 400, HTTP 401, incomplete output, or queue timeout, without printing the key, untrusted site content, or full provider response.
+
+**If a successful model call is followed by HTTP 401:** run `scripts/check_bharatcode.py` again and enter the *same account's* key through the hidden prompt. If the catalog or generation now rejects the key, review its validity and privileges in the BharatCode account. If the smoke test still returns HTTP 200 but the demo returns HTTP 401, share only sanitized status codes with the provider; do not paste the key or raw authorization headers anywhere. Read the repair status on each finding. Never present a suggested fix as verified unless the independent browser recheck passes.
 
 ## Web app
 
