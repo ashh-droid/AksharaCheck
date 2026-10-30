@@ -369,12 +369,12 @@ body{font-size:16px;line-height:1.55}
 }
 
 /* Shared trilingual identity. One compact typographic scale at every breakpoint. */
-.topbar-inner{min-height:80px;padding-block:11px;gap:clamp(12px,1.8vw,28px)}
-.topbar .brand{gap:12px;min-width:0;white-space:normal;letter-spacing:normal}
-.topbar .brand .brand-symbol{display:block;width:40px;height:40px;flex:0 0 40px}
-.brand-lettering{display:flex;flex-direction:column;justify-content:center;min-width:0;gap:4px}
-.topbar .brand-name{display:block;font-size:clamp(23px,1.7vw,27px);font-weight:750;letter-spacing:-.025em;line-height:1.09;white-space:nowrap}
-.topbar .brand-subtitle{display:flex;align-items:center;flex-wrap:wrap;gap:2px 7px;font-size:clamp(11px,.82vw,13px);font-weight:550;line-height:1.3;color:var(--ink-soft);white-space:normal;margin:0}
+.topbar-inner{min-height:102px;padding-block:16px;gap:clamp(14px,2vw,28px)}
+.topbar .brand{gap:14px;min-width:0;white-space:normal;letter-spacing:normal}
+.topbar .brand .brand-symbol{display:block;width:48px;height:48px;flex:0 0 48px}
+.brand-lettering{display:flex;flex-direction:column;justify-content:center;min-width:0;gap:5px}
+.topbar .brand-name{display:block;font-size:clamp(29px,2.15vw,34px);font-weight:750;letter-spacing:-.027em;line-height:1.1;white-space:nowrap}
+.topbar .brand-subtitle{display:flex;align-items:center;flex-wrap:wrap;gap:2px 8px;font-size:clamp(13px,1vw,15px);font-weight:550;line-height:1.35;color:var(--ink-soft);white-space:normal;margin:0}
 .brand-divider{color:var(--green);font-weight:700;opacity:.7}
 .topbar nav{gap:clamp(13px,1.7vw,26px)}
 .topbar nav a{font-size:14px;line-height:1.3;white-space:nowrap}
@@ -387,10 +387,10 @@ body{font-size:16px;line-height:1.55}
 .footer>div:last-child{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:10px 22px}
 .footer a{font-size:13px;line-height:1.45}
 @media(max-width:980px){
- .topbar-inner{position:relative;min-height:74px;padding-block:10px;flex-wrap:nowrap}
- .topbar .brand-name{font-size:24px}
- .topbar .brand-subtitle{font-size:12px}
- .topbar .brand .brand-symbol{width:38px;height:38px;flex-basis:38px}
+ .topbar-inner{position:relative;min-height:92px;padding-block:14px;flex-wrap:nowrap}
+ .topbar .brand-name{font-size:27px}
+ .topbar .brand-subtitle{font-size:13px}
+ .topbar .brand .brand-symbol{width:43px;height:43px;flex-basis:43px}
  .menu-toggle{display:inline-flex;align-items:center;justify-content:center;margin-left:auto;flex:none;min-height:41px;padding:0 14px}
  .topbar nav{display:none;position:absolute;top:100%;left:0;right:0;z-index:21;margin:0;padding:8px 12px 12px;background:var(--sheet);border:1px solid var(--line);border-radius:0 0 8px 8px;box-shadow:0 14px 22px rgba(27,36,64,.11);flex-direction:column;align-items:stretch;gap:0}
  .topbar nav.is-open{display:flex}
@@ -403,12 +403,12 @@ body{font-size:16px;line-height:1.55}
  .footer-brand strong{font-size:22px}
 }
 @media(max-width:480px){
- .topbar-inner{min-height:72px;padding-block:10px;gap:9px}
- .topbar .brand{gap:9px}
- .topbar .brand .brand-symbol{width:34px;height:34px;flex-basis:34px}
- .brand-lettering{gap:3px}
- .topbar .brand-name{font-size:21px;line-height:1.12}
- .topbar .brand-subtitle{font-size:10.5px;gap:1px 5px;line-height:1.3}
+ .topbar-inner{min-height:82px;padding-block:13px;gap:10px}
+ .topbar .brand{gap:10px}
+ .topbar .brand .brand-symbol{width:37px;height:37px;flex-basis:37px}
+ .brand-lettering{gap:4px}
+ .topbar .brand-name{font-size:clamp(22px,5.9vw,24px);line-height:1.12}
+ .topbar .brand-subtitle{font-size:11px;gap:2px 6px;line-height:1.35}
  .menu-toggle{min-height:38px;padding:0 10px;font-size:13px}
  .footer-brand{gap:9px}
  .footer-brand .brand-symbol{width:31px;height:31px;flex-basis:31px}
@@ -417,7 +417,7 @@ body{font-size:16px;line-height:1.55}
  .footer a{font-size:12.5px}
 }
 @media(max-width:360px){
- .topbar .brand-name{font-size:20px}
- .topbar .brand-subtitle{font-size:10px}
- .topbar .brand .brand-symbol{width:32px;height:32px;flex-basis:32px}
+ .topbar .brand-name{font-size:22px}
+ .topbar .brand-subtitle{font-size:10.5px}
+ .topbar .brand .brand-symbol{width:35px;height:35px;flex-basis:35px}
 }

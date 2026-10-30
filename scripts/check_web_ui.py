@@ -92,14 +92,18 @@ def main():
                     footerSize:parseFloat(style('.footer-brand strong').fontSize),
                     footerRight:footer.right,footNameRight:footName.right};
             }""")
-            assert identity["headHeight"]>=69,f"{width}px: brand lacks vertical breathing room: {identity}"
+            min_height=102 if width>980 else (92 if width>480 else 82)
+            assert identity["headHeight"]>=min_height-3,f"{width}px: header height missing breathing room: {identity}"
             assert identity["brandLeft"]>=identity["headLeft"]-2 and identity["brandRight"]<=identity["headRight"]+2,(
                 f"{width}px: brand outside header: {identity}"
             )
             assert identity["subGap"]>=1,f"{width}px: language subtitle touches English title: {identity}"
-            assert 19<=identity["nameSize"]<=27.2,f"{width}px: oversized English brand: {identity}"
-            assert 10<=identity["subtitleSize"]<=13.2,f"{width}px: inconsistent Indic subtitle: {identity}"
-            assert identity["logoWidth"]<=41,f"{width}px: oversized brand mark: {identity}"
+            name_min,name_max=(29,34.2) if width>980 else ((26.5,27.5) if width>480 else (21.8,24.2))
+            assert name_min<=identity["nameSize"]<=name_max,f"{width}px: brand name out of proportional scale: {identity}"
+            sub_min,sub_max=(13,15.2) if width>980 else ((12.7,13.2) if width>480 else (10.4,11.2))
+            assert sub_min<=identity["subtitleSize"]<=sub_max,f"{width}px: multilingual subtitle not scaled with title: {identity}"
+            mark_min,mark_max=(47,49) if width>980 else ((42,44) if width>480 else (34,38))
+            assert mark_min<=identity["logoWidth"]<=mark_max,f"{width}px: logo not scaled with name: {identity}"
             assert identity["footerRight"]<=width+2,f"{width}px: footer clipped horizontally: {identity}"
             if width<=980:
                 assert identity["menuVisible"] and not identity["navVisible"],(
@@ -132,7 +136,7 @@ def main():
                 hero_height=page.locator(".hero").evaluate("(el)=>el.getBoundingClientRect().height")
                 header_height=page.locator(".topbar").evaluate("(el)=>el.getBoundingClientRect().height")
                 assert hero_height>=height-header_height-3,f"{width}px: desktop hero fails to use the vertical viewport"
-                assert 23<=desktop["brand"]<=27.2,f"{width}px: brand typography outside balanced range: {desktop}"
+                assert 29<=desktop["brand"]<=34.2,f"{width}px: brand typography outside balanced range: {desktop}"
                 assert 21<=desktop["footerBrand"]<=24.2,f"{width}px: footer typography outside balanced range: {desktop}"
                 assert desktop["sheet"]>=500,f"{width}px: hero art too narrow: {desktop}"
             assert geometry["brand"]>(150 if width<=480 else 180),f"{width}px: brand lockup too small"
