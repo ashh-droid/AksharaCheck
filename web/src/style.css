@@ -368,30 +368,56 @@ body{font-size:16px;line-height:1.55}
  .footer a{font-size:13px}
 }
 
-
-/* Trilingual identity: header and footer must stay visible in every build. */
-.brand-lettering{display:flex;flex-direction:column;justify-content:center;min-width:0;gap:2px}
-.topbar .brand-name{font-size:clamp(28px,2.15vw,36px);font-weight:750;letter-spacing:-.025em;line-height:1.06}
-.topbar .brand-subtitle{display:flex;align-items:center;flex-wrap:wrap;column-gap:8px;row-gap:1px;white-space:normal;font-size:clamp(12px,.91vw,15px);font-weight:550;line-height:1.3;color:var(--ink-soft);margin-top:4px}
+/* Shared trilingual identity. One compact typographic scale at every breakpoint. */
+.topbar-inner{min-height:80px;padding-block:11px;gap:clamp(12px,1.8vw,28px)}
+.topbar .brand{gap:12px;min-width:0;white-space:normal;letter-spacing:normal}
+.topbar .brand .brand-symbol{display:block;width:40px;height:40px;flex:0 0 40px}
+.brand-lettering{display:flex;flex-direction:column;justify-content:center;min-width:0;gap:4px}
+.topbar .brand-name{display:block;font-size:clamp(23px,1.7vw,27px);font-weight:750;letter-spacing:-.025em;line-height:1.09;white-space:nowrap}
+.topbar .brand-subtitle{display:flex;align-items:center;flex-wrap:wrap;gap:2px 7px;font-size:clamp(11px,.82vw,13px);font-weight:550;line-height:1.3;color:var(--ink-soft);white-space:normal;margin:0}
 .brand-divider{color:var(--green);font-weight:700;opacity:.7}
-.footer-brand{display:flex;align-items:center;gap:13px;min-width:0}
-.footer-brand-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
-.footer-brand strong{font-size:clamp(23px,1.7vw,30px);font-weight:750;letter-spacing:-.025em;line-height:1.08;color:var(--ink)}
-.footer-brand-languages{display:flex;align-items:center;flex-wrap:wrap;gap:3px 8px;font-size:clamp(12px,.85vw,14px);line-height:1.35;color:var(--ink-soft)}
-.topbar .brand .logo{width:47px;height:47px;flex:none}
-.footer-brand .logo{width:38px;height:38px;flex:none}
+.topbar nav{gap:clamp(13px,1.7vw,26px)}
+.topbar nav a{font-size:14px;line-height:1.3;white-space:nowrap}
+.footer{gap:16px 28px;padding:26px 0 38px;align-items:center}
+.footer-brand{display:flex;align-items:center;gap:12px;min-width:0;flex-wrap:nowrap}
+.footer-brand .brand-symbol{display:block;width:34px;height:34px;flex:0 0 34px}
+.footer-brand-copy{display:flex;flex-direction:column;gap:4px;min-width:0}
+.footer-brand strong{font-size:clamp(21px,1.5vw,24px);font-weight:750;letter-spacing:-.02em;line-height:1.12;color:var(--ink)}
+.footer-brand-languages{display:flex;align-items:center;flex-wrap:wrap;gap:2px 7px;font-size:12px;line-height:1.35;color:var(--ink-soft)}
+.footer>div:last-child{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:10px 22px}
+.footer a{font-size:13px;line-height:1.45}
+@media(max-width:980px){
+ .topbar-inner{position:relative;min-height:74px;padding-block:10px;flex-wrap:nowrap}
+ .topbar .brand-name{font-size:24px}
+ .topbar .brand-subtitle{font-size:12px}
+ .topbar .brand .brand-symbol{width:38px;height:38px;flex-basis:38px}
+ .menu-toggle{display:inline-flex;align-items:center;justify-content:center;margin-left:auto;flex:none;min-height:41px;padding:0 14px}
+ .topbar nav{display:none;position:absolute;top:100%;left:0;right:0;z-index:21;margin:0;padding:8px 12px 12px;background:var(--sheet);border:1px solid var(--line);border-radius:0 0 8px 8px;box-shadow:0 14px 22px rgba(27,36,64,.11);flex-direction:column;align-items:stretch;gap:0}
+ .topbar nav.is-open{display:flex}
+ .topbar nav a,.topbar nav a:not(.nav-github){display:flex;align-items:center;justify-content:flex-start;min-height:44px;padding:10px 12px;font-size:15px;white-space:normal}
+ .topbar nav .nav-github{margin-top:6px;justify-content:center}
+}
 @media(max-width:760px){
- .topbar .brand-name{font-size:clamp(23px,3.5vw,29px)}
- .topbar .brand-subtitle{font-size:12px;column-gap:6px}
- .footer-brand strong{font-size:clamp(22px,3.1vw,27px)}
- .footer-brand-languages{font-size:12px}
+ .footer{flex-direction:column;align-items:flex-start;padding-block:24px 32px}
+ .footer>div:last-child{justify-content:flex-start}
+ .footer-brand strong{font-size:22px}
 }
 @media(max-width:480px){
- .topbar .brand-name{font-size:22px}
- .topbar .brand-subtitle{font-size:11px;column-gap:5px;margin-top:2px}
- .topbar .brand .logo{width:34px;height:34px}
+ .topbar-inner{min-height:72px;padding-block:10px;gap:9px}
+ .topbar .brand{gap:9px}
+ .topbar .brand .brand-symbol{width:34px;height:34px;flex-basis:34px}
+ .brand-lettering{gap:3px}
+ .topbar .brand-name{font-size:21px;line-height:1.12}
+ .topbar .brand-subtitle{font-size:10.5px;gap:1px 5px;line-height:1.3}
+ .menu-toggle{min-height:38px;padding:0 10px;font-size:13px}
  .footer-brand{gap:9px}
- .footer-brand .logo{width:34px;height:34px}
- .footer-brand strong{font-size:22px}
- .footer-brand-languages{font-size:11px;gap:2px 6px}
+ .footer-brand .brand-symbol{width:31px;height:31px;flex-basis:31px}
+ .footer-brand strong{font-size:21px}
+ .footer-brand-languages{font-size:11px;gap:2px 5px}
+ .footer a{font-size:12.5px}
+}
+@media(max-width:360px){
+ .topbar .brand-name{font-size:20px}
+ .topbar .brand-subtitle{font-size:10px}
+ .topbar .brand .brand-symbol{width:32px;height:32px;flex-basis:32px}
 }
