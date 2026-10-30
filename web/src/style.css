@@ -445,6 +445,6 @@ figcaption { margin-top: 6px; text-align: center; font-size: 13px; color: var(--
   .hero > .hero-copy,
   .hero > .demo {
     position: relative;
-    top: -clamp(12px, 2.5vh, 24px);
+    top: calc(-1 * clamp(12px, 2.5vh, 24px));
   }
 }

@@ -109,5 +109,5 @@ def test_desktop_hero_content_is_lifted_without_reflow():
     css=(WEB / "src" / "style.css").read_text(encoding="utf-8")
     assert "Slight optical lift:" in css
     assert ".hero > .hero-copy,\n  .hero > .demo" in css
-    assert "top: -clamp(12px, 2.5vh, 24px);" in css
+    assert "top: calc(-1 * clamp(12px, 2.5vh, 24px));" in css
     assert "min-height: calc(100svh - 88px)" in css
