@@ -1,4 +1,5 @@
 """The report shows the proof on the card, uses one severity vocabulary and works offline."""
+import json
 import re
 
 from aksharacheck.report import FONT_FILES, write_reports
@@ -199,7 +200,7 @@ def test_language_fix_does_not_show_identical_before_and_after(tmp_path):
         element_screenshot="element-abc123-390.png",
         fix={"status": "verified", "css": {}, "attributes": {"lang": "hi"}, "viewport": 390,
              "after_screenshot": "element-abc123-390-fixed.png"})])
-    assert "element-abc123-390-fixed.png" not in page
+    assert "element-abc123-390-fixed.png" not in page.split("<script")[0]
     assert "screen readers treat the text as Hindi" in page
     assert "Tagged as English (en), but written in Devanagari." in page
 
@@ -319,5 +320,18 @@ def test_header_has_large_name_and_matching_download_buttons(tmp_path):
     page = render(tmp_path, [finding()])
     css = page.split("<style>")[1].split("</style>")[0]
     assert ".brand-name{font-size:30px;" in css
-    assert '<a href="report.md" download aria-label="Download Markdown"><svg class="ico"' in page
+    assert 'data-file="md" aria-label="Download Markdown"><svg class="ico"' in page
     assert '<span class="dl-word">Download </span>JSON' in page
+
+
+def test_download_buttons_carry_their_files_and_hide_internal_handles(tmp_path):
+    page = render(tmp_path, [finding(sample="</script><b>x</b>")], generated_at="2026-10-30T19:15:48+00:00")
+    assert 'download="aksharacheck-report-2026-10-30.md" data-file="md"' in page
+    assert 'download="aksharacheck-report-2026-10-30.json" data-file="json"' in page
+    embedded = page.split('<script type="application/json" id="report-files">')[1].split("</script>")[0]
+    files = json.loads(embedded)
+    assert files["md"] == (tmp_path / "report.md").read_text(encoding="utf-8")
+    assert files["json"] == (tmp_path / "report.json").read_text(encoding="utf-8")
+    assert "</script><b>" not in embedded
+    assert "data-akshara-id" not in page.split("<script")[0]
+    assert "data-akshara-id" not in (tmp_path / "report.md").read_text(encoding="utf-8")

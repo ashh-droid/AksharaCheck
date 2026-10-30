@@ -33,7 +33,7 @@ def check(path):
         browser = playwright.chromium.launch(**options)
         try:
             for width, height in WIDTHS:
-                page = browser.new_page(viewport={"width": width, "height": height})
+                page = browser.new_page(viewport={"width": width, "height": height}, accept_downloads=True)
                 errors = []
                 page.on("pageerror", lambda err: errors.append(str(err)))
                 page.goto(source.as_uri())
@@ -76,6 +76,18 @@ def check(path):
                     if tabs.count():
                         tabs.first.click()
 
+                # Downloads must save a file even from a file:// report, where browsers ignore "download".
+                if width == WIDTHS[-1][0]:
+                    for kind in ("md", "json"):
+                        with page.expect_download(timeout=5000) as saved:
+                            page.locator(f'.downloads a[data-file="{kind}"]').click()
+                        name = saved.value.suggested_filename
+                        assert name.endswith("." + kind), f"{where}: {kind} download saved as {name}"
+                        text = Path(saved.value.path()).read_text(encoding="utf-8")
+                        assert text.strip(), f"{where}: {kind} download is empty"
+                        if kind == "json":
+                            json.loads(text)
+                    assert page.url == source.as_uri(), f"{where}: a download button navigated away from the report"
                 assert not errors, f"{where}: JavaScript errors {errors}"
                 page.screenshot(path=str(dest / f"report-{width}.png"), full_page=True)
                 page.close()

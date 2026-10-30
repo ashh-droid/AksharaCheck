@@ -383,7 +383,6 @@ def _card(f, folder, ai_ran=False):
     raw=esc(json.dumps(details,ensure_ascii=False,indent=2))
     more=('<details class="more"><summary>Technical details</summary><dl>'
           '<div><dt>Page</dt><dd>'+_safe_link(f.get("url",""))+'</dd></div>'
-          +('<div><dt>Element</dt><dd><code>'+esc(f.get("selector",""))+'</code></dd></div>' if f.get("selector") not in (None,"","document") else "")
           +'<div><dt>Checked at</dt><dd>'+esc(_widths(f))+'</dd></div>'
           +('<div><dt>Screenshot</dt><dd><a href="'+esc(shot)+'" target="_blank" rel="noopener noreferrer">Whole page at '+esc(f.get("viewport",""))+' px</a></dd></div>' if shot else "")
           +'</dl><pre>'+raw+'</pre></details>')
@@ -641,10 +640,34 @@ figcaption{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);tex
 """
 
 
-def _html_report(data,folder):
+def _file_stem(data):
+    """A download name people can recognise later, such as aksharacheck-report-2026-10-30."""
+    day=str(data.get("generated_at") or "")[:10]
+    return "aksharacheck-report"+("-"+day if re.fullmatch(r"\d{4}-\d{2}-\d{2}",day) else "")
+
+
+def _download_script(files):
+    """Browsers ignore the download attribute on file:// pages and just open the file.
+    The report carries its own Markdown and JSON, so the buttons can save a copy
+    wherever the report is opened. Without JavaScript the links still open the files."""
+    if not files:
+        return ""
+    payload=json.dumps(files,ensure_ascii=False).replace("<","\\u003c")
+    return ('<script type="application/json" id="report-files">'+payload+'</script>'
+            '<script>document.querySelectorAll(".downloads a[data-file]").forEach(function(link){'
+            'link.addEventListener("click",function(event){try{'
+            'var files=JSON.parse(document.getElementById("report-files").textContent);var kind=link.dataset.file;'
+            'var blob=new Blob([files[kind]],{type:kind==="json"?"application/json;charset=utf-8":"text/markdown;charset=utf-8"});'
+            'var url=URL.createObjectURL(blob);var save=document.createElement("a");save.href=url;'
+            'save.download=link.getAttribute("download");document.body.appendChild(save);save.click();save.remove();'
+            'setTimeout(function(){URL.revokeObjectURL(url)},2000);event.preventDefault();}catch(error){}});});</script>')
+
+
+def _html_report(data,folder,files=None):
     findings=data.get("findings",[])
     counts=Counter(f.get("severity","info") for f in findings)
     target=data.get("target","")
+    stem=_file_stem(data)
     groups=defaultdict(lambda:defaultdict(list))
     for f in findings:
         groups[f.get("severity","info")][f.get("detector","unknown")].append(f)
@@ -692,15 +715,15 @@ def _html_report(data,folder):
         '<title>'+esc(name)+' | AksharaCheck report</title><style>'+CSS+'</style></head><body>'
         '<header class="shell"><div class="top"><span class="brand">'+LOGO+'<span class="brand-text"><span class="brand-name">AksharaCheck</span>'
         '<span class="brand-sub"><span lang="hi">अक्षर जाँच</span><span lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ</span></span></span></span>'
-        '<nav class="downloads" aria-label="Download this report"><a href="report.md" download aria-label="Download Markdown">'+DOWNLOAD+'<span><span class="dl-word">Download </span>Markdown</span></a>'
-        '<a href="report.json" download aria-label="Download JSON">'+DOWNLOAD+'<span><span class="dl-word">Download </span>JSON</span></a></nav></div></header>'
+        '<nav class="downloads" aria-label="Download this report"><a href="report.md" download="'+esc(stem)+'.md" data-file="md" aria-label="Download Markdown">'+DOWNLOAD+'<span><span class="dl-word">Download </span>Markdown</span></a>'
+        '<a href="report.json" download="'+esc(stem)+'.json" data-file="json" aria-label="Download JSON">'+DOWNLOAD+'<span><span class="dl-word">Download </span>JSON</span></a></nav></div></header>'
         '<main class="shell"><section class="cover" aria-labelledby="report-title"><p class="for">Rendering report</p>'
         '<h1 id="report-title">'+_safe_link(target,name)+'</h1>'
         '<p class="verdict">'+esc(_summary_sentence(counts))+'</p>'
         '<p class="meta">'+esc(checked)+'</p>'+_ai_line(data)+''.join(notices)+'</section>'
         +_overview(groups,counts)+"".join(bands)+'</main>'
         '<footer class="shell"><div class="foot"><span>AksharaCheck measures how Chromium draws the page. It is not a full accessibility audit.</span>'
-        '<span><span lang="hi">अक्षर जाँच</span> · <span lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ</span></span></div></footer></body></html>'
+        '<span><span lang="hi">अक्षर जाँच</span> · <span lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ</span></span></div></footer>'+_download_script(files)+'</body></html>'
     )
 
 
@@ -740,7 +763,7 @@ def _markdown(data):
             if measured:
                 lines+=[measured,""]
             for item in _merged_sequences((f.get("evidence") or {}).get("invalid_sequences") or []):
-                lines.append("- "+item["sequence"].strip()+" `"+" ".join(item["codepoints"])+"`: "+item["reason"])
+                lines.append("- "+item["sequence"].strip()+" `"+" ".join(item["codepoints"])+"`: "+PLAIN_REASONS.get(item["reason"].lower(),item["reason"]))
             english=_clean(f.get("ai_explanation"))
             if english and not english.startswith(("BharatCode unavailable","AI unavailable","BharatCode API")):
                 lines+=["","BharatCode: "+english]
@@ -755,8 +778,7 @@ def _markdown(data):
                 lines+=["","What to change: "+action]
             for t in fix.get("attempts") or []:
                 lines.append("- Tried `"+_css_text(t).replace("\n"," ")+"`: "+("passed" if t.get("status")=="verified" else "rejected, "+str(t.get("reason",""))))
-            where=" on "+str(f.get("url","")) if f.get("selector") in (None,"","document") else ": `"+str(f.get("selector",""))+"` on "+str(f.get("url",""))
-            lines+=["","Element"+where,""]
+            lines+=["","Page: "+str(f.get("url","")),""]
     return "\n".join(lines)
 
 
@@ -766,7 +788,9 @@ def write_reports(data,dest):
     # Findings live once, at the top level; pages keep their own counts and screenshots.
     saved={**data,"pages":[{**{k:v for k,v in page.items() if k!="findings"},"finding_count":len(page.get("findings") or [])}
                             if isinstance(page,dict) else page for page in data.get("pages",[])]}
-    (folder/"report.json").write_text(json.dumps(saved,indent=2,ensure_ascii=False),encoding="utf-8")
-    (folder/"report.md").write_text(_markdown(data),encoding="utf-8")
+    json_text=json.dumps(saved,indent=2,ensure_ascii=False)
+    markdown=_markdown(data)
+    (folder/"report.json").write_text(json_text,encoding="utf-8")
+    (folder/"report.md").write_text(markdown,encoding="utf-8")
     _copy_fonts(folder)
-    (folder/"report.html").write_text(_html_report(data,folder),encoding="utf-8")
+    (folder/"report.html").write_text(_html_report(data,folder,{"md":markdown,"json":json_text}),encoding="utf-8")
