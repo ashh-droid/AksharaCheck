@@ -45,6 +45,7 @@ type Report = {
 type Job = { status: string; events: string[]; error?: string };
 type RecordedScan = {
   slug: string;
+  kind?: 'fixture' | 'public';
   title: string;
   target: string;
   scanned_at: string;
@@ -557,12 +558,12 @@ function RecordedScans({ scans }: { scans: RecordedScan[] }) {
   if (!scans.length) return null;
   return (
     <div className="recorded">
-      <h3>Recorded scans of real pages</h3>
+      <h3>Recorded browser reports</h3>
       <div className="recorded-grid">
         {scans.map((s) => (
           <a key={s.slug} className="recorded-card" href={recordedReportUrl(s.slug)} target="_blank" rel="noopener noreferrer">
             <span className="recorded-site">{s.title}</span>
-            <span className="recorded-url">{hostOf(s.target)}</span>
+            <span className="recorded-url">{s.kind === 'fixture' ? 'Controlled test page · not a real website scan' : hostOf(s.target)}</span>
             <span className="recorded-counts">{summarySentence(s.counts || {})}</span>
             {s.highlight?.sample && (
               <span className="recorded-sample" lang={langOf(s.highlight.sample)}>
