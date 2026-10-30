@@ -166,7 +166,7 @@ async def read_bharatcode_stream(response):
             data_lines.append(line[5:].strip())
             continue
         if line=="" and data_lines:
-            raw="\\n".join(data_lines)
+            raw="\n".join(data_lines)
             data_lines=[]
             name=event
             event=""
@@ -181,7 +181,7 @@ async def read_bharatcode_stream(response):
                 break
 
     if completed is None and data_lines:
-        raw="\\n".join(data_lines)
+        raw="\n".join(data_lines)
         if raw!="[DONE]":
             try:
                 completed=handle_event(event,json.loads(raw))
@@ -247,12 +247,12 @@ class BharatCodeClient:
                                                     "Accept":"text/event-stream"},
                             json={**payload,"stream":True},
                         ) as resp:
-                            status=status
+                            status=resp.status_code
                             request_id=resp.headers.get("x-request-id","")
                             body=await asyncio.wait_for(read_bharatcode_stream(resp),timeout=300) if status==200 else None
                     else:
                         resp=await client.post(API_URL,headers={"Authorization":f"Bearer {self.key}"},json=payload)
-                        status=status
+                        status=resp.status_code
                         request_id=resp.headers.get("x-request-id","")
                         body=resp.json() if status==200 else None
                     if status in {429,503}:
@@ -326,8 +326,16 @@ class BharatCodeClient:
                 except TimeoutError:
                     last_issue="BharatCode model stream exceeded the bounded request duration"
                     break
-                except (ValueError,KeyError,TypeError):
-                    last_issue="Provider response could not be decoded"
+                except (ValueError,KeyError,TypeError) as exc:
+                    diagnostic=str(exc)
+                    safe=(
+                        "BharatCode response incomplete",
+                        "BharatCode response failed",
+                        "BharatCode streaming provider error",
+                        "BharatCode stream ended without response.completed",
+                        "Invalid BharatCode streaming JSON event",
+                    )
+                    last_issue=diagnostic if diagnostic.startswith(safe) else "Provider streaming response could not be decoded"
                     break
         # Do not display fallback text as AI work or log credentials/page text.
         return {"explanation":"","css":{},"attributes":{},"status":"unavailable","error_code":last_issue}
