@@ -15,7 +15,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 from playwright.sync_api import sync_playwright
 
-SIZES=[(360,780),(390,844),(768,1024),(1024,800),(1440,900),(1920,1080)]
+SIZES=[(360,780),(390,844),(600,900),(768,1024),(900,900),(1024,800),(1280,800),(1440,900),(1920,1080)]
 def main():
     ap=argparse.ArgumentParser()
     ap.add_argument("--url",default="http://127.0.0.1:5173")
@@ -38,7 +38,7 @@ def main():
             page.evaluate("document.fonts.ready")
             assert page.title().startswith("AksharaCheck"),"Unexpected browser title"
             assert page.locator(".brand-name").inner_text()=="AksharaCheck"
-            assert "अक्षर जाँच" in page.locator(".brand-subtitle").inner_text()
+            assert "अक्षर चेक" in page.locator(".brand-subtitle").inner_text()
             assert "ಅಕ್ಷರ ಪರಿಶೀಲನೆ" in page.locator(".brand-subtitle").inner_text()
             assert page.get_by_text("390 px example").count()==1
             assert page.evaluate("document.fonts.check('600 16px \"Anek Latin Variable\"')"),"Locally hosted Anek Latin font not loaded"
@@ -75,6 +75,48 @@ def main():
             assert all(abs(r["left"]-alignment[0]["left"])<=3 and
                        abs(r["right"]-alignment[0]["right"])<=3
                        for r in alignment),f"{width}px: header, hero, CTA, footer disagree on alignment: {alignment}"
+            identity=page.evaluate("""() => {
+                const rect=s=>document.querySelector(s).getBoundingClientRect();
+                const style=s=>getComputedStyle(document.querySelector(s));
+                const head=rect('.topbar-inner'),brand=rect('.topbar .brand'),
+                    logo=rect('.topbar .brand .brand-symbol'),name=rect('.topbar .brand-name'),
+                    subtitle=rect('.topbar .brand-subtitle'),menu=rect('.menu-toggle'),
+                    nav=rect('.topbar nav'),footer=rect('.footer-brand'),footName=rect('.footer-brand strong');
+                return {headHeight:head.height,headLeft:head.left,headRight:head.right,
+                    brandLeft:brand.left,brandRight:brand.right,logoWidth:logo.width,
+                    nameSize:parseFloat(style('.topbar .brand-name').fontSize),
+                    subtitleSize:parseFloat(style('.topbar .brand-subtitle').fontSize),
+                    subGap:subtitle.top-name.bottom,navLeft:nav.left,
+                    menuLeft:menu.left,menuVisible:style('.menu-toggle').display!=='none',
+                    navVisible:style('.topbar nav').display!=='none',
+                    footerSize:parseFloat(style('.footer-brand strong').fontSize),
+                    footerRight:footer.right,footNameRight:footName.right};
+            }""")
+            assert identity["headHeight"]>=69,f"{width}px: brand lacks vertical breathing room: {identity}"
+            assert identity["brandLeft"]>=identity["headLeft"]-2 and identity["brandRight"]<=identity["headRight"]+2,(
+                f"{width}px: brand outside header: {identity}"
+            )
+            assert identity["subGap"]>=1,f"{width}px: language subtitle touches English title: {identity}"
+            assert 19<=identity["nameSize"]<=27.2,f"{width}px: oversized English brand: {identity}"
+            assert 10<=identity["subtitleSize"]<=13.2,f"{width}px: inconsistent Indic subtitle: {identity}"
+            assert identity["logoWidth"]<=41,f"{width}px: oversized brand mark: {identity}"
+            assert identity["footerRight"]<=width+2,f"{width}px: footer clipped horizontally: {identity}"
+            if width<=980:
+                assert identity["menuVisible"] and not identity["navVisible"],(
+                    f"{width}px: menu should replace desktop links at this width: {identity}"
+                )
+                assert identity["brandRight"]+6<=identity["menuLeft"],(
+                    f"{width}px: brand overlaps menu: {identity}"
+                )
+            else:
+                assert identity["navVisible"] and not identity["menuVisible"],(
+                    f"{width}px: desktop nav must be visible: {identity}"
+                )
+                assert identity["brandRight"]+8<=identity["navLeft"],(
+                    f"{width}px: brand overlaps navigation: {identity}"
+                )
+            assert "अक्षर चेक" in page.locator(".footer-brand-languages").inner_text()
+            assert "ಅಕ್ಷರ ಪರಿಶೀಲನೆ" in page.locator(".footer-brand-languages").inner_text()
             if width>=1440:
                 desktop=page.evaluate("""() => ({
                     frame:document.querySelector('.hero.wrap').getBoundingClientRect().width,
@@ -90,8 +132,8 @@ def main():
                 hero_height=page.locator(".hero").evaluate("(el)=>el.getBoundingClientRect().height")
                 header_height=page.locator(".topbar").evaluate("(el)=>el.getBoundingClientRect().height")
                 assert hero_height>=height-header_height-3,f"{width}px: desktop hero fails to use the vertical viewport"
-                assert desktop["brand"]>=27,f"{width}px: company name too small: {desktop}"
-                assert desktop["footerBrand"]>=22,f"{width}px: footer name too small: {desktop}"
+                assert 23<=desktop["brand"]<=27.2,f"{width}px: brand typography outside balanced range: {desktop}"
+                assert 21<=desktop["footerBrand"]<=24.2,f"{width}px: footer typography outside balanced range: {desktop}"
                 assert desktop["sheet"]>=500,f"{width}px: hero art too narrow: {desktop}"
             assert geometry["brand"]>(150 if width<=480 else 180),f"{width}px: brand lockup too small"
             if width>720:
@@ -118,7 +160,7 @@ def main():
             page.locator("#url").fill("")
             assert page.locator(".sample-report-top .sample-error").is_visible()
             assert page.locator(".bottom-cta a").is_visible()
-            if width<=720:
+            if width<=980:
                 menu=page.get_by_role("button",name="Open navigation")
                 assert menu.is_visible()
                 menu.click()
@@ -130,7 +172,7 @@ def main():
             print(f"PASS {width} x {height}: layout, navigation, controls, content, and screenshot")
             page.close()
         browser.close()
-    print(f"All six viewports passed. Screenshots: {shots.resolve()}")
+    print(f"All {len(SIZES)} viewports passed. Screenshots: {shots.resolve()}")
 
 if __name__=="__main__":
     main()
