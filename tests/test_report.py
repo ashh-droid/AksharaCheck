@@ -290,3 +290,15 @@ def test_report_discloses_resumed_bharatcode_work(tmp_path):
     assert "1 explanation from an earlier BharatCode run (repair rechecked in Chromium)" in page
     md=(tmp_path/"report.md").read_text(encoding="utf-8")
     assert "0 calls this run, 1 findings resumed" in md
+
+
+def test_partial_ai_report_is_visibly_labelled_in_html_and_markdown(tmp_path):
+    page=render(tmp_path,[finding(fix={"status":"unavailable","reason":"BharatCode response failed"})],
+                ai={"model":"qwen-3.8-27b","partial":True,
+                    "requested_findings":3,"completed_findings":2,
+                    "resumed_findings":2,"calls":0})
+    assert "Partial AI report." in page
+    assert "2 of 3 requested findings have complete explanations" in page
+    assert "do not present this as a completed AI demonstration" in page
+    md=(tmp_path/"report.md").read_text(encoding="utf-8")
+    assert "Partial AI report: 2 of 3 requested findings completed" in md
