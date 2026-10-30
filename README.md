@@ -36,6 +36,18 @@ For automated checks, `.venv\Scripts\python.exe -m aksharacheck scan https://hi.
 
 For the hackathon, public proof should include the actual report screenshot and a reviewed recorded scan. Do not substitute generated screenshots or claim live scans until they have been performed.
 
+## Submission evidence and recording
+
+The [submission guide](docs/SUBMISSION_GUIDE.md) includes the verified BharatCode Build League requirements, a 2–3-minute recording storyboard, privacy checks, and a release checklist. Record only what the actual run proves.
+
+After the live AI demo prints `PASS` and you review the report, the controlled fixture can be added to the site gallery **as a labelled demo**, not a real scanned website:
+
+```cmd
+.venv\Scripts\python.exe scripts\publish_recorded_scan.py output\ai-demo --slug akshara-fixture-demo --title "AksharaCheck controlled demo" --reviewed-public-content --fixture-demo
+```
+
+For a real public website, use the regular publisher without `--fixture-demo` (see the recorded-scan instructions below). The gallery remains empty until reviewed files are actually committed and deployed.
+
 ## Website experience
 
 The frontend follows the **Attested school-copybook** identity: paper ground, ruled blue lines, correction red, verified green, fountain-pen blue-black and the circular AksharaCheck mark. Fonts are bundled from Fontsource's Anek Latin, Devanagari and Kannada variable families so visitors do not depend on a Google Fonts request. The masthead, browser tab title and SVG favicon use this identity.
