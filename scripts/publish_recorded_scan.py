@@ -24,6 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SAMPLES = ROOT / "web" / "public" / "samples"
 SAFE_SLUG = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 ASSETS = {"report.json", "report.html", "report.md"}
+FONT = re.compile(r"^font-anek-[a-z]+-[0-9]{3}\.woff2$")
 
 
 def public_url(value: str) -> bool:
@@ -40,6 +41,17 @@ def public_url(value: str) -> bool:
             return "." in host
     except ValueError:
         return False
+
+
+def highlight(findings):
+    """The most serious finding with visible text, shown on the gallery card."""
+    rank = {"error": 0, "warning": 1, "info": 2}
+    shown = [f for f in findings if str(f.get("sample") or "").strip()]
+    if not shown:
+        return {}
+    best = min(shown, key=lambda f: (rank.get(f.get("severity"), 3), (f.get("fix") or {}).get("status") != "verified"))
+    sample = str(best["sample"]).strip()
+    return {"detector": best.get("detector", ""), "sample": sample[:117] + "…" if len(sample) > 120 else sample}
 
 
 def copy_scan(folder: Path, slug: str, title: str, reviewed: bool):
@@ -72,10 +84,15 @@ def copy_scan(folder: Path, slug: str, title: str, reviewed: bool):
             shots = item.get(field) or {}
             if isinstance(shots, dict):
                 files.update(shots.values())
+        after = (item.get("fix") or {}).get("after_screenshot")
+        if after:
+            files.add(after)
+    # The report's own fonts, so the published copy renders like the original.
+    files.update(path.name for path in folder.iterdir() if FONT.fullmatch(path.name))
     for name in files:
         if not isinstance(name, str) or Path(name).name != name:
             raise ValueError("Unexpected report asset path.")
-        if name not in ASSETS and not (name.startswith(("page-", "element-")) and name.endswith(".png")):
+        if name not in ASSETS and not FONT.fullmatch(name) and not (name.startswith(("page-", "element-")) and name.endswith(".png")):
             raise ValueError("Invalid screenshot filename: " + name)
         if not (folder / name).is_file():
             raise ValueError("Required evidence file is missing: " + name)
@@ -94,6 +111,9 @@ def copy_scan(folder: Path, slug: str, title: str, reviewed: bool):
         "target": data["target"],
         "scanned_at": created,
         "counts": data.get("summary", {}),
+        "ai_calls": int((data.get("ai") or {}).get("calls") or 0),
+        "verified_fixes": sum(1 for f in data["findings"] if (f.get("fix") or {}).get("status") == "verified"),
+        "highlight": highlight(data["findings"]),
     })
     catalog.write_text(json.dumps(collection, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print("Recorded sample ready:", target)

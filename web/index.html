@@ -3,20 +3,24 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <meta name="color-scheme" content="light"/>
-  <meta name="theme-color" content="#F8FAF7"/>
-  <meta name="description" content="AksharaCheck finds Hindi and Kannada rendering problems in a real browser and tests suggested fixes before marking them verified."/>
+  <meta name="color-scheme" content="only light"/>
+  <meta name="theme-color" content="#F6F7F2"/>
+  <title>AksharaCheck | Find the letters your website breaks</title>
+  <meta name="description" content="AksharaCheck opens your page in Chromium, finds Hindi and Kannada text that comes out broken, and asks BharatCode to explain it and draft a fix. A fix counts only when the browser agrees."/>
   <meta property="og:type" content="website"/>
   <meta property="og:title" content="AksharaCheck | Find the letters your website breaks"/>
-  <meta property="og:description" content="Browser evidence for broken Indic letters, missing fonts, clipping, and language-tag errors."/>
-  <meta name="twitter:card" content="summary"/>
-  <title>AksharaCheck | Find the letters your website breaks</title>
+  <meta property="og:description" content="Hindi and Kannada rendering checks in a real browser, with BharatCode explanations and browser-verified fixes."/>
+  <meta property="og:image" content="https://ashh-droid.github.io/AksharaCheck/social-preview.png"/>
+  <meta property="og:image:width" content="1280"/>
+  <meta property="og:image:height" content="640"/>
+  <meta name="twitter:card" content="summary_large_image"/>
   <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg"/>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link rel="icon" type="image/png" sizes="32x32" href="%BASE_URL%favicon-32.png"/>
+  <link rel="apple-touch-icon" href="%BASE_URL%apple-touch-icon.png"/>
 </head>
 <body>
   <div id="root"></div>
+  <noscript>AksharaCheck needs JavaScript for the text checker and scan results. The source is at https://github.com/ashh-droid/AksharaCheck</noscript>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>

@@ -1,222 +1,1079 @@
-import React,{useEffect,useRef,useState} from 'react';
-import {createRoot} from 'react-dom/client';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createRoot } from 'react-dom/client';
 import '@fontsource-variable/anek-latin/wght.css';
 import '@fontsource-variable/anek-devanagari/wght.css';
 import '@fontsource-variable/anek-kannada/wght.css';
 import './style.css';
+import { checkText, codepoint, LetterProblem } from './letters';
 
-type Fix={status:string;css?:Record<string,string>;attributes?:Record<string,string>;reason?:string};
-type Finding={id:string;url:string;viewport:number;viewports?:number[];selector:string;sample:string;detector:string;severity:string;evidence:Record<string,unknown>;screenshot?:string;element_screenshot?:string;ai_explanation?:string;fix?:Fix};
-type Report={target:string;summary:{error:number;warning:number;info:number};findings:Finding[];pages:{url:string;viewport:number;error?:string}[]};
-type Job={status:string;events:string[];error?:string};
-type LetterProblem={index:number;title:string;hint:string;character:string};
-type RecordedSample={slug:string;title:string;scanned_at:string;target:string;counts?:{error?:number;warning?:number;info?:number}};
-const staticReportUrl=(slug:string)=>import.meta.env.BASE_URL+'samples/'+encodeURIComponent(slug)+'/report.html';
-const API=import.meta.env.VITE_API_URL||'';
-const PAGES_PREVIEW=window.location.hostname.endsWith('.github.io')&&!import.meta.env.VITE_API_URL;
-const REPO='https://github.com/ashh-droid/AksharaCheck';
-const SAMPLE='सूचना: परीक्षा ह िंदी माध्यम में होगी। अाज शाम तक फ़ॉर्म जमा करें।\nಪರೀಕ್ಷೆ ಮುಂದೂಡಲಾಗ ಿದೆ. ಹೊಸ ದಿನಾಂಕವನ್ನು ಶೀಘ್ರದಲ್ಲೇ ತಿಳಿಸಲಾಗುವುದು.';
-const CLEAN_SAMPLE='किताब सही दिखती है।\nಕನ್ನಡ ಸರಿಯಾಗಿ ಕಾಣುತ್ತದೆ.';
-const detectorNames:Record<string,string>={
- 'broken-cluster':'Broken letters','legacy-font':'Legacy encoded fonts','font-load-failed':'Missing web fonts',
- 'font-fallback':'Font substitution','possible-clipping':'Cut-off letters','mobile-overflow':'Text beyond the screen',
- 'wrong-lang':'Wrong language tag','mixed-language':'Mixed language spans','tight-line-height':'Tight line spacing'
+/* ---------- Types shared with the Python report.json ---------- */
+
+type Attempt = { css?: Record<string, string>; attributes?: Record<string, string>; status: string; reason?: string };
+type Fix = {
+  status: string;
+  css?: Record<string, string>;
+  attributes?: Record<string, string>;
+  reason?: string;
+  viewport?: number;
+  after_screenshot?: string;
+  attempts?: Attempt[];
 };
-const cp=(c:string)=>c.codePointAt(0)||0;
-const inside=(c:number,a:number,b:number)=>c>=a&&c<=b;
-function kind(ch:string){
- const code=cp(ch);
- if(code===0x200c||code===0x200d)return 'joiner';
- if(inside(code,0x0915,0x0939)||inside(code,0x0958,0x095f)||inside(code,0x0c95,0x0cb9)||code===0x0cde)return 'consonant';
- if(inside(code,0x0904,0x0914)||inside(code,0x0c85,0x0c94))return 'vowel';
- if(code===0x093c||code===0x0cbc)return 'nukta';
- if(code===0x094d||code===0x0ccd)return 'virama';
- if([0x0901,0x0902,0x0903,0x0c81,0x0c82,0x0c83].includes(code))return 'final';
- if(inside(code,0x093e,0x094c)||inside(code,0x0cbe,0x0ccc)||[0x0962,0x0963,0x0ce2,0x0ce3].includes(code))return 'mark';
- return 'other';
+type Finding = {
+  id: string;
+  url: string;
+  viewport: number;
+  viewports?: number[];
+  selector: string;
+  sample: string;
+  detector: string;
+  severity: 'error' | 'warning' | 'info' | string;
+  evidence: Record<string, unknown>;
+  screenshot?: string;
+  element_screenshot?: string;
+  ai_explanation?: string | null;
+  summary_hi?: string;
+  summary_kn?: string;
+  fix?: Fix | null;
+};
+type Report = {
+  target: string;
+  summary: { error: number; warning: number; info: number };
+  findings: Finding[];
+  pages: { url: string; viewport: number; error?: string }[];
+  ai?: { model?: string; calls?: number; input_tokens?: number; output_tokens?: number; seconds?: number };
+};
+type Job = { status: string; events: string[]; error?: string };
+type RecordedScan = {
+  slug: string;
+  title: string;
+  target: string;
+  scanned_at: string;
+  counts?: { error?: number; warning?: number; info?: number };
+  ai_calls?: number;
+  verified_fixes?: number;
+  highlight?: { title?: string; sample?: string };
+};
+
+/* ---------- Settings ---------- */
+
+const API = import.meta.env.VITE_API_URL || '';
+// On GitHub Pages there is no scanner service unless VITE_API_URL is set at build time.
+const PAGES_PREVIEW = window.location.hostname.endsWith('.github.io') && !import.meta.env.VITE_API_URL;
+const REPO = 'https://github.com/ashh-droid/AksharaCheck';
+const BASE = import.meta.env.BASE_URL;
+const COMMANDS = [
+  'git clone ' + 'https://github.com/ashh-droid/AksharaCheck.git',
+  'cd AksharaCheck',
+  'pip install -e .',
+  'python -m playwright install chromium',
+  'export BHARATCODE_API_KEY=your-key',
+  'aksharacheck scan https://your-site.in --ai',
+];
+const recordedReportUrl = (slug: string) => BASE + 'samples/' + encodeURIComponent(slug) + '/report.html';
+
+const SEVERITY: Record<string, { word: string; band: string }> = {
+  error: { word: 'Fix', band: 'To fix' },
+  warning: { word: 'Check', band: 'To check' },
+  info: { word: 'Note', band: 'Notes' },
+};
+const DETECTOR_NAMES: Record<string, string> = {
+  'broken-cluster': 'Broken letters',
+  'possible-clipping': 'Letters may be cut off',
+  'mobile-overflow': 'Text runs off the screen on phones',
+  'wrong-lang': 'Wrong language tag',
+  'mixed-language': 'Two languages without labels',
+  'font-load-failed': 'Web font did not load',
+  'font-fallback': 'A different font was used',
+  'legacy-font': 'Old non-Unicode font',
+  'tight-line-height': 'Tight line spacing',
+};
+
+const BROKEN_SAMPLE = 'सूचना: परीक्षा ह िंदी माध्यम में होगी। अाज शाम तक फ़ॉर्म जमा करें।\nಪರೀಕ್ಷೆ ಮುಂದೂಡಲಾಗ ಿದೆ. ಹೊಸ ದಿನಾಂಕವನ್ನು ಶೀಘ್ರದಲ್ಲೇ ತಿಳಿಸಲಾಗುವುದು.';
+const CLEAN_SAMPLE = 'सूचना: परीक्षा हिंदी माध्यम में होगी। आज शाम तक फ़ॉर्म जमा करें।\nಪರೀಕ್ಷೆ ಮುಂದೂಡಲಾಗಿದೆ. ಹೊಸ ದಿನಾಂಕವನ್ನು ಶೀಘ್ರದಲ್ಲೇ ತಿಳಿಸಲಾಗುವುದು.';
+
+const plural = (n: number, one: string, many = one + 's') => `${n.toLocaleString('en-IN')} ${n === 1 ? one : many}`;
+const cssText = (change?: { css?: Record<string, string>; attributes?: Record<string, string> }) =>
+  [
+    ...Object.entries(change?.css || {}).map(([k, v]) => `${k}: ${v};`),
+    ...Object.entries(change?.attributes || {}).map(([k, v]) => `${k}="${v}"`),
+  ].join(' ');
+const widthName = (w: number) => (w <= 430 ? 'phone' : w <= 1024 ? 'tablet' : 'desktop');
+const scanDate = (iso: string) => {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+};
+const hostOf = (url: string) => {
+  try {
+    const u = new URL(url);
+    return (u.host + u.pathname.replace(/\/$/, '')).replace(/^www\./, '');
+  } catch {
+    return url;
+  }
+};
+const langOf = (text: string) => {
+  let deva = 0;
+  let kan = 0;
+  for (const ch of text) {
+    const c = codepoint(ch);
+    if (c >= 0x0900 && c <= 0x097f) deva++;
+    if (c >= 0x0c80 && c <= 0x0cff) kan++;
+  }
+  return deva === 0 && kan === 0 ? undefined : deva >= kan ? 'hi' : 'kn';
+};
+function summarySentence(counts: { error?: number; warning?: number; info?: number }) {
+  const parts: string[] = [];
+  if (counts.error) parts.push(plural(counts.error, 'problem') + ' to fix');
+  if (counts.warning) parts.push(plural(counts.warning, 'thing') + ' to check');
+  if (counts.info) parts.push(plural(counts.info, 'note'));
+  if (!parts.length) return 'Nothing broke in these checks.';
+  const text = parts.length === 1 ? parts[0] : parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1];
+  return text[0].toUpperCase() + text.slice(1) + '.';
 }
-function script(ch:string){const c=cp(ch);return inside(c,0x0900,0x097f)?'dev':inside(c,0x0c80,0x0cff)?'kan':''}
-function checkText(text:string):LetterProblem[]{
- const chars=Array.from(text);const problems:LetterProblem[]=[];
- chars.forEach((ch,i)=>{
-  const t=kind(ch);if(!['mark','nukta','virama','final'].includes(t))return;
-  const before=chars[i-1]||'';const preceding=kind(before);const scriptMatches=script(before)===script(ch);
-  const beforeBefore=chars[i-2]||'';
-  const base=scriptMatches&&(preceding==='consonant'||(preceding==='nukta'&&kind(beforeBefore)==='consonant'));
-  const hasVowel=preceding==='vowel'||(preceding==='mark'&&scriptMatches);
-  let bad=false;
-  if(t==='mark'||t==='nukta'||t==='virama')bad=!(base||(t==='mark'&&preceding==='mark'&&(before+ch).normalize('NFC').length===1));
-  if(t==='final')bad=!(base||hasVowel);
-  if(!bad)return;
-  const type=t==='mark'?'vowel sign':t;
-  let hint='The '+type+' needs a preceding letter in the same script.';
-  if(before===' ')hint='The '+type+' follows a space instead of the letter it belongs to.';
-  if(preceding==='vowel'&&t==='mark')hint='Use an independent vowel rather than placing a dependent vowel sign after a vowel.';
-  problems.push({index:i,character:ch,title:'◌'+ch+' has nothing to attach to',hint});
- });
- return problems.slice(0,30);
+
+/* ---------- Small pieces ---------- */
+
+function Logo({ size = 32, onDark = false }: { size?: number; onDark?: boolean }) {
+  const arc = onDark ? '#3FB58A' : '#0E6B4E';
+  const dot = onDark ? '#F07A88' : '#D9475A';
+  return (
+    <svg className="logo" width={size} height={size} viewBox="0 0 120 120" aria-hidden="true" focusable="false">
+      <path d="M49.65 21.36 A40 40 0 1 1 49.65 98.64" fill="none" stroke={arc} strokeWidth="13" strokeLinecap="round" />
+      {[
+        [34.83, 91.08],
+        [24.05, 77.54],
+        [20, 60],
+        [24.05, 42.46],
+        [34.83, 28.92],
+      ].map(([cx, cy]) => (
+        <circle key={cx + '-' + cy} cx={cx} cy={cy} r="6.5" fill={dot} />
+      ))}
+    </svg>
+  );
 }
-function Logo({size=36,onDark=false}:{size?:number;onDark?:boolean}){
- return <svg className="brand-symbol" width={size} height={size} viewBox="0 0 120 120" aria-hidden="true" focusable="false"><path d="M49.65 21.36 A40 40 0 1 1 49.65 98.64" fill="none" stroke={onDark?"#3FB58A":"#0E6B4E"} strokeWidth="13" strokeLinecap="round"/><circle cx="34.83" cy="91.08" r="6.5" fill={onDark?"#F07A88":"#D9475A"}/><circle cx="24.05" cy="77.54" r="6.5" fill={onDark?"#F07A88":"#D9475A"}/><circle cx="20" cy="60" r="6.5" fill={onDark?"#F07A88":"#D9475A"}/><circle cx="24.05" cy="42.46" r="6.5" fill={onDark?"#F07A88":"#D9475A"}/><circle cx="34.83" cy="28.92" r="6.5" fill={onDark?"#F07A88":"#D9475A"}/></svg>;
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      className="copy"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(text);
+          setCopied(true);
+          window.setTimeout(() => setCopied(false), 1600);
+        } catch {
+          setCopied(false);
+        }
+      }}
+    >
+      {copied ? 'Copied' : 'Copy'}
+    </button>
+  );
 }
-function App(){
- const [url,setUrl]=useState('');const [lang,setLang]=useState('both');
- const [ai,setAi]=useState(false);const [aiAvailable,setAiAvailable]=useState(false);const [backendOnline,setBackendOnline]=useState<boolean|null>(null);
- const [busy,setBusy]=useState(false);const [jobId,setJobId]=useState<string|null>(null);
- const [job,setJob]=useState<Job|null>(null);const [report,setReport]=useState<Report|null>(null);const [error,setError]=useState('');
- const [recordedScans,setRecordedScans]=useState<RecordedSample[]>([]);
- const [sample,setSample]=useState(SAMPLE);const [sampleFeedback,setSampleFeedback]=useState('');const [replay,setReplay]=useState(0);const [menuOpen,setMenuOpen]=useState(false);
- const input=useRef<HTMLInputElement>(null);const textInput=useRef<HTMLTextAreaElement>(null);const scanSection=useRef<HTMLElement>(null);
- const issues=checkText(sample);
- useEffect(()=>{
-  if(!PAGES_PREVIEW)return;
-  fetch(import.meta.env.BASE_URL+'samples/catalog.json')
-   .then(r=>r.ok?r.json():{scans:[]})
-   .then(d=>setRecordedScans(Array.isArray(d.scans)?d.scans.filter((item:RecordedSample)=>typeof item.slug==='string'&&/^[a-z0-9-]+$/.test(item.slug)&&typeof item.title==='string'):[]))
-   .catch(()=>setRecordedScans([]));
- },[]);
- useEffect(()=>{
-  // GitHub Pages has no /api endpoint. Avoid a guaranteed 404 and a broken promise.
-  if(PAGES_PREVIEW)return;
-  fetch(API+'/api/health').then(r=>{if(!r.ok)throw Error('Backend unavailable');return r.json()})
-   .then(d=>{setBackendOnline(true);setAiAvailable(Boolean(d.ai_available))})
-   .catch(()=>{setBackendOnline(false);setAiAvailable(false)})
- },[]);
- useEffect(()=>{
-  if(!jobId)return;
-  let active=true;let timer:number|undefined;
-  const poll=async()=>{
-   try{
-    const r=await fetch(API+'/api/scans/'+jobId);if(!r.ok)throw Error('This scan is no longer available.');
-    const j:Job=await r.json();if(!active)return;setJob(j);
-    if(j.status==='running')return;
-    if(j.status==='error')throw Error(j.error||'The scan failed.');
-    const r2=await fetch(API+'/api/scans/'+jobId+'/report');if(!r2.ok)throw Error('The report could not be loaded.');
-    const data:Report=await r2.json();if(!active)return;setReport(data);setBusy(false);setJobId(null);
-   }catch(e){if(!active)return;setError(e instanceof Error?e.message:String(e));setBusy(false);setJobId(null)}
-  };
-  void poll();timer=window.setInterval(()=>void poll(),2000);
-  return ()=>{active=false;if(timer!==undefined)window.clearInterval(timer)};
- },[jobId]);
- async function scan(e:React.FormEvent){
-  e.preventDefault();setError('');setReport(null);setJob(null);
-  let target=url.trim();if(!/^https?:\/\//i.test(target))target='https://'+target;
-  try{
-   const u=new URL(target);if(!u.hostname.includes('.'))throw Error('Enter a valid public website URL.');
-   setUrl(u.href);setBusy(true);
-   const response=await fetch(API+'/api/scans',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:u.href,lang,use_ai:ai&&aiAvailable})});
-   const data=await response.json().catch(()=>({}));
-   if(!response.ok){
-    const local=['localhost','127.0.0.1'].includes(window.location.hostname);
-    const detail=typeof data.detail==='string'?data.detail:'';
-    if(response.status>=500&&!detail){
-     throw Error(local?'Scanner backend unavailable. Start the Python backend on port 8000, then try again.':'Scanner service is temporarily unavailable. Please try again.');
-    }
-    throw Error(detail||('Scanner request failed (HTTP '+response.status+').'));
-   }
-   if(!data.id)throw Error('The scanner did not return a scan ID. Check the backend service.');
-   setJobId(data.id);
-   window.setTimeout(()=>scanSection.current?.scrollIntoView({behavior:'smooth',block:'start'}),50);
-  }catch(e){if(e instanceof TypeError){setBackendOnline(false);setError(window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1'?'Cannot reach the scanner. Start the Python backend on port 8000 and reload this page.':'The scanner service is currently unreachable. Please try again.')}else{setError(e instanceof Error?e.message:String(e))}setBusy(false)}
- }
- const reportArtifact=(file:string)=>API+'/api/scans/'+(reportId.current||'')+'/artifacts/'+encodeURIComponent(file);
- const reportId=useRef<string|null>(null);
- useEffect(()=>{if(jobId)reportId.current=jobId},[jobId]);
- const startOver=()=>{setJobId(null);reportId.current=null;setJob(null);setReport(null);setError('');setBusy(false);input.current?.focus()};
- return <div id="top">
-  <a className="skip" href="#main">Skip to content</a>
-  <header className="topbar"><div className="wrap topbar-inner">
-   <a className="brand" href="#top" aria-label="AksharaCheck, अक्षर चेक, ಅಕ್ಷರ ಪರಿಶೀಲನೆ, back to top" onClick={()=>setMenuOpen(false)}>
-    <Logo size={51}/>
-    <span className="brand-lettering"><strong className="brand-name">AksharaCheck</strong><span className="brand-subtitle"><span lang="hi">अक्षर चेक</span><span className="brand-divider" aria-hidden="true">·</span><span lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ</span></span></span>
-   </a>
-   <button className="menu-toggle" type="button" aria-label={menuOpen?'Close navigation':'Open navigation'} aria-controls="site-menu" aria-expanded={menuOpen} onClick={()=>setMenuOpen(v=>!v)}><span aria-hidden="true">{menuOpen?'×':'☰'}</span><span>Menu</span></button>
-   <nav id="site-menu" className={menuOpen?'is-open':''} aria-label="Main navigation"><a href="#try" onClick={()=>setMenuOpen(false)}>Try it</a><a href="#checks" onClick={()=>setMenuOpen(false)}>What it checks</a><a href="#report" onClick={()=>setMenuOpen(false)}>Reports</a><a href="#faq" onClick={()=>setMenuOpen(false)}>Questions</a><a className="nav-github" href={REPO} target="_blank" rel="noopener noreferrer">GitHub</a></nav>
-  </div></header>
-  <main id="main">
-   <section className="hero wrap" aria-labelledby="hero-title">
-    <div className="hero-copy">
-     <h1 id="hero-title">Every letter<br/>should render<br/>right<span className="tiny-green">.</span></h1>
-     <p className="lede">Your site may look fine in English. AksharaCheck opens it in a real browser, finds the <span lang="hi">हिंदी</span> and <span lang="kn">ಕನ್ನಡ</span> text that comes out broken, and rechecks supported repairs in Chromium before calling them verified.</p>
-     {PAGES_PREVIEW ? <div className="preview-entry">
-      {recordedScans.length>0?<a className="preview-start" href={staticReportUrl(recordedScans[0].slug)}>Explore a recorded browser scan <span aria-hidden="true">↗</span></a>:<a className="preview-start" href="#try">Try the text checker <span aria-hidden="true">↗</span></a>}
-      <p>{recordedScans.length>0?'Open a genuine saved Chromium audit, or try the live local text checker below.':'Explore a real-time Hindi and Kannada character check in your browser. Full website scans require the separate scanner service.'}</p>
-      {recordedScans.length>0&&<div className="recorded-list"><strong>Recorded page audits</strong>{recordedScans.map(item=><a key={item.slug} href={staticReportUrl(item.slug)}>{item.title} <span>Browser evidence ↗</span></a>)}</div>}
-     </div> : <form onSubmit={scan} className="scan-form">
-      <label htmlFor="url" className="sr-only">Website address</label>
-      <div className="scan-input"><input ref={input} id="url" type="text" placeholder="https://your-site.in" value={url} onChange={e=>setUrl(e.target.value)} required spellCheck={false}/><button type="submit" disabled={busy}>{busy?'Checking…':'Check this page'}</button></div>
-      <div className="scan-options"><label>Language <select value={lang} onChange={e=>setLang(e.target.value)} disabled={busy}><option value="both">Hindi and Kannada</option><option value="hi">Hindi only</option><option value="kn">Kannada only</option></select></label></div>
-      {aiAvailable&&<label className="ai-option"><input type="checkbox" checked={ai} onChange={e=>setAi(e.target.checked)} disabled={busy}/> Also suggest CSS fixes with BharatCode AI</label>}
-      {!PAGES_PREVIEW&&backendOnline===false&&<p className="backend-note" role="status">{['localhost','127.0.0.1'].includes(window.location.hostname)?'The local scanner backend is not connected. Start it on port 8000 to enable scans.':'The scan service is temporarily offline. The local text checker below still works.'}</p>}
-      <p className="examples">Or try <button type="button" onClick={()=>{setUrl('https://hi.wikipedia.org/');input.current?.focus()}}>hi.wikipedia.org</button>, <button type="button" onClick={()=>{setUrl('https://kn.wikipedia.org/');input.current?.focus()}}>kn.wikipedia.org</button> or <button type="button" onClick={()=>{setUrl('https://www.india.gov.in/');input.current?.focus()}}>india.gov.in</button></p>
-     </form>}
-    </div>
-    <figure key={replay} className="copybook hero-sheet" aria-label="Illustration of a broken Hindi letter and a corrected Kannada layout">
-     <div className="sheet-top"><span>Example page</span><span>390 px example</span></div>
-     <div className="paper-line"><span className="margin-icon bad">×</span><p lang="hi">परीक्षा <span className="underline-wrong">ह िंदी</span> में होगी</p></div>
-     <p className="handnote bad">The ि comes after a space, so it has nothing to attach to. Browsers draw a dotted circle.</p>
-     <div className="paper-line"><span className="margin-icon bad">×</span><p lang="kn" className="crop-text">ಪರೀಕ್ಷೆ ಮುಂದೂಡಲಾಗಿದೆ</p></div>
-     <p className="handnote bad"><code>line-height: 1</code> and <code>overflow: hidden</code> can cut the tops off letters.</p>
-     <div className="paper-line"><span className="margin-icon good">✓</span><p lang="kn" className="good">ಪರೀಕ್ಷೆ ಮುಂದೂಡಲಾಗಿದೆ</p></div>
-     <p className="handnote good">A more comfortable line height lets the entire word show.</p>
-     <div className="verified-stamp" aria-label="Example of a corrected line"><span aria-hidden="true">✓</span></div>
-     <button className="play-again" type="button" onClick={()=>setReplay(v=>v+1)}>Replay example</button>
+
+/* ---------- Header ---------- */
+
+function Header() {
+  const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+  const links = [
+    ['#reports', 'Reports'],
+    ['#how', 'How it works'],
+    ['#try', 'Try it'],
+    ['#run', 'Run it'],
+    ['#faq', 'Questions'],
+  ];
+  return (
+    <header className={'topbar' + (scrolled ? ' is-scrolled' : '')}>
+      <div className="wrap topbar-inner">
+        <a className="brand" href="#top" aria-label="AksharaCheck, back to top" onClick={() => setOpen(false)}>
+          <Logo size={46} />
+          <span className="brand-text">
+            <span className="brand-name">AksharaCheck</span>
+            <span className="brand-sub">
+              <span lang="hi">अक्षर जाँच</span>
+              <span lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ</span>
+            </span>
+          </span>
+        </a>
+        <button
+          className="menu-toggle"
+          type="button"
+          aria-controls="site-menu"
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+        >
+          <span className="menu-icon" aria-hidden="true" data-open={open} />
+          <span>{open ? 'Close' : 'Menu'}</span>
+        </button>
+        <nav id="site-menu" className={open ? 'is-open' : ''} aria-label="Main navigation">
+          {links.map(([href, label]) => (
+            <a key={href} href={href} onClick={() => setOpen(false)}>
+              {label}
+            </a>
+          ))}
+          <a href={REPO} target="_blank" rel="noopener noreferrer">
+            GitHub <span aria-hidden="true">↗</span>
+          </a>
+        </nav>
+      </div>
+    </header>
+  );
+}
+
+/* ---------- Hero: a repair as it actually happens ---------- */
+
+function RepairDemo() {
+  const [run, setRun] = useState(0);
+  const d = (seconds: number) => ({ '--d': seconds + 's' }) as React.CSSProperties;
+  return (
+    <figure key={run} className="demo" aria-label="Example: cut-off Kannada letters, the repairs BharatCode suggested, and the one Chromium accepted">
+      <div className="demo-glyphs" lang="kn">
+        <span className="glyph-before">
+          <span className="cut">ಪರೀಕ್ಷೆ</span>
+        </span>
+        <svg className="glyph-arrow step" style={d(0.5)} viewBox="0 0 64 24" aria-hidden="true">
+          <path d="M2 12h56m-10-9 10 9-10 9" />
+        </svg>
+        <span className="glyph-after step" style={d(2.6)}>
+          ಪರೀಕ್ಷೆ
+        </span>
+      </div>
+      <div className="demo-trail">
+        <p className="demo-head step" style={d(0.2)}>
+          <span className="sev warning">Check</span> Letters cut off at 390 px
+        </p>
+        <p className="demo-ai step" style={d(0.8)}>
+          <span className="demo-who">BharatCode</span>
+          The heading has a fixed height and hides its overflow, so the vowel signs are cut off.
+        </p>
+        <ol className="demo-tries" aria-label="Repairs tested in Chromium">
+          <li className="bad step" style={d(1.5)}>
+            <span className="mark" aria-hidden="true">✗</span>
+            <code>height: 1px</code>
+            <span>Rejected: text area shrank</span>
+          </li>
+          <li className="ok step" style={d(2.2)}>
+            <span className="mark" aria-hidden="true">✓</span>
+            <code>height: auto; line-height: 1.7</code>
+            <span>Verified in Chromium</span>
+          </li>
+        </ol>
+      </div>
+      <figcaption className="demo-caption">
+        <span>Example finding</span>
+        <button type="button" onClick={() => setRun((v) => v + 1)}>
+          Play again
+        </button>
+      </figcaption>
     </figure>
-   </section>
-   <section ref={scanSection} id="scan" className="live-results wrap" hidden={!busy&&!report&&!error}>
-    <div className="scan-result-head"><div><p className="eyebrow">{busy?'Checking':'Scan report'}</p><h2>{busy?'Opening the page in Chromium':error?'The scan could not finish':report?.findings.length+' findings recorded'}</h2></div><button type="button" className="quiet-button" onClick={startOver}>Check another page</button></div>
-    {error&&<p className="error-message" role="alert">{error}</p>}
-    {busy&&<div role="status" className="scan-progress"><p>Checking mobile and desktop rendering.</p>{job?.events?.slice(-6).map((e,i)=><p key={i} className="progress-line">{e}</p>)}</div>}
-    {report&&<div className="audit"><p className="audit-target">{report.target}</p><div className="audit-summary"><span>{report.summary.error} errors</span><span>{report.summary.warning} warnings</span><span>{report.summary.info} notes</span><a href={reportArtifact('report.html')} target="_blank" rel="noreferrer">Open full report</a></div>{report.pages.some(p=>p.error)&&<p className="error-message">Some pages or widths could not be scanned. These are not counted as clean.</p>}
-      {!report.findings.length&&<p className="clean-result">No issues were detected by the implemented checks. This is not proof of complete correctness.</p>}
-      {Array.from(new Set(report.findings.map(f=>f.detector))).map(type=><div className="audit-group" key={type}><h3>{detectorNames[type]||type} <span>{report.findings.filter(f=>f.detector===type).length}</span></h3>
-       {report.findings.filter(f=>f.detector===type).map(f=><article className="audit-card" key={f.id}>
-        <header><span className={'audit-severity '+f.severity}>{f.severity}</span><strong>{detectorNames[f.detector]||f.detector}</strong><small>{(f.viewports||[f.viewport]).map(w=>w<=430?'Phone':'Desktop').join(' + ')}</small></header>
-        <p className="audit-sample">{f.sample}</p><div className="audit-card-content">
-         
-         <div><p>{f.ai_explanation||'This finding comes from the browser measurement.'}</p>{f.fix&&<p className={f.fix.status==='verified'?'verified-note':'unverified-note'}>{f.fix.status==='verified'?'✓ Fix verified in Chromium':f.fix.status==='not-applicable'?'Manual repair needed':'Not verified: '+(f.fix.reason||'Review the change')}</p>}{(f.fix?.css||f.fix?.attributes)&&<pre>{Object.entries({...f.fix.css,...f.fix.attributes}).map(([k,v])=>k+': '+v+';').join('\n')}</pre>}</div></div>
-        <details><summary>View evidence and suggested next step</summary>{(f.element_screenshot||f.screenshot)&&<p><a className="audit-screenshot-link" href={reportArtifact(f.element_screenshot||f.screenshot||'')} target="_blank" rel="noopener noreferrer">Open browser screenshot</a></p>}<pre>{JSON.stringify(f.evidence,null,2)}</pre><p className="audit-target">Page: {f.url}<br/>Element: {f.selector}</p></details>
-       </article>)}</div>)}
-      </div>}
-   </section>
-   <section className="try-section" id="try"><div className="wrap">
-    <div className="section-head"><h2>Check a line of text right here</h2><p>Paste Hindi or Kannada text to check basic Unicode letter sequences. This runs in your browser, and your text is not uploaded.</p></div>
-    <div className="try-grid">
-     <div className="copybook text-editor"><div className="sheet-top"><span>Your text</span><button type="button" onClick={()=>{const next=sample===SAMPLE?CLEAN_SAMPLE:SAMPLE;setSample(next);setSampleFeedback(next===SAMPLE?'Broken example loaded. Edit the text to test another sequence.':'Clean example loaded. Compare the results with the broken example.');textInput.current?.focus()}}>{sample===SAMPLE?'Show a clean example':'Show a broken example'}</button></div><textarea ref={textInput} aria-label="Hindi or Kannada text to check" placeholder="Paste or type Hindi or Kannada text here" spellCheck={false} value={sample} onChange={e=>{setSample(e.target.value);setSampleFeedback('')}}/><p className="sample-feedback" role="status">{sampleFeedback||'Text is checked locally in this browser.'}</p></div>
-     <div className="try-feedback"><h3 className={issues.length?'red-text':'green-text'}>{issues.length?'× '+issues.length+' possible '+(issues.length===1?'issue':'issues'):sample.trim()?'✓ No malformed letter sequences detected':'Your results appear here'}</h3>
-      <p className="rendered-sample">{Array.from(sample).map((ch,i)=><React.Fragment key={i}>{issues.some(x=>x.index===i)?<span className="underline-wrong">{ch}</span>:ch}</React.Fragment>)}</p><p className="try-disclaimer">This quick text check does not test fonts, layout, spelling, or translation. Use the page scan for browser rendering evidence.</p>
-      <ol>{issues.map((issue,i)=><li key={i}><strong>{issue.title}</strong> <code>{'U+'+cp(issue.character).toString(16).toUpperCase().padStart(4,'0')}</code><p>{issue.hint}</p></li>)}</ol>
-     </div>
-    </div></div></section>
-   <section className="checks-section wrap" id="checks"><div className="section-head"><h2>What it checks</h2><p>Four common issues that can affect Hindi and Kannada pages. Website scans collect Chromium evidence at phone and desktop widths.</p></div>
-    <div className="checks-grid">
-     <article className="check-card"><div className="rule-preview" lang="hi"><span className="underline-wrong">ह िंदी</span></div><h3>Broken letters</h3><p>A vowel sign, virama or nukta with nothing to attach to. Browsers draw it on a dotted circle.</p></article>
-     <article className="check-card"><div className="rule-preview"><span className="tofu">□□□□</span></div><h3>Missing fonts</h3><p>Chromium reports which font drew each letter, so it can reveal unexpected fallback or empty boxes.</p></article>
-     <article className="check-card"><div className="rule-preview" lang="kn"><span className="crop-text">ಪರೀಕ್ಷೆ</span></div><h3>Cut-off letters</h3><p>A tight line height or hidden overflow can cut letters above or below the line.</p></article>
-     <article className="check-card"><div className="rule-preview code-preview"><code>&lt;html lang=<span className="underline-wrong">"en"</span>&gt;</code></div><h3>Wrong language tag</h3><p>Hindi marked as English can be misread by assistive technology and may use a different font.</p></article>
-    </div>
-   </section>
-   <section className="report-section" id="report"><div className="wrap"><div className="section-head"><h2>Every finding comes with its evidence</h2><p>See the text, its location, the browser evidence and whether a suggested repair passed verification. The card below illustrates a report.</p></div>
-    <div className="report-grid">
-     <article className="sample-report" aria-label="Illustrative example of an AksharaCheck finding">
-      <div className="sample-report-top"><span className="sample-error">× Error</span><strong>Broken letter</strong><small>Example report</small></div>
-      <p className="sample-report-word" lang="hi">सूचना: परीक्षा <span className="underline-wrong">ह िंदी</span> माध्यम में होगी</p>
-      <div className="sample-evidence"><p><span>Characters</span><code>ह U+0939</code> <code>space U+0020</code> <code>ि U+093F</code></p><p><span>Rule</span>A vowel sign must follow a consonant.</p><p><span>Where</span>A notice paragraph on a sample page</p><p><span>Font evidence</span>Actual font names appear in live scan reports.</p></div>
-      <div className="sample-fix"><strong>What to change</strong><p>Remove the extra space between ह and ि in the page text. This is a text error, not a CSS issue.</p></div>
-     </article>
-     <div className="report-notes"><div><h3>The exact characters</h3><p>Each finding lists the Unicode code points, so you can search for the mistake in your CMS or code.</p></div><div><h3>CSS only where CSS helps</h3><p>BharatCode AI drafts CSS for layout and font problems. A typing mistake is reported as a typing mistake.</p></div><div><h3>Verified means rechecked</h3><p>A proposed repair is tested again in Chromium. Hiding the text, shrinking it or moving it off screen does not count as a fix.</p></div></div>
-    </div>
-   </div></section>
-   <section className="faq-section wrap" id="faq"><h2>Questions</h2><div className="faq-list">
-    <details><summary>Does AksharaCheck change my website?</summary><p>No. It only reads a public page. Suggested fixes are tested in a separate browser session, not committed to your website.</p></details>
-    <details><summary>Which languages does it support?</summary><p>Hindi and Kannada. The rules also recognize other languages written in the Devanagari and Kannada scripts, including Marathi, Nepali, Sanskrit and Tulu.</p></details>
-    <details><summary>Do I need the AI to use it?</summary><p>No. Browser detectors generate findings without AI. BharatCode AI is optional for explanations and repair suggestions.</p></details>
-    <details><summary>Can it check pages behind a login?</summary><p>Not yet. It checks public pages only. Local and private network addresses are not supported by the hosted scanner.</p></details>
-    <details><summary>Is the source code available?</summary><p>Yes. The scanner, rules, and website source are publicly viewable in the <a href={REPO} target="_blank" rel="noreferrer">GitHub repository</a>. Reuse terms will be specified in the repository license.</p></details>
-   </div></section>
-   <section className="bottom-cta wrap" aria-labelledby="cta-heading"><Logo size={52} onDark/><h2 id="cta-heading">Find the broken letters before your readers do.</h2>{PAGES_PREVIEW?<a href="#try">Try text checker</a>:<a href="#top" onClick={()=>{window.setTimeout(()=>input.current?.focus(),100)}}>Check a page</a>}</section>
-  </main>
-  <footer className="footer wrap"><div className="footer-brand"><Logo size={38}/><span className="footer-brand-copy"><strong>AksharaCheck</strong><span className="footer-brand-languages"><span lang="hi">अक्षर चेक</span><span className="brand-divider" aria-hidden="true">·</span><span lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ</span></span></span></div><div><a href={REPO} target="_blank" rel="noreferrer">GitHub</a><a href="https://bharatcode.ai/hackathon" target="_blank" rel="noreferrer">BharatCode Build League 2026</a></div></footer>
- </div>
+  );
 }
-createRoot(document.getElementById('root')!).render(<React.StrictMode><App/></React.StrictMode>);
+
+/* ---------- Live scanning (only when a scanner service is connected) ---------- */
+
+function ScanForm({
+  onStart,
+  busy,
+  aiAvailable,
+  online,
+}: {
+  onStart: (url: string, lang: string, ai: boolean) => void;
+  busy: boolean;
+  aiAvailable: boolean;
+  online: boolean | null;
+}) {
+  const [url, setUrl] = useState('');
+  const [lang, setLang] = useState('both');
+  const [ai, setAi] = useState(true);
+  const [problem, setProblem] = useState('');
+  const field = useRef<HTMLInputElement>(null);
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    let target = url.trim();
+    if (!target) {
+      setProblem('Enter a web address, like https://your-site.in');
+      return;
+    }
+    if (!/^https?:\/\//i.test(target)) target = 'https://' + target;
+    try {
+      const u = new URL(target);
+      if (!u.hostname.includes('.')) throw new Error();
+      setProblem('');
+      setUrl(u.href);
+      onStart(u.href, lang, ai && aiAvailable);
+    } catch {
+      setProblem('Enter a full web address, like https://your-site.in');
+    }
+  };
+  return (
+    <form className="scan-form" onSubmit={submit} noValidate>
+      <label htmlFor="url" className="sr-only">
+        Page address
+      </label>
+      <div className="scan-row">
+        <input
+          ref={field}
+          id="url"
+          type="url"
+          inputMode="url"
+          placeholder="https://your-site.in"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          spellCheck={false}
+          aria-invalid={problem ? true : undefined}
+          aria-describedby={problem ? 'url-problem' : undefined}
+        />
+        <button className="btn primary" type="submit" disabled={busy}>
+          {busy ? 'Checking…' : 'Check this page'}
+        </button>
+      </div>
+      {problem && (
+        <p id="url-problem" className="form-problem">
+          {problem}
+        </p>
+      )}
+      <div className="scan-options">
+        <label className="field">
+          <span>Language</span>
+          <select value={lang} onChange={(e) => setLang(e.target.value)} disabled={busy}>
+            <option value="both">Hindi and Kannada</option>
+            <option value="hi">Hindi</option>
+            <option value="kn">Kannada</option>
+          </select>
+        </label>
+        {aiAvailable && (
+          <label className="check">
+            <input type="checkbox" checked={ai} onChange={(e) => setAi(e.target.checked)} disabled={busy} />
+            <span>Explain and fix with BharatCode</span>
+          </label>
+        )}
+      </div>
+      {online === false && <p className="form-note">The scanner service is not reachable right now. The text checker below still works.</p>}
+      <p className="examples">
+        Or try{' '}
+        {['hi.wikipedia.org', 'kn.wikipedia.org'].map((site, i) => (
+          <React.Fragment key={site}>
+            {i > 0 && ' or '}
+            <button
+              type="button"
+              onClick={() => {
+                setUrl('https://' + site + '/');
+                field.current?.focus();
+              }}
+            >
+              {site}
+            </button>
+          </React.Fragment>
+        ))}
+      </p>
+    </form>
+  );
+}
+
+function FindingCard({ f, asset }: { f: Finding; asset: (name: string) => string }) {
+  const sev = SEVERITY[f.severity] ? f.severity : 'info';
+  const fix = f.fix || undefined;
+  const before = f.element_screenshot;
+  const after = fix?.status === 'verified' ? fix.after_screenshot : undefined;
+  const sequences = ((f.evidence?.invalid_sequences as { sequence?: string; codepoints?: string[]; reason?: string }[]) || []).slice(0, 6);
+  return (
+    <article className={'finding ' + sev}>
+      <div className="finding-main">
+        <p className="finding-top">
+          <span className={'sev ' + sev}>{SEVERITY[sev].word}</span>
+          <strong>{DETECTOR_NAMES[f.detector] || f.detector}</strong>
+          <span className="muted">{[...new Set((f.viewports || [f.viewport]).map(widthName))].join(' and ')}</span>
+        </p>
+        {f.sample && (
+          <p className="finding-sample" lang={langOf(f.sample)}>
+            {f.sample}
+          </p>
+        )}
+        {sequences.length > 0 && (
+          <ul className="sequences">
+            {sequences.map((s, i) => (
+              <li key={i}>
+                <span className="glyph" lang={langOf(s.sequence || '')}>
+                  {(s.sequence || '').trim()}
+                </span>
+                <code>{(s.codepoints || []).join(' ')}</code>
+              </li>
+            ))}
+          </ul>
+        )}
+        {f.ai_explanation && (
+          <div className="ai">
+            <p className="ai-label">BharatCode explanation</p>
+            <p>{f.ai_explanation}</p>
+            {f.summary_hi && (
+              <p className="translation">
+                <span className="lang-name" lang="hi">
+                  हिंदी
+                </span>
+                <span lang="hi">{f.summary_hi}</span>
+              </p>
+            )}
+            {f.summary_kn && (
+              <p className="translation">
+                <span className="lang-name" lang="kn">
+                  ಕನ್ನಡ
+                </span>
+                <span lang="kn">{f.summary_kn}</span>
+              </p>
+            )}
+          </div>
+        )}
+        {fix?.status === 'verified' && (
+          <div className="repair ok">
+            <p className="repair-title">✓ Fix verified in a fresh Chromium at {fix.viewport || f.viewport} px</p>
+            <pre>{cssText(fix).replace(/; /g, ';\n')}</pre>
+          </div>
+        )}
+        {fix?.status === 'unverified' && (
+          <div className="repair bad">
+            <p className="repair-title">✗ No suggested fix passed. {fix.reason}</p>
+          </div>
+        )}
+        {(fix?.attempts?.length || 0) > 1 && (
+          <ol className="tries">
+            {fix!.attempts!.map((a, i) => (
+              <li key={i} className={a.status === 'verified' ? 'ok' : 'bad'}>
+                <span className="mark" aria-hidden="true">
+                  {a.status === 'verified' ? '✓' : '✗'}
+                </span>
+                <code>{cssText(a)}</code>
+                <span>{a.status === 'verified' ? 'Passed' : 'Rejected: ' + (a.reason || 'did not pass')}</span>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+      {(before || after) && (
+        <div className="finding-shots">
+          {before && (
+            <figure>
+              <img src={asset(before)} alt="The element as Chromium drew it" />
+              <figcaption>{after ? 'Before' : 'As Chromium drew it'}</figcaption>
+            </figure>
+          )}
+          {after && (
+            <figure>
+              <img src={asset(after)} alt="The element after the fix" />
+              <figcaption>After</figcaption>
+            </figure>
+          )}
+        </div>
+      )}
+    </article>
+  );
+}
+
+function LiveResults({
+  busy,
+  job,
+  report,
+  error,
+  scanId,
+  onReset,
+}: {
+  busy: boolean;
+  job: Job | null;
+  report: Report | null;
+  error: string;
+  scanId: string | null;
+  onReset: () => void;
+}) {
+  const asset = (name: string) => API + '/api/scans/' + scanId + '/artifacts/' + encodeURIComponent(name);
+  const order = ['error', 'warning', 'info'];
+  return (
+    <section id="scan" className="wrap live" aria-live="polite">
+      <div className="live-head">
+        <div>
+          <p className="kicker">{busy ? 'Checking' : error ? 'Scan stopped' : 'Scan finished'}</p>
+          <h2>{busy ? 'Opening the page in Chromium' : error ? 'The page could not be checked' : report ? hostOf(report.target) : ''}</h2>
+          {report && <p className="live-summary">{summarySentence(report.summary)}</p>}
+        </div>
+        <div className="live-actions">
+          {report && scanId && (
+            <a className="btn secondary" href={asset('report.html')} target="_blank" rel="noopener noreferrer">
+              Open full report
+            </a>
+          )}
+          <button type="button" className="btn quiet" onClick={onReset}>
+            Check another page
+          </button>
+        </div>
+      </div>
+      {error && (
+        <p className="alert" role="alert">
+          {error}
+        </p>
+      )}
+      {busy && (
+        <div className="progress" role="status">
+          <p className="progress-title">Checking the page at phone and desktop widths…</p>
+          {job?.events?.slice(-6).map((line, i) => (
+            <p key={i} className="progress-line">
+              {line}
+            </p>
+          ))}
+        </div>
+      )}
+      {report && (
+        <>
+          {report.pages.some((p) => p.error) && <p className="alert">Some pages or widths could not be checked. They are not counted as clean.</p>}
+          {!report.findings.length && <p className="clean">✓ Nothing broke on this page at these widths.</p>}
+          {order.map((sev) => {
+            const items = report.findings.filter((f) => (SEVERITY[f.severity] ? f.severity : 'info') === sev);
+            if (!items.length) return null;
+            return (
+              <div key={sev} className="band">
+                <h3>
+                  {SEVERITY[sev].band} <span>{items.length}</span>
+                </h3>
+                {items.map((f) => (
+                  <FindingCard key={f.id} f={f} asset={asset} />
+                ))}
+              </div>
+            );
+          })}
+        </>
+      )}
+    </section>
+  );
+}
+
+/* ---------- Recorded scans ---------- */
+
+function RecordedScans({ scans }: { scans: RecordedScan[] }) {
+  if (!scans.length) return null;
+  return (
+    <div className="recorded">
+      <h3>Recorded scans of real pages</h3>
+      <div className="recorded-grid">
+        {scans.map((s) => (
+          <a key={s.slug} className="recorded-card" href={recordedReportUrl(s.slug)} target="_blank" rel="noopener noreferrer">
+            <span className="recorded-site">{s.title}</span>
+            <span className="recorded-url">{hostOf(s.target)}</span>
+            <span className="recorded-counts">{summarySentence(s.counts || {})}</span>
+            {s.highlight?.sample && (
+              <span className="recorded-sample" lang={langOf(s.highlight.sample)}>
+                {s.highlight.sample}
+              </span>
+            )}
+            <span className="recorded-foot">
+              <span>Scanned {scanDate(s.scanned_at)}</span>
+              {(s.verified_fixes || 0) > 0 && <span>{plural(s.verified_fixes || 0, 'verified fix', 'verified fixes')}</span>}
+              <span className="recorded-open">Open report ↗</span>
+            </span>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Text checker ---------- */
+
+function TextChecker() {
+  const [text, setText] = useState(BROKEN_SAMPLE);
+  const [note, setNote] = useState('');
+  const box = useRef<HTMLTextAreaElement>(null);
+  const problems = useMemo(() => checkText(text), [text]);
+  const chars = useMemo(() => Array.from(text), [text]);
+  const marked = useMemo(() => {
+    // Mark the broken sign with the letter before it, and keep any marks that follow
+    // inside the same span, so the numbering never splits a cluster.
+    const out: React.ReactNode[] = [];
+    let cursor = 0;
+    problems.forEach((p: LetterProblem, n: number) => {
+      const from = Math.max(p.index - 1, cursor);
+      let end = p.index + 1;
+      while (end < chars.length && /\p{M}/u.test(chars[end])) end++;
+      if (from > cursor) out.push(chars.slice(cursor, from).join(''));
+      out.push(
+        <span key={'m' + n} className="wavy">
+          {chars.slice(from, end).join('')}
+        </span>,
+        <sup key={'s' + n}>{n + 1}</sup>,
+      );
+      cursor = end;
+    });
+    if (cursor < chars.length) out.push(chars.slice(cursor).join(''));
+    return out;
+  }, [problems, chars]);
+  const broken = text === BROKEN_SAMPLE;
+  return (
+    <section className="try" id="try" aria-labelledby="try-title">
+      <div className="wrap">
+        <div className="section-head">
+          <h2 id="try-title">Check a line of text right here</h2>
+          <p>Paste Hindi or Kannada text and the letter rules run as you type. It all happens in your browser, so nothing is uploaded.</p>
+        </div>
+        <div className="try-grid">
+          <div className="sheet editor">
+            <div className="sheet-head">
+              <label htmlFor="sample">Your text</label>
+              <button
+                type="button"
+                className="link"
+                onClick={() => {
+                  const next = broken ? CLEAN_SAMPLE : BROKEN_SAMPLE;
+                  setText(next);
+                  setNote(next === BROKEN_SAMPLE ? 'Broken example loaded.' : 'Clean example loaded.');
+                  box.current?.focus();
+                }}
+              >
+                {broken ? 'Show the corrected text' : 'Show the broken example'}
+              </button>
+            </div>
+            <textarea
+              id="sample"
+              ref={box}
+              value={text}
+              spellCheck={false}
+              placeholder="Paste or type Hindi or Kannada text"
+              onChange={(e) => {
+                setText(e.target.value);
+                setNote('');
+              }}
+            />
+            <p className="sheet-foot" role="status">
+              {note || 'Checked in this browser. Nothing is uploaded.'}
+            </p>
+          </div>
+          <div className="try-out">
+            <p className={'verdict ' + (problems.length ? 'bad' : text.trim() ? 'ok' : '')} aria-live="polite">
+              {problems.length ? '✗ ' + plural(problems.length, 'broken letter') : text.trim() ? '✓ No broken letters found' : 'Results appear here'}
+            </p>
+            {text.trim() && <p className="rendered">{marked}</p>}
+            {problems.length > 0 && (
+              <ol className="problems">
+                {problems.map((p, i) => (
+                  <li key={i}>
+                    <strong>{p.title}</strong> <code>{'U+' + codepoint(p.character).toString(16).toUpperCase().padStart(4, '0')}</code>
+                    <span>{p.hint}</span>
+                  </li>
+                ))}
+              </ol>
+            )}
+            <p className="fine">This checks letter sequences only. Fonts, layout and cut-off letters need the page scan.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Page ---------- */
+
+function App() {
+  const [scans, setScans] = useState<RecordedScan[]>([]);
+  const [online, setOnline] = useState<boolean | null>(null);
+  const [aiAvailable, setAiAvailable] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [scanId, setScanId] = useState<string | null>(null);
+  const [job, setJob] = useState<Job | null>(null);
+  const [report, setReport] = useState<Report | null>(null);
+  const [error, setError] = useState('');
+  const resultsShown = busy || !!report || !!error;
+
+  useEffect(() => {
+    fetch(BASE + 'samples/catalog.json')
+      .then((r) => (r.ok ? r.json() : { scans: [] }))
+      .then((d) =>
+        setScans(
+          Array.isArray(d.scans)
+            ? d.scans.filter((s: RecordedScan) => typeof s.slug === 'string' && /^[a-z0-9-]+$/.test(s.slug) && typeof s.title === 'string')
+            : [],
+        ),
+      )
+      .catch(() => setScans([]));
+  }, []);
+
+  useEffect(() => {
+    // GitHub Pages has no scanner endpoint, so do not ask for one.
+    if (PAGES_PREVIEW) return;
+    fetch(API + '/api/health')
+      .then((r) => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      })
+      .then((d) => {
+        setOnline(true);
+        setAiAvailable(Boolean(d.ai_available));
+      })
+      .catch(() => setOnline(false));
+  }, []);
+
+  useEffect(() => {
+    if (!scanId || !busy) return;
+    let active = true;
+    const poll = async () => {
+      try {
+        const r = await fetch(API + '/api/scans/' + scanId);
+        if (!r.ok) throw new Error('This scan is no longer available. Start a new one.');
+        const j: Job = await r.json();
+        if (!active) return;
+        setJob(j);
+        if (j.status === 'running') return;
+        if (j.status === 'error') throw new Error(j.error || 'The scan failed.');
+        const r2 = await fetch(API + '/api/scans/' + scanId + '/report');
+        if (!r2.ok) throw new Error('The scan finished, but the report could not be loaded.');
+        const data: Report = await r2.json();
+        if (!active) return;
+        setReport(data);
+        setBusy(false);
+      } catch (e) {
+        if (!active) return;
+        setError(e instanceof Error ? e.message : String(e));
+        setBusy(false);
+      }
+    };
+    void poll();
+    const timer = window.setInterval(() => void poll(), 2000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [scanId, busy]);
+
+  const start = async (url: string, lang: string, ai: boolean) => {
+    setError('');
+    setReport(null);
+    setJob(null);
+    setBusy(true);
+    window.setTimeout(() => document.getElementById('scan')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+    try {
+      const r = await fetch(API + '/api/scans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, lang, use_ai: ai }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(typeof d.detail === 'string' ? d.detail : 'The scan could not start (HTTP ' + r.status + ').');
+      if (!d.id) throw new Error('The scanner did not return a scan ID.');
+      setScanId(d.id);
+    } catch (e) {
+      setOnline(e instanceof TypeError ? false : online);
+      setError(e instanceof TypeError ? 'The scanner service is not reachable right now.' : e instanceof Error ? e.message : String(e));
+      setBusy(false);
+    }
+  };
+  const reset = () => {
+    setBusy(false);
+    setScanId(null);
+    setJob(null);
+    setReport(null);
+    setError('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.setTimeout(() => document.getElementById('url')?.focus(), 300);
+  };
+
+  return (
+    <div id="top">
+      <a className="skip" href="#main">
+        Skip to content
+      </a>
+      <Header />
+      <main id="main">
+        <section className="hero wrap" aria-labelledby="hero-title">
+          <div className="hero-copy">
+            <h1 id="hero-title">
+              Every letter should <span className="hl">render</span> right<span className="dot">.</span>
+            </h1>
+            <p className="lede">
+              Your site may look fine in English. AksharaCheck opens it in Chromium, finds the <span lang="hi">हिंदी</span> and{' '}
+              <span lang="kn">ಕನ್ನಡ</span> text that comes out broken, and asks BharatCode to explain it and draft a fix. A fix counts only when the
+              browser agrees.
+            </p>
+            {PAGES_PREVIEW ? (
+              <div className="hero-actions">
+                <a className="btn primary" href="#reports">
+                  {scans.length ? 'See real reports' : 'See what a report shows'}
+                </a>
+                <a className="btn secondary" href="#run">
+                  Run it on your site
+                </a>
+              </div>
+            ) : (
+              <ScanForm onStart={start} busy={busy} aiAvailable={aiAvailable} online={online} />
+            )}
+            <ul className="hero-facts">
+              <li>Real Chromium at phone and desktop widths</li>
+              <li>Explanations in English, Hindi and Kannada</li>
+              <li>Open source</li>
+            </ul>
+          </div>
+          <RepairDemo />
+        </section>
+
+        {resultsShown && <LiveResults busy={busy} job={job} report={report} error={error} scanId={scanId} onReset={reset} />}
+
+        <section className="reports" id="reports" aria-labelledby="reports-title">
+          <div className="wrap">
+            <div className="section-head">
+              <h2 id="reports-title">Every finding comes with its evidence</h2>
+              <p>A report names the problem, shows how Chromium drew it, lists the exact characters, and keeps every repair BharatCode tried.</p>
+            </div>
+            <RecordedScans scans={scans} />
+            <div className="anatomy">
+              <article className="finding error example" aria-label="Example finding">
+                <div className="finding-main">
+                  <p className="finding-top">
+                    <span className="sev error">Fix</span>
+                    <strong>Broken letters</strong>
+                    <span className="muted">phone and desktop</span>
+                  </p>
+                  <p className="finding-sample" lang="hi">
+                    सूचना: परीक्षा <span className="wavy">ह िंदी</span> माध्यम में होगी
+                  </p>
+                  <ul className="sequences">
+                    <li>
+                      <span className="glyph" lang="hi">
+                        ह ि
+                      </span>
+                      <code>U+0939 U+0020 U+093F</code>
+                    </li>
+                  </ul>
+                  <div className="ai">
+                    <p className="ai-label">BharatCode explanation</p>
+                    <p>The vowel sign ि was typed after a space, so it has no consonant to sit on. Remove the space in the page text.</p>
+                    <p className="translation">
+                      <span className="lang-name" lang="hi">
+                        हिंदी
+                      </span>
+                      <span lang="hi">मात्रा एक खाली जगह के बाद टाइप हुई है, इसलिए वह बिंदीदार गोले पर दिखती है।</span>
+                    </p>
+                    <p className="translation">
+                      <span className="lang-name" lang="kn">
+                        ಕನ್ನಡ
+                      </span>
+                      <span lang="kn">ಸ್ವರ ಚಿಹ್ನೆಯನ್ನು ಖಾಲಿ ಜಾಗದ ನಂತರ ಟೈಪ್ ಮಾಡಲಾಗಿದೆ.</span>
+                    </p>
+                  </div>
+                  <div className="repair todo">
+                    <p className="repair-title">What to change</p>
+                    <p>This is a typing mistake, so CSS cannot repair it. Correct the text itself.</p>
+                  </div>
+                </div>
+              </article>
+              <div className="anatomy-notes">
+                <div>
+                  <h3>The exact characters</h3>
+                  <p>Unicode code points, so the mistake can be found with a search in your CMS or code.</p>
+                </div>
+                <div>
+                  <h3>In the reader's language</h3>
+                  <p>BharatCode explains each finding in English, Hindi and Kannada, so content editors can act on it too.</p>
+                </div>
+                <div>
+                  <h3>CSS only where CSS helps</h3>
+                  <p>Layout and font problems get a CSS repair. A typing mistake is reported as a typing mistake.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="how wrap" id="how" aria-labelledby="how-title">
+          <div className="section-head">
+            <h2 id="how-title">The model suggests. The browser decides.</h2>
+            <p>Findings always come from Chromium. BharatCode explains them and drafts repairs, and every repair is tested in a fresh browser before it is called a fix.</p>
+          </div>
+          <div className="flow" role="list">
+            <div className="flow-node" role="listitem">
+              <p className="flow-who">Chromium</p>
+              <h3>Measures the page</h3>
+              <p>Opens the page at 390 and 1440 px, reads which font drew each letter, and checks letter sequences, clipping and language tags.</p>
+            </div>
+            <div className="flow-arrow" aria-hidden="true">
+              <svg viewBox="0 0 48 24">
+                <path d="M2 12h40m-8-8 8 8-8 8" />
+              </svg>
+            </div>
+            <div className="flow-node ai-node" role="listitem">
+              <p className="flow-who">BharatCode</p>
+              <h3>Explains and drafts a fix</h3>
+              <p>
+                <code>qwen-3.8-27b</code> explains the finding in three languages and proposes a whitelisted CSS or <code>lang</code> change.
+              </p>
+            </div>
+            <div className="flow-arrow" aria-hidden="true">
+              <svg viewBox="0 0 48 24">
+                <path d="M2 12h40m-8-8 8 8-8 8" />
+              </svg>
+            </div>
+            <div className="flow-node" role="listitem">
+              <p className="flow-who">Fresh Chromium</p>
+              <h3>Tests the repair</h3>
+              <p>Applies it, runs every check again and confirms the text is still visible, full size and on screen.</p>
+            </div>
+            <div className="flow-loop" aria-hidden="true">
+              <svg viewBox="0 0 100 24" preserveAspectRatio="none">
+                <path d="M98 2v10H2V2" />
+              </svg>
+              <span>Rejected? The browser's reason goes back to BharatCode, up to three tries.</span>
+            </div>
+          </div>
+          <ul className="guards">
+            <li>
+              <strong>Page text is untrusted.</strong> It is sent to the model as data, never as instructions.
+            </li>
+            <li>
+              <strong>Only safe CSS.</strong> The model can only use a short list of layout properties. No URLs, scripts or selectors.
+            </li>
+            <li>
+              <strong>No cheating fixes.</strong> Hiding, shrinking or moving the text off screen is rejected.
+            </li>
+          </ul>
+        </section>
+
+        <TextChecker />
+
+        <section className="checks wrap" id="checks" aria-labelledby="checks-title">
+          <div className="section-head">
+            <h2 id="checks-title">What it checks</h2>
+            <p>Four problems that make Hindi and Kannada pages hard to read, each measured in Chromium at phone and desktop widths.</p>
+          </div>
+          <div className="checks-grid">
+            <article className="check-card">
+              <div className="specimen" lang="hi">
+                <span className="wavy">ह िंदी</span>
+              </div>
+              <h3>Broken letters</h3>
+              <p>A vowel sign, virama or nukta with nothing to attach to. Browsers draw it on a dotted circle.</p>
+            </article>
+            <article className="check-card">
+              <div className="specimen" role="img" aria-label="A Kannada word drawn as empty boxes">
+                <span className="tofu" />
+                <span className="tofu" />
+                <span className="tofu" />
+                <span className="tofu" />
+              </div>
+              <h3>Missing fonts</h3>
+              <p>Chromium reports which font drew each letter, so a silent fallback or an empty box is caught.</p>
+            </article>
+            <article className="check-card">
+              <div className="specimen" lang="kn">
+                <span className="cut">ಪರೀಕ್ಷೆ</span>
+              </div>
+              <h3>Cut-off letters</h3>
+              <p>A tight line height or hidden overflow cuts the parts of a letter above or below the line.</p>
+            </article>
+            <article className="check-card">
+              <div className="specimen code">
+                <code>
+                  &lt;html lang=<span className="wavy">"en"</span>&gt;
+                </code>
+              </div>
+              <h3>Wrong language tag</h3>
+              <p>Hindi marked as English is read aloud in an English voice and may get the wrong font.</p>
+            </article>
+          </div>
+        </section>
+
+        <section className="run wrap" id="run" aria-labelledby="run-title">
+          <div className="run-copy">
+            <h2 id="run-title">Run it on your own site</h2>
+            <p>The scanner runs on your machine with Python and Chromium. Set your BharatCode key on the server side, never in a browser.</p>
+            <p className="muted">Windows, macOS and Linux. Python 3.10 or newer.</p>
+            <a className="btn secondary" href={REPO + '#readme'} target="_blank" rel="noopener noreferrer">
+              Full instructions on GitHub
+            </a>
+          </div>
+          <div className="terminal">
+            <div className="terminal-bar">
+              <span>Terminal</span>
+              <CopyButton text={COMMANDS.join('\n')} />
+            </div>
+            <pre aria-label="Commands to run AksharaCheck">
+              {COMMANDS.map((line) => (
+                <span key={line} className="cmd">
+                  <span className="prompt" aria-hidden="true">
+                    $
+                  </span>
+                  {line}
+                  {'\n'}
+                </span>
+              ))}
+            </pre>
+          </div>
+        </section>
+
+        <section className="faq wrap" id="faq" aria-labelledby="faq-title">
+          <h2 id="faq-title">Questions</h2>
+          <div className="faq-list">
+            <details>
+              <summary>Does AksharaCheck change my website?</summary>
+              <p>No. It only reads a public page. Repairs are tested on a copy of the page in a separate browser, never on your site.</p>
+            </details>
+            <details>
+              <summary>Where does BharatCode come in?</summary>
+              <p>
+                Every finding comes from the browser. BharatCode's <code>qwen-3.8-27b</code> then explains it in English, Hindi and Kannada and drafts a
+                repair. Chromium tests that repair; if it fails, the reason goes back to the model for another try.
+              </p>
+            </details>
+            <details>
+              <summary>Which languages does it support?</summary>
+              <p>Hindi and Kannada. The letter rules also cover other languages in the Devanagari and Kannada scripts, such as Marathi, Nepali, Sanskrit and Tulu.</p>
+            </details>
+            <details>
+              <summary>Can it check pages behind a login?</summary>
+              <p>Not yet. It checks public pages only, and it will not open local or private network addresses.</p>
+            </details>
+            <details>
+              <summary>Is the source code available?</summary>
+              <p>
+                Yes, the scanner, the rules and this site are on{' '}
+                <a href={REPO} target="_blank" rel="noopener noreferrer">
+                  GitHub
+                </a>
+                .
+              </p>
+            </details>
+          </div>
+        </section>
+
+        <section className="cta wrap" aria-labelledby="cta-title">
+          <Logo size={48} onDark />
+          <h2 id="cta-title">Find the broken letters before your readers do.</h2>
+          <a className="btn on-dark" href={PAGES_PREVIEW ? '#reports' : '#top'}>
+            {PAGES_PREVIEW ? 'See the reports' : 'Check a page'}
+          </a>
+        </section>
+      </main>
+      <footer className="footer wrap">
+        <div className="footer-brand">
+          <Logo size={22} />
+          <strong>AksharaCheck</strong>
+          <span lang="hi">अक्षर जाँच</span>
+          <span lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ</span>
+        </div>
+        <nav aria-label="Footer">
+          <a href={REPO} target="_blank" rel="noopener noreferrer">
+            GitHub
+          </a>
+          <a href="https://bharatcode.ai/hackathon" target="_blank" rel="noopener noreferrer">
+            BharatCode Build League 2026
+          </a>
+        </nav>
+      </footer>
+    </div>
+  );
+}
+
+createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+);

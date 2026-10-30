@@ -1,182 +1,126 @@
-"""Browser QA for the built AksharaCheck interface.
+"""Browser QA for the AksharaCheck website at nine screen sizes.
 
-Run the frontend first:
-    cd web
-    npm install
-    npm run dev
+Run the frontend first, either the dev server:
+    cd web && npm install && npm run dev
+or a built copy:
+    cd web && npm run build && npx vite preview --port 5173
 
 Then, in another terminal:
     python scripts/check_web_ui.py --url http://127.0.0.1:5173
 
-Screenshots are saved under output/visual-qa/ and are not committed.
+Screenshots go to output/visual-qa/ and are not committed.
 """
 import argparse
 from pathlib import Path
 from urllib.parse import urlparse
+
 from playwright.sync_api import sync_playwright
 
-SIZES=[(360,780),(390,844),(600,900),(768,1024),(900,900),(1024,800),(1280,800),(1440,900),(1920,1080)]
-def main():
-    ap=argparse.ArgumentParser()
-    ap.add_argument("--url",default="http://127.0.0.1:5173")
-    args=ap.parse_args()
-    parsed=urlparse(args.url)
-    if parsed.scheme not in {"http","https"} or parsed.hostname not in {"localhost","127.0.0.1"}:
-        ap.error("For safety, visual QA only accepts a locally running frontend")
-    shots=Path("output/visual-qa")
-    shots.mkdir(parents=True,exist_ok=True)
-    with sync_playwright() as p:
-        browser=p.chromium.launch(headless=True)
-        for width,height in SIZES:
-            page=browser.new_page(viewport={"width":width,"height":height},device_scale_factor=1)
-            errors=[]
-            page.on("pageerror",lambda err:errors.append(str(err)))
-            response=page.goto(args.url,wait_until="domcontentloaded",timeout=30000)
-            if not response or response.status>=400:
-                raise AssertionError(f"{width}px: frontend did not load correctly")
-            page.locator("#hero-title").wait_for()
-            page.evaluate("document.fonts.ready")
-            assert page.title().startswith("AksharaCheck"),"Unexpected browser title"
-            assert page.locator(".brand-name").inner_text()=="AksharaCheck"
-            assert "अक्षर चेक" in page.locator(".brand-subtitle").inner_text()
-            assert "ಅಕ್ಷರ ಪರಿಶೀಲನೆ" in page.locator(".brand-subtitle").inner_text()
-            assert page.get_by_text("390 px example").count()==1
-            assert page.evaluate("document.fonts.check('600 16px \"Anek Latin Variable\"')"),"Locally hosted Anek Latin font not loaded"
-            assert page.evaluate("document.fonts.check('400 16px \"Anek Devanagari Variable\"')"),"Locally hosted Hindi font not loaded"
-            assert page.evaluate("document.fonts.check('400 16px \"Anek Kannada Variable\"')"),"Locally hosted Kannada font not loaded"
-            assert page.locator("a[href='#faq']").count()==1
-            assert page.locator("a[href='#checks']").count()==1
-            for section in ["try","checks","report","faq"]:
-                assert page.locator(f"#{section}").count()==1,f"{width}px: missing #{section}"
-            overflow=page.evaluate(
-                "()=>({body:document.body.scrollWidth,root:document.documentElement.scrollWidth,viewport:innerWidth})"
-            )
-            assert overflow["root"]<=width+2 and overflow["body"]<=width+2,(
-                f"{width}px: horizontal overflow: {overflow}"
-            )
-            geometry=page.evaluate("""() => {
-                const r=s=>document.querySelector(s).getBoundingClientRect();
-                const center=o=>(o.top+o.bottom)/2;
-                const wrap=r('.hero.wrap'),cta=r('.bottom-cta'),button=r('.bottom-cta a');
-                const badge=r('.sample-report-top .sample-error'),title=r('.sample-report-top strong');
-                return {left:wrap.left,right:innerWidth-wrap.right,
-                        brand:r('.brand').width,
-                        ctaOffset:Math.abs(center(cta)-center(button)),
-                        badgeOffset:Math.abs(center(badge)-center(title))};
-            }""")
-            assert abs(geometry["left"]-geometry["right"])<3,(
-                f"{width}px: page frame is not centered: {geometry}"
-            )
-            alignment=page.evaluate("""() => {
-                const selectors=['.topbar .wrap','.hero.wrap','.bottom-cta.wrap','.footer.wrap'];
-                return selectors.map(s=>({selector:s,left:document.querySelector(s).getBoundingClientRect().left,
-                    right:document.querySelector(s).getBoundingClientRect().right}));
-            }""")
-            assert all(abs(r["left"]-alignment[0]["left"])<=3 and
-                       abs(r["right"]-alignment[0]["right"])<=3
-                       for r in alignment),f"{width}px: header, hero, CTA, footer disagree on alignment: {alignment}"
-            identity=page.evaluate("""() => {
-                const rect=s=>document.querySelector(s).getBoundingClientRect();
-                const style=s=>getComputedStyle(document.querySelector(s));
-                const head=rect('.topbar-inner'),brand=rect('.topbar .brand'),
-                    logo=rect('.topbar .brand .brand-symbol'),name=rect('.topbar .brand-name'),
-                    subtitle=rect('.topbar .brand-subtitle'),menu=rect('.menu-toggle'),
-                    nav=rect('.topbar nav'),footer=rect('.footer-brand'),footName=rect('.footer-brand strong');
-                return {headHeight:head.height,headLeft:head.left,headRight:head.right,
-                    brandLeft:brand.left,brandRight:brand.right,logoWidth:logo.width,
-                    nameSize:parseFloat(style('.topbar .brand-name').fontSize),
-                    subtitleSize:parseFloat(style('.topbar .brand-subtitle').fontSize),
-                    subGap:subtitle.top-name.bottom,navLeft:nav.left,
-                    menuLeft:menu.left,menuVisible:style('.menu-toggle').display!=='none',
-                    navVisible:style('.topbar nav').display!=='none',
-                    footerSize:parseFloat(style('.footer-brand strong').fontSize),
-                    footerRight:footer.right,footNameRight:footName.right};
-            }""")
-            min_height=102 if width>980 else (92 if width>480 else 82)
-            assert identity["headHeight"]>=min_height-3,f"{width}px: header height missing breathing room: {identity}"
-            assert identity["brandLeft"]>=identity["headLeft"]-2 and identity["brandRight"]<=identity["headRight"]+2,(
-                f"{width}px: brand outside header: {identity}"
-            )
-            assert identity["subGap"]>=1,f"{width}px: language subtitle touches English title: {identity}"
-            name_min,name_max=(29,34.2) if width>980 else ((26.5,27.5) if width>480 else (21.8,24.2))
-            assert name_min<=identity["nameSize"]<=name_max,f"{width}px: brand name out of proportional scale: {identity}"
-            sub_min,sub_max=(13,15.2) if width>980 else ((12.7,13.2) if width>480 else (10.4,11.2))
-            assert sub_min<=identity["subtitleSize"]<=sub_max,f"{width}px: multilingual subtitle not scaled with title: {identity}"
-            mark_min,mark_max=(47,49) if width>980 else ((42,44) if width>480 else (34,38))
-            assert mark_min<=identity["logoWidth"]<=mark_max,f"{width}px: logo not scaled with name: {identity}"
-            assert identity["footerRight"]<=width+2,f"{width}px: footer clipped horizontally: {identity}"
-            if width<=980:
-                assert identity["menuVisible"] and not identity["navVisible"],(
-                    f"{width}px: menu should replace desktop links at this width: {identity}"
-                )
-                assert identity["brandRight"]+6<=identity["menuLeft"],(
-                    f"{width}px: brand overlaps menu: {identity}"
-                )
-            else:
-                assert identity["navVisible"] and not identity["menuVisible"],(
-                    f"{width}px: desktop nav must be visible: {identity}"
-                )
-                assert identity["brandRight"]+8<=identity["navLeft"],(
-                    f"{width}px: brand overlaps navigation: {identity}"
-                )
-            assert "अक्षर चेक" in page.locator(".footer-brand-languages").inner_text()
-            assert "ಅಕ್ಷರ ಪರಿಶೀಲನೆ" in page.locator(".footer-brand-languages").inner_text()
-            if width>=1440:
-                desktop=page.evaluate("""() => ({
-                    frame:document.querySelector('.hero.wrap').getBoundingClientRect().width,
-                    brand:parseFloat(getComputedStyle(document.querySelector('.brand-name')).fontSize),
-                    footerBrand:parseFloat(getComputedStyle(document.querySelector('.footer-brand strong')).fontSize),
-                    sheet:document.querySelector('.hero-sheet').getBoundingClientRect().width
-                })""")
-                gutter=max(20,min(width*.03,48))
-                ideal=min(width-2*gutter,1420)
-                assert abs(desktop["frame"]-ideal)<5,f"{width}px: centered desktop frame mismatch: {desktop}"
-                if width>=1700:
-                    assert desktop["frame"]/width<.90,f"{width}px: content is stretched to the edges: {desktop}"
-                hero_height=page.locator(".hero").evaluate("(el)=>el.getBoundingClientRect().height")
-                header_height=page.locator(".topbar").evaluate("(el)=>el.getBoundingClientRect().height")
-                assert hero_height>=height-header_height-3,f"{width}px: desktop hero fails to use the vertical viewport"
-                assert 29<=desktop["brand"]<=34.2,f"{width}px: brand typography outside balanced range: {desktop}"
-                assert 21<=desktop["footerBrand"]<=24.2,f"{width}px: footer typography outside balanced range: {desktop}"
-                assert desktop["sheet"]>=500,f"{width}px: hero art too narrow: {desktop}"
-            assert geometry["brand"]>(150 if width<=480 else 180),f"{width}px: brand lockup too small"
-            if width>720:
-                assert geometry["ctaOffset"]<18,f"{width}px: closing action not vertically centered"
-                assert geometry["badgeOffset"]<10,f"{width}px: sample status badge not aligned"
+SIZES = [(320, 640), (360, 780), (390, 844), (430, 932), (768, 1024), (1024, 800), (1280, 720), (1440, 900), (1920, 1080)]
+SECTIONS = ["reports", "how", "try", "checks", "run", "faq"]
 
-            # The editor starts with visible issues. The control toggles to a clean example.
-            textarea=page.get_by_role("textbox",name="Hindi or Kannada text to check")
-            assert "सूचना" in textarea.input_value()
-            page.get_by_role("button",name="Show a clean example").click()
-            assert "किताब" in textarea.input_value()
-            assert "Clean example loaded" in page.locator(".sample-feedback").inner_text()
-            page.get_by_role("button",name="Show a broken example").click()
-            assert "सूचना" in textarea.input_value()
-            assert "Broken example loaded" in page.locator(".sample-feedback").inner_text()
-            textarea.fill("कन्नड")
-            assert textarea.input_value()=="कन्नड"
-            page.get_by_role("button",name="Show a broken example").click()
-            assert "सूचना" in textarea.input_value()
-            page.get_by_role("button",name="Replay example").click()
-            assert page.locator(".hero-sheet").count()==1
-            page.get_by_role("button",name="hi.wikipedia.org").click()
-            assert page.locator("#url").input_value()=="https://hi.wikipedia.org/"
-            page.locator("#url").fill("")
-            assert page.locator(".sample-report-top .sample-error").is_visible()
-            assert page.locator(".bottom-cta a").is_visible()
-            if width<=980:
-                menu=page.get_by_role("button",name="Open navigation")
-                assert menu.is_visible()
-                menu.click()
-                assert page.get_by_role("navigation",name="Main navigation").get_by_role("link",name="What it checks").is_visible()
-                page.get_by_role("navigation",name="Main navigation").get_by_role("link",name="What it checks").click()
-                assert page.get_by_role("button",name="Open navigation").get_attribute("aria-expanded")=="false"
-            page.screenshot(path=str(shots/f"aksharacheck-{width}.png"),full_page=True,animations="disabled")
-            assert not errors,f"{width}px JavaScript errors: {errors}"
-            print(f"PASS {width} x {height}: layout, navigation, controls, content, and screenshot")
+
+def check(page, width, height):
+    errors = []
+    page.on("pageerror", lambda err: errors.append(str(err)))
+    page.locator("#hero-title").wait_for()
+    page.evaluate("document.fonts.ready")
+    assert page.title().startswith("AksharaCheck"), "Unexpected browser title"
+    for family, weight in (("Anek Latin Variable", 600), ("Anek Devanagari Variable", 400), ("Anek Kannada Variable", 400)):
+        assert page.evaluate(f"document.fonts.check('{weight} 16px \"{family}\"')"), f"{family} did not load"
+    for section in SECTIONS:
+        assert page.locator(f"#{section}").count() == 1, f"{width}px: missing #{section}"
+
+    size = page.evaluate("() => ({root: document.documentElement.scrollWidth, body: document.body.scrollWidth})")
+    assert size["root"] <= width + 1 and size["body"] <= width + 1, f"{width}px: sideways scroll {size}"
+
+    frames = page.evaluate("""() => ['.topbar .wrap', '.hero.wrap', '.cta.wrap', '.footer.wrap'].map(s => {
+        const r = document.querySelector(s).getBoundingClientRect(); return {s, left: r.left, right: r.right};
+    })""")
+    first = frames[0]
+    assert all(abs(f["left"] - first["left"]) <= 2 and abs(f["right"] - first["right"]) <= 2 for f in frames), (
+        f"{width}px: header, hero, closing band and footer do not line up: {frames}")
+    assert abs(first["left"] - (width - first["right"])) <= 2, f"{width}px: page is not centred: {first}"
+
+    # Button text sits in the vertical middle of its button.
+    offsets = page.evaluate("""() => [...document.querySelectorAll('.btn, #site-menu a, .menu-toggle')]
+        .filter(b => b.offsetParent !== null)
+        .map(b => {
+            const box = b.getBoundingClientRect();
+            const range = document.createRange(); range.selectNodeContents(b);
+            const text = range.getBoundingClientRect();
+            return {label: b.textContent.trim(), offset: Math.abs((text.top - box.top) - (box.bottom - text.bottom))};
+        })""")
+    off_centre = [o for o in offsets if o["offset"] > 3]
+    assert not off_centre, f"{width}px: button text off centre: {off_centre}"
+
+    # Header: a readable name, menu options that all match, and nothing overlapping.
+    header = page.evaluate("""() => {
+        const box = e => e.getBoundingClientRect();
+        const brand = box(document.querySelector('.brand'));
+        const links = [...document.querySelectorAll('#site-menu a')].filter(a => a.offsetParent !== null);
+        const styles = links.map(a => { const c = getComputedStyle(a); return [c.fontSize, c.fontWeight, c.color, Math.round(box(a).height)].join('|'); });
+        const toggle = document.querySelector('.menu-toggle');
+        const right = links.length ? Math.min(...links.map(a => box(a).left)) : box(toggle).left;
+        return {name: parseFloat(getComputedStyle(document.querySelector('.brand-name')).fontSize),
+                sub: document.querySelector('.brand-sub').innerText, styles: [...new Set(styles)],
+                gap: right - brand.right, links: links.length};
+    }""")
+    assert header["name"] >= 22, f"{width}px: name too small {header}"
+    assert "अक्षर जाँच" in header["sub"] and "ಅಕ್ಷರ ಪರಿಶೀಲನೆ" in header["sub"], f"{width}px: Hindi and Kannada names missing"
+    assert len(header["styles"]) <= 1, f"{width}px: menu options do not match {header['styles']}"
+    assert header["gap"] >= 16, f"{width}px: name and menu are too close {header}"
+    if width > 760:
+        assert header["links"] == 6, f"{width}px: menu options missing {header}"
+
+    # Phone menu opens, and closes again when a link is chosen.
+    if width <= 760:
+        page.locator(".menu-toggle").click()
+        assert page.locator("#site-menu").is_visible(), f"{width}px: menu did not open"
+        page.locator("#site-menu a[href='#faq']").click()
+        page.wait_for_timeout(300)
+        assert not page.locator("#site-menu").is_visible(), f"{width}px: menu did not close"
+
+    # The text checker starts broken, switches to the corrected text and back.
+    verdict = page.locator(".verdict")
+    assert "broken letter" in verdict.inner_text()
+    page.get_by_role("button", name="Show the corrected text").click()
+    assert "No broken letters" in verdict.inner_text()
+    page.get_by_role("button", name="Show the broken example").click()
+    assert "broken letter" in verdict.inner_text()
+    assert not errors, f"{width}px: script errors {errors}"
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--url", default="http://127.0.0.1:5173")
+    args = ap.parse_args()
+    parsed = urlparse(args.url)
+    if parsed.scheme not in {"http", "https"} or parsed.hostname not in {"localhost", "127.0.0.1"}:
+        ap.error("For safety, visual QA only accepts a locally running frontend")
+    shots = Path("output/visual-qa")
+    shots.mkdir(parents=True, exist_ok=True)
+    with sync_playwright() as p:
+        import os
+        options = {"headless": True}
+        if os.getenv("AKSHARA_CHROMIUM_PATH"):
+            options["executable_path"] = os.environ["AKSHARA_CHROMIUM_PATH"]
+        browser = p.chromium.launch(**options)
+        for width, height in SIZES:
+            page = browser.new_page(viewport={"width": width, "height": height}, device_scale_factor=1, color_scheme="dark")
+            response = page.goto(args.url, wait_until="domcontentloaded", timeout=30000)
+            if not response or response.status >= 400:
+                raise AssertionError(f"{width}px: the site did not load")
+            check(page, width, height)
+            # Dark mode on the device must not change the page.
+            assert page.evaluate("getComputedStyle(document.body).backgroundColor") == "rgb(246, 247, 242)"
+            page.wait_for_timeout(3500)
+            page.screenshot(path=str(shots / f"site-{width}.png"), full_page=True)
+            print(f"{width}px: ok")
             page.close()
         browser.close()
-    print(f"All {len(SIZES)} viewports passed. Screenshots: {shots.resolve()}")
+    print(f"All {len(SIZES)} viewports passed.")
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     main()

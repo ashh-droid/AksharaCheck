@@ -44,3 +44,28 @@ def test_slug_cannot_traverse_directories(tmp_path,monkeypatch):
     monkeypatch.setattr(publish,"SAMPLES",tmp_path)
     with pytest.raises(ValueError,match="Slug"):
         publish.copy_scan(tmp_path,"../private","Test",True)
+
+
+def test_publishes_fix_captures_fonts_and_gallery_details(tmp_path, monkeypatch):
+    monkeypatch.setattr(publish, "SAMPLES", tmp_path / "samples")
+    source = tmp_path / "scan"
+    source.mkdir()
+    findings = [
+        {"id": "a", "severity": "warning", "detector": "possible-clipping", "sample": "कृपया पूरा पाठ",
+         "element_screenshot": "element-a-390.png",
+         "fix": {"status": "verified", "after_screenshot": "element-a-390-fixed.png"}},
+        {"id": "b", "severity": "error", "detector": "broken-cluster", "sample": "ह िंदी", "fix": {"status": "not-applicable"}},
+    ]
+    (source / "report.json").write_text(json.dumps({
+        "target": "https://kn.wikipedia.org/", "pages": [{"url": "https://kn.wikipedia.org/", "viewport": 390}],
+        "findings": findings, "summary": {"error": 1, "warning": 1, "info": 0},
+        "ai": {"model": "qwen-3.8-27b", "calls": 4}, "generated_at": "2026-11-02T10:00:00+00:00"}), encoding="utf-8")
+    for name in ("report.html", "report.md", "element-a-390.png", "element-a-390-fixed.png", "font-anek-latin-400.woff2"):
+        (source / name).write_bytes(b"x")
+    publish.copy_scan(source, "kannada-wikipedia", "Kannada Wikipedia", True)
+    out = tmp_path / "samples" / "kannada-wikipedia"
+    assert (out / "element-a-390-fixed.png").is_file()
+    assert (out / "font-anek-latin-400.woff2").is_file()
+    entry = json.loads((tmp_path / "samples" / "catalog.json").read_text(encoding="utf-8"))["scans"][0]
+    assert entry["ai_calls"] == 4 and entry["verified_fixes"] == 1
+    assert entry["highlight"] == {"detector": "broken-cluster", "sample": "ह िंदी"}
