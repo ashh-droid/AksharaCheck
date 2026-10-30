@@ -98,3 +98,11 @@ def test_stops_after_first_unavailable_generation(monkeypatch):
     assert "fix" not in report["findings"][1]
     assert "could not process" in events[-1]
     assert report["ai"]["calls"]==0
+
+
+def test_model_text_is_tidied_and_checked_for_script():
+    assert ai.tidy_explanation('The element selected by [data-akshara-id="ak-29ef8dc6"] is cut off.', 420) == "The element is cut off."
+    assert ai.mostly_script("यह पाठ हिंदी में है।", 0x0900, 0x097F)
+    assert not ai.mostly_script("ಈ ಪಠ್ಯ ಕನ್ನಡದಲ್ಲಿದೆ.", 0x0900, 0x097F)
+    long = "First sentence here. " * 40
+    assert ai.tidy_explanation(long, 100).endswith(".") and len(ai.tidy_explanation(long, 100)) <= 100

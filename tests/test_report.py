@@ -73,11 +73,11 @@ def test_bharatcode_explanation_and_translations_are_on_the_card(tmp_path):
         summary_hi="डिब्बा पाठ से छोटा है।", summary_kn="ಪೆಟ್ಟಿಗೆ ಪಠ್ಯಕ್ಕಿಂತ ಚಿಕ್ಕದು.")],
         ai={"model": "qwen-3.8-27b", "calls": 3, "input_tokens": 2000, "output_tokens": 500, "seconds": 6.5})
     body = page.split("<details")[0]  # visible without opening anything
-    assert "BharatCode explanation" in body
+    assert "BharatCode explains" in body
     assert "The box is shorter than its text." in body
     assert '<span lang="hi">डिब्बा पाठ से छोटा है।</span>' in body
     assert '<span lang="kn">ಪೆಟ್ಟಿಗೆ ಪಠ್ಯಕ್ಕಿಂತ ಚಿಕ್ಕದು.</span>' in body
-    assert "BharatCode <code>qwen-3.8-27b</code>: 3 calls, 2,500 tokens, 6.5 s." in page
+    assert "BharatCode <code>qwen-3.8-27b</code>, 3 calls, 2,500 tokens, 6.5 s." in page
 
 
 def test_verified_fix_shows_before_after_and_every_attempt(tmp_path):
@@ -90,9 +90,9 @@ def test_verified_fix_shows_before_after_and_every_attempt(tmp_path):
              "attempts": [{"css": {"height": "1px"}, "attributes": {}, "status": "unverified", "reason": "Visible text area shrunk"},
                           {"css": {"height": "auto"}, "attributes": {}, "status": "verified", "reason": ""}]})])
     assert "Fix verified in a fresh Chromium at 390 px" in page
-    assert '<img src="element-abc123-390.png" alt="The element before the fix">' in page
+    assert '<img src="element-abc123-390.png" alt="The element as Chromium drew it"><figcaption>Before</figcaption>' in page
     assert '<img src="element-abc123-390-fixed.png" alt="The element after the fix">' in page
-    assert "BharatCode suggested 2 repairs, and Chromium tested each one" in page
+    assert "BharatCode suggested 2 repairs and Chromium tested each one." in page
     assert "Rejected: Visible text area shrunk" in page
     assert "height: auto;" in page
 
@@ -101,7 +101,7 @@ def test_failure_does_not_claim_verified(tmp_path):
     page = render(tmp_path, [finding(fix={"status": "unverified", "reason": "Original issue still present",
                                           "attempts": [{"css": {"line-height": "1.8"}, "attributes": {}, "status": "unverified",
                                                         "reason": "Original issue still present"}]})])
-    assert "No suggested fix passed. Original issue still present." in page
+    assert "No suggested fix passed: original issue still present." in page
     assert "Fix verified" not in page
     assert "repair ok" not in page
 
@@ -121,7 +121,7 @@ def test_crops_show_on_the_card_and_slivers_do_not(tmp_path):
         finding(element_screenshot="element-good.png"),
         finding(id="s", element_screenshot="element-sliver.png", screenshot="page-01-390.png"),
     ])
-    assert '<figure class="capture"><img src="element-good.png"' in page
+    assert '<div class="figures"><figure><img src="element-good.png"' in page
     assert 'src="element-sliver.png"' not in page
     assert 'href="page-01-390.png"' in page
 
@@ -165,3 +165,74 @@ def test_markdown_uses_the_same_words(tmp_path):
     assert "## To check" in md and "### Check: Letters may be cut off" in md
     assert "BharatCode: Too short." in md and "हिंदी: छोटा।" in md
     assert "Fix verified in Chromium at 390 px" in md
+
+
+def test_model_text_in_the_wrong_script_or_with_selectors_is_cleaned(tmp_path):
+    page = render(tmp_path, [finding(
+        ai_explanation='The element selected by [data-akshara-id="ak-29ef8dc6"] has a fixed height.',
+        summary_hi="ಈ ಪಠ್ಯ ಕನ್ನಡದಲ್ಲಿದೆ.",  # Kannada in the Hindi slot
+        summary_kn="ಈ ಪಠ್ಯ ಕನ್ನಡದಲ್ಲಿದೆ.")])
+    body = page.split('<details class="more"')[0]
+    assert "The element has a fixed height." in body
+    assert "data-akshara-id" not in body and "ak-29ef8dc6" not in body
+    assert '<span class="lang-name" lang="hi">' not in body
+    assert '<span lang="kn">ಈ ಪಠ್ಯ ಕನ್ನಡದಲ್ಲಿದೆ.</span>' in body
+
+
+def test_unavailable_model_placeholder_is_not_shown_as_an_explanation(tmp_path):
+    page = render(tmp_path, [finding(ai_explanation="BharatCode unavailable; browser findings remain available")])
+    assert "BharatCode explains" not in page
+
+
+def test_language_fix_does_not_show_identical_before_and_after(tmp_path):
+    png(tmp_path / "element-abc123-390.png", 300, 60)
+    png(tmp_path / "element-abc123-390-fixed.png", 300, 60)
+    page = render(tmp_path, [finding(detector="wrong-lang", evidence={"script": "devanagari", "effective": "en"},
+        element_screenshot="element-abc123-390.png",
+        fix={"status": "verified", "css": {}, "attributes": {"lang": "hi"}, "viewport": 390,
+             "after_screenshot": "element-abc123-390-fixed.png"})])
+    assert "element-abc123-390-fixed.png" not in page
+    assert "Chromium reads the text as Hindi" in page
+    assert "Tagged as English (en), but written in Devanagari." in page
+
+
+def test_overlapping_broken_sequences_are_merged(tmp_path):
+    page = render(tmp_path, [finding(severity="error", detector="broken-cluster", evidence={"invalid_sequences": [
+        {"position": 8, "sequence": "माा", "codepoints": ["U+092E", "U+093E", "U+093E"], "reason": "dependent vowel sign without a preceding consonant"},
+        {"position": 9, "sequence": "ााि", "codepoints": ["U+093E", "U+093E", "U+093F"], "reason": "dependent vowel sign without a preceding consonant"}]})])
+    assert page.count('<span class="glyph"') == 1
+    assert "U+092E U+093E U+093E U+093F" in page
+
+
+def test_font_findings_name_the_file_and_the_fonts(tmp_path):
+    page = render(tmp_path, [
+        finding(id="f1", severity="error", detector="font-load-failed", sample="", selector="document",
+                evidence={"font_url": "https://example.org/fonts/missing.woff2", "status": 404}),
+        finding(id="f2", severity="info", detector="font-fallback",
+                evidence={"requested": "Mukta", "actual": [{"familyName": "Noto Sans Devanagari"}]}),
+        finding(id="f3", detector="legacy-font", evidence={"computed_font": '"KrutiDev 010", serif'}),
+    ])
+    assert "https://example.org/fonts/missing.woff2" in page and "The font file returned HTTP 404." in page
+    assert "The page asked for Mukta, but Chromium drew this text with Noto Sans Devanagari." in page
+    assert "Font used: KrutiDev 010." in page
+
+
+def test_overview_lists_every_kind_with_links(tmp_path):
+    page = render(tmp_path, [finding(), finding(id="b", severity="error", detector="broken-cluster", evidence={})])
+    assert '<h2 id="overview-title">What was found</h2>' in page
+    assert '<a href="#broken-cluster">Broken letters</a>' in page and 'id="broken-cluster"' in page
+    assert '<a href="#possible-clipping">Letters may be cut off</a>' in page
+
+
+def test_json_does_not_repeat_findings_inside_pages(tmp_path):
+    import json
+    item = finding()
+    render(tmp_path, [item], pages=[{"url": "https://example.org", "viewport": 390, "findings": [item]}])
+    saved = json.loads((tmp_path / "report.json").read_text(encoding="utf-8"))
+    assert "findings" not in saved["pages"][0] and saved["pages"][0]["finding_count"] == 1
+    assert len(saved["findings"]) == 1
+
+
+def test_duration_reads_naturally():
+    from aksharacheck.report import _duration
+    assert _duration(6.5) == "6.5 s" and _duration(42.2) == "42 s" and _duration(110.15) == "1 min 50 s"
