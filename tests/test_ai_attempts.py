@@ -79,3 +79,22 @@ def test_unavailable_model_is_reported_not_shown_as_explanation(monkeypatch):
     assert f["fix"]["status"] == "unavailable"
     assert not f.get("ai_explanation")
     assert report["ai"]["calls"] == 0
+
+
+def test_stops_after_first_unavailable_generation(monkeypatch):
+    reply={"status":"unavailable","error_code":"HTTP 200, incomplete output: max_output_tokens reached",
+           "explanation":"","css":{},"attributes":{}}
+    ScriptedClient.replies=[reply,reply]
+    ScriptedClient.seen=[]
+    monkeypatch.setattr(ai,"BharatCodeClient",ScriptedClient)
+    report={"findings":[finding(id="f-1"),finding(id="f-2")]}
+    events=[]
+    async def progress(msg):
+        events.append(msg)
+    asyncio.run(ai.explain_and_verify(report,max_fixes=2,progress=progress))
+    assert len(ScriptedClient.seen)==1
+    assert report["findings"][0]["fix"]["status"]=="unavailable"
+    assert "max_output_tokens" in report["findings"][0]["fix"]["reason"]
+    assert "fix" not in report["findings"][1]
+    assert "could not process" in events[-1]
+    assert report["ai"]["calls"]==0
