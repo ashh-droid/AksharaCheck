@@ -245,3 +245,39 @@ def test_checkpoint_identity_distinguishes_same_rule_at_different_elements():
     assert demo.identity(first)!=demo.identity(second)
     assert demo.identity(first)!=demo.identity(third)
     assert demo.identity(first)==demo.identity(dict(first))
+
+
+def test_pre_retry_checkpoint_is_migrated_after_fresh_browser_verification(monkeypatch,tmp_path):
+    """Networking-only changes must not lose the user's two verified findings."""
+    setup_fake(monkeypatch,tmp_path)
+    previous_scope=demo.scope_hash(previous_client=True)
+    assert previous_scope and previous_scope!=demo.scope_hash()
+    old_finding={"detector":"wrong-lang","severity":"warning","viewport":390,
+                 "selector":'[data-akshara-id="ak-1"]',"sample":"यह पाठ है"}
+    state={"version":1,"scope":previous_scope,"model":demo.MODEL,
+           "findings":{demo.identity(old_finding):{
+               "ai_explanation":"The language tag is wrong.",
+               "summary_hi":"भाषा का टैग गलत है।",
+               "summary_kn":"ಭಾಷಾ ಗುರುತು ತಪ್ಪಾಗಿದೆ.",
+               "fix":{"status":"verified","css":{},"attributes":{"lang":"hi"}}}}}
+    demo.save_checkpoint(tmp_path/demo.CHECKPOINT_NAME,state)
+    verifications=[]
+
+    async def recheck(finding,patch,**kwargs):
+        verifications.append(finding["id"])
+        return {"status":"verified","css":{},"attributes":{"lang":"hi"}}
+    monkeypatch.setattr(demo,"verify_patch",recheck)
+
+    async def skip_completed(report,**options):
+        assert report["findings"][0].get("ai_resumed") is True
+        assert report["findings"][0]["fix"]["status"]=="verified"
+        report["ai"]={"model":demo.MODEL,"calls":0}
+
+    monkeypatch.setattr(demo,"explain_and_verify",skip_completed)
+    monkeypatch.setattr(demo,"write_reports",
+                        lambda report,folder:(folder/"report.html").write_text("RESUMED PASS",encoding="utf-8"))
+    asyncio.run(demo.test("http://127.0.0.1:8080/index.html",max_findings=1))
+    migrated=demo.read_checkpoint(tmp_path/demo.CHECKPOINT_NAME,demo.scope_hash())
+    assert len(migrated["findings"])==1
+    assert verifications==["first"]
+    assert (tmp_path/"report.html").read_text(encoding="utf-8")=="RESUMED PASS"
