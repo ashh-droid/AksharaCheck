@@ -81,7 +81,13 @@ Once that succeeds, run the full AI demonstration:
 start output\ai-demo\report.html
 ```
 
-The demo starts a temporary localhost fixture server, runs Chromium, makes **fresh** BharatCode calls (it bypasses the local answer cache), and saves `output/ai-demo/report.html` **only after a successful complete run**. A failed model request never replaces a previous successful HTML/JSON/Markdown report. If a request fails, the terminal reports a safe diagnostic such as HTTP 400, HTTP 401, incomplete output, or queue timeout, without printing the key, untrusted site content, or full provider response.
+The demo runs the scanner in an isolated working directory and preserves your previous HTML/JSON/Markdown report and screenshots if a model request fails. After each **completed** model explanation it writes a credential-free local progress checkpoint to `output/ai-demo/.ai-progress.json`.
+
+**If the second (or later) finding times out:** run the **same command again**, `.venv\Scripts\python.exe scripts\run_ai_demo.py --max-findings 5`. Completed findings are resumed from previous BharatCode model calls, and verified repairs must pass a **fresh Chromium check**. Only pending findings request new model generations. The completed report labels how many explanations came from previous successful sessions, and does not count reused answers as new model calls.
+
+To deliberately ignore earlier progress and make new model requests for every finding, use `--fresh` (for example, `scripts\run_ai_demo.py --max-findings 5 --fresh`). The checkpoint contains only public fixture explanations and repair data, **never API keys**. If the fixture or scanner/AI implementation changes, its saved results are invalidated automatically.
+
+A successful run is required before the new report is published. A failed model request retains the previous completed report. The terminal provides a safe diagnostic such as HTTP 401, incomplete output, or network/queue timeout without printing keys, authorization headers, or raw model responses.
 
 **If a successful model call is followed by HTTP 401:** run `scripts/check_bharatcode.py` again and enter the *same account's* key through the hidden prompt. If the catalog or generation now rejects the key, review its validity and privileges in the BharatCode account. If the smoke test still returns HTTP 200 but the demo returns HTTP 401, share only sanitized status codes with the provider; do not paste the key or raw authorization headers anywhere. Read the repair status on each finding. Never present a suggested fix as verified unless the independent browser recheck passes.
 
