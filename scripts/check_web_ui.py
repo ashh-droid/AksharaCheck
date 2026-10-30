@@ -42,6 +42,39 @@ def check(page, width, height):
         f"{width}px: header, hero, closing band and footer do not line up: {frames}")
     assert abs(first["left"] - (width - first["right"])) <= 2, f"{width}px: page is not centred: {first}"
 
+    # Desktop: center the content in the available height and keep the
+    # following blue report band below the first visible screen.
+    if width > 1024:
+        hero = page.evaluate("""() => {
+            const box = selector => document.querySelector(selector).getBoundingClientRect();
+            const header = box('.topbar'), stage = box('.hero.wrap'),
+                  next = box('#reports');
+            return {headerBottom: header.bottom, heroTop: stage.top,
+                    heroBottom: stage.bottom, heroHeight: stage.height,
+                    nextTop: next.top, viewportHeight: innerHeight,
+                    copyWidth: box('.hero-copy').width, demoWidth: box('.demo').width};
+        }""")
+        assert hero["nextTop"] >= height - 3, (
+            f"{width}px: next section is visible beneath the hero: {hero}")
+        assert hero["heroHeight"] >= height - hero["headerBottom"] - 3, (
+            f"{width}px: hero does not fill the available desktop height: {hero}")
+        assert abs(hero["heroTop"] - hero["headerBottom"]) <= 3, (
+            f"{width}px: unexpected gap below the header: {hero}")
+        assert hero["copyWidth"] > 0 and hero["demoWidth"] > 0
+
+    # Footer: the English identity sits above the two Indic names.
+    footer = page.evaluate("""() => {
+        const b = selector => document.querySelector(selector).getBoundingClientRect();
+        return {nameBottom: b('.footer-brand strong').bottom,
+                hindiTop: b('.footer-brand [lang="hi"]').top,
+                kannadaTop: b('.footer-brand [lang="kn"]').top,
+                navTop: b('.footer nav').top};
+    }""")
+    assert footer["hindiTop"] >= footer["nameBottom"] - 2, (
+        f"{width}px: footer languages are no longer underneath AksharaCheck: {footer}")
+    assert abs(footer["hindiTop"] - footer["kannadaTop"]) < 8, (
+        f"{width}px: footer languages are not aligned: {footer}")
+
     # Button text sits in the vertical middle of its button.
     offsets = page.evaluate("""() => [...document.querySelectorAll('.btn, #site-menu a, .menu-toggle')]
         .filter(b => b.offsetParent !== null)
