@@ -339,10 +339,10 @@ figcaption { margin-top: 6px; text-align: center; font-size: 13px; color: var(--
 .faq details p { max-width: 62ch; padding-bottom: 20px; color: var(--ink-soft); }
 
 /* Closing band */
-.cta { display: flex; flex-wrap: wrap; align-items: center; gap: 20px 26px; margin-top: var(--section); padding: clamp(28px, 4vw, 48px); background: var(--night); border-radius: 14px; color: #F3F5FA; }
-.cta .logo { flex: none; }
-.cta h2 { font-size: clamp(24px, 2.8vw, 34px); line-height: 1.2; max-width: 24ch; }
-.cta .btn { margin-left: auto; }
+.cta { display: flex; flex-wrap: wrap; align-items: center; gap: 18px 23px; margin-top: var(--section); padding: clamp(24px, 3.25vw, 40px); background: var(--night); border-radius: 14px; color: #F3F5FA; }
+.cta .logo { flex: none; width: 44px; height: 44px; }
+.cta h2 { font-size: clamp(23px, 2.5vw, 31px); line-height: 1.2; max-width: 24ch; }
+.cta .btn { margin-left: auto; min-height: 44px; padding-inline: 20px; }
 
 /* Footer */
 .footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px; margin-top: 56px; padding: 26px 0 40px; border-top: 1px solid var(--line); font-size: 15px; color: var(--ink-soft); }

@@ -94,3 +94,13 @@ def test_footer_restoration_and_desktop_hero_viewport():
 def test_check_cards_have_extra_breathing_room_before_run_section():
     css = (WEB / "src" / "style.css").read_text(encoding="utf-8")
     assert "padding-top: var(--section); margin-top: clamp(12px, 2vw, 24px);" in css
+
+
+def test_closing_banner_is_modestly_compact_without_changing_footer_or_hero():
+    css = (WEB / "src" / "style.css").read_text(encoding="utf-8")
+    assert ".cta { display: flex; flex-wrap: wrap; align-items: center; gap: 18px 23px; margin-top: var(--section); padding: clamp(24px, 3.25vw, 40px);" in css
+    assert ".cta .logo { flex: none; width: 44px; height: 44px; }" in css
+    assert ".cta h2 { font-size: clamp(23px, 2.5vw, 31px);" in css
+    assert ".cta .btn { margin-left: auto; min-height: 44px; padding-inline: 20px; }" in css
+    assert "Restore the earlier compact, stacked trilingual footer lockup" in css
+    assert "min-height: calc(100svh - 88px)" in css
