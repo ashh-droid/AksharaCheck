@@ -126,9 +126,9 @@ function App(){
  return <div id="top">
   <a className="skip" href="#main">Skip to content</a>
   <header className="topbar"><div className="wrap topbar-inner">
-   <a className="brand" href="#top" aria-label="AksharaCheck, back to top" onClick={()=>setMenuOpen(false)}>
+   <a className="brand" href="#top" aria-label="AksharaCheck, अक्षर चेक, ಅಕ್ಷರ ಪರಿಶೀಲನೆ, back to top" onClick={()=>setMenuOpen(false)}>
     <Logo size={51}/>
-    <span className="brand-lettering"><strong className="brand-name">AksharaCheck</strong><span className="brand-subtitle"><span lang="hi">अक्षर जाँच</span><span lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ</span></span></span>
+    <span className="brand-lettering"><strong className="brand-name">AksharaCheck</strong><span className="brand-subtitle"><span lang="hi">अक्षर चेक</span><span className="brand-divider" aria-hidden="true">·</span><span lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ</span></span></span>
    </a>
    <button className="menu-toggle" type="button" aria-label={menuOpen?'Close navigation':'Open navigation'} aria-controls="site-menu" aria-expanded={menuOpen} onClick={()=>setMenuOpen(v=>!v)}><span aria-hidden="true">{menuOpen?'×':'☰'}</span><span>Menu</span></button>
    <nav id="site-menu" className={menuOpen?'is-open':''} aria-label="Main navigation"><a href="#try" onClick={()=>setMenuOpen(false)}>Try it</a><a href="#checks" onClick={()=>setMenuOpen(false)}>What it checks</a><a href="#report" onClick={()=>setMenuOpen(false)}>Reports</a><a href="#faq" onClick={()=>setMenuOpen(false)}>Questions</a><a className="nav-github" href={REPO} target="_blank" rel="noopener noreferrer">GitHub</a></nav>
@@ -216,7 +216,7 @@ function App(){
    </div></section>
    <section className="bottom-cta wrap" aria-labelledby="cta-heading"><Logo size={52} onDark/><h2 id="cta-heading">Find the broken letters before your readers do.</h2>{PAGES_PREVIEW?<a href="#try">Try text checker</a>:<a href="#top" onClick={()=>{window.setTimeout(()=>input.current?.focus(),100)}}>Check a page</a>}</section>
   </main>
-  <footer className="footer wrap"><div className="footer-brand"><Logo size={29}/><strong>AksharaCheck</strong><span lang="hi">अक्षर जाँच</span><span lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ</span></div><div><a href={REPO} target="_blank" rel="noreferrer">GitHub</a><a href="https://bharatcode.ai/hackathon" target="_blank" rel="noreferrer">BharatCode Build League 2026</a></div></footer>
+  <footer className="footer wrap"><div className="footer-brand"><Logo size={38}/><span className="footer-brand-copy"><strong>AksharaCheck</strong><span className="footer-brand-languages"><span lang="hi">अक्षर चेक</span><span className="brand-divider" aria-hidden="true">·</span><span lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ</span></span></span></div><div><a href={REPO} target="_blank" rel="noreferrer">GitHub</a><a href="https://bharatcode.ai/hackathon" target="_blank" rel="noreferrer">BharatCode Build League 2026</a></div></footer>
  </div>
 }
 createRoot(document.getElementById('root')!).render(<React.StrictMode><App/></React.StrictMode>);
