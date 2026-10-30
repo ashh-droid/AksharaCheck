@@ -68,13 +68,20 @@ Use an API key from [your BharatCode account](https://bharatcode.ai/account). Ne
 
 A passing result confirms an authenticated API request and structured English, Hindi and Kannada response fields. It does **not** prove the browser repair loop yet.
 
-After that, test the complete bundled broken-page flow with a private key prompt:
+After that, run a single real model-assisted finding before attempting all five, to keep failures easy to diagnose:
 
 ```cmd
-.venv\Scripts\python.exe scripts\run_ai_demo.py
+.venv\Scripts\python.exe scripts\run_ai_demo.py --max-findings 1
 ```
 
-This starts a temporary localhost fixture server, runs Chromium, makes real BharatCode calls, and saves `output/ai-demo/report.html`. Read the repair status on each finding. Never present a suggested fix as verified unless the independent browser recheck passes.
+Once that succeeds, run the full AI demonstration:
+
+```cmd
+.venv\Scripts\python.exe scripts\run_ai_demo.py --max-findings 5
+start output\ai-demo\report.html
+```
+
+The demo starts a temporary localhost fixture server, runs Chromium, makes real BharatCode calls, and saves `output/ai-demo/report.html`. If a model request fails, the terminal now reports a safe diagnostic such as HTTP 400, incomplete output, or queue timeout, without printing the key, untrusted site content, or full provider response. Read the repair status on each finding. Never present a suggested fix as verified unless the independent browser recheck passes.
 
 ## Web app
 
