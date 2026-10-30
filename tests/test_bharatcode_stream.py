@@ -76,11 +76,16 @@ def test_stream_never_accepts_failed_or_incomplete_output(monkeypatch,tmp_path,n
         response={"status":"failed"}
     stream+=sse(name,{"response":response})
     client,sent=provider(monkeypatch,tmp_path,stream.encode())
+    async def no_delay(seconds):
+        return None
+    monkeypatch.setattr(ai.asyncio,"sleep",no_delay)
     result=asyncio.run(client.propose(finding()))
     assert result["status"]=="unavailable"
     assert name.split(".")[1] in result["error_code"]
     assert "test-key-private" not in repr(result)
-    assert len(sent)==1
+    # A provider-ended stream is transient; token-budget exhaustion is not.
+    assert len(sent)==(3 if name=="response.failed" else 1)
+    assert "req-test-123" in result["error_code"]
 
 
 def test_stream_ending_after_partial_output_does_not_pass(monkeypatch,tmp_path):
@@ -113,3 +118,56 @@ def test_read_timeout_is_not_mislabeled_as_bad_key(monkeypatch,tmp_path):
     assert "Read timeout" in result["error_code"]
     assert "raw error" not in result["error_code"]
     assert "401" not in result["error_code"]
+
+
+def test_stream_retry_recovers_on_third_attempt_without_accepting_partial(monkeypatch,tmp_path):
+    """Two failed terminal events must not contaminate the third completed result."""
+    monkeypatch.setenv("BHARATCODE_API_KEY","private-test-key")
+    original=httpx.AsyncClient
+    counts=[]
+    async def no_delay(seconds):
+        counts.append(seconds)
+    monkeypatch.setattr(ai.asyncio,"sleep",no_delay)
+    attempts=[]
+    def handler(request):
+        attempts.append(json.loads(request.content))
+        if len(attempts)<3:
+            body=sse("response.output_text.delta",{"delta":"not complete"})
+            body+=sse("response.failed",{"response":{"status":"failed"}})
+        else:
+            body=sse("response.completed",{"response":{
+                "status":"completed",
+                "output":[{"content":[{"type":"output_text",
+                    "text":json.dumps(structured_result(),ensure_ascii=False)}]}],
+            }})
+        return httpx.Response(200,headers={"x-request-id":f"req-retry-{len(attempts)}"},
+                              content=body.encode())
+    monkeypatch.setattr(ai.httpx,"AsyncClient",
+                        lambda **kwargs:original(transport=httpx.MockTransport(handler),**kwargs))
+    result=asyncio.run(ai.BharatCodeClient(cache_dir=tmp_path,stream=True).propose(finding()))
+    assert result["status"]=="proposed"
+    assert result["summary_hi"]=="भाषा का टैग बदलें।"
+    assert len(attempts)==3
+    assert counts==[2,4]
+
+
+def test_failed_stream_exhausts_retry_limit_and_exposes_only_safe_request_id(monkeypatch,tmp_path):
+    monkeypatch.setenv("BHARATCODE_API_KEY","private-test-key")
+    original=httpx.AsyncClient
+    calls=[]
+    async def no_delay(seconds):
+        return None
+    monkeypatch.setattr(ai.asyncio,"sleep",no_delay)
+    def handler(request):
+        calls.append(1)
+        body=sse("response.failed",{"response":{"status":"failed"}})
+        return httpx.Response(200,headers={"x-request-id":"unsafe/request\nsecret"},
+                              content=body.encode())
+    monkeypatch.setattr(ai.httpx,"AsyncClient",
+                        lambda **kwargs:original(transport=httpx.MockTransport(handler),**kwargs))
+    result=asyncio.run(ai.BharatCodeClient(cache_dir=tmp_path,stream=True).propose(finding()))
+    assert result["status"]=="unavailable"
+    assert len(calls)==3
+    assert "3 attempts" in result["error_code"]
+    assert "unsafe" not in result["error_code"]
+    assert "private-test-key" not in str(result)
