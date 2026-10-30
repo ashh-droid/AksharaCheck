@@ -31,6 +31,8 @@ CHECKPOINT_NAME=".ai-progress.json"
 # normal code/fixture invalidation for future releases.
 PRE_RETRY_AI_SHA256="ae6908ce695075861fe7119e8e76c1245cdbb61915019a2dff434657c4af2dc4"
 RETRY_AI_SHA256="eb387e13255139690d8d589c6208abaaa5b596bc836bd0c5e8a1b46456521fff"
+PRE_RETRY_AI_CRLF_SHA256="6b6b83979815672660f3b1340e2e7e9e337442f30fcfb4d35b9c2fcbe5afccf1"
+RETRY_AI_CRLF_SHA256="b848bd47dd422ca7b7e6de1d04bc7647f3d24eab8c3abfdd10178bbd48057897"
 
 class QuietHandler(SimpleHTTPRequestHandler):
     def __init__(self,*args,**kwargs):
@@ -49,9 +51,12 @@ def scope_hash(*, previous_client=False):
         file_digest=hashlib.sha256(p.read_bytes()).digest()
         if previous_client and p==ROOT/"aksharacheck"/"ai.py":
             # Do not accept old checkpoints if ai.py changes again.
-            if file_digest.hex()!=RETRY_AI_SHA256:
+            known={RETRY_AI_SHA256:PRE_RETRY_AI_SHA256,
+                   RETRY_AI_CRLF_SHA256:PRE_RETRY_AI_CRLF_SHA256}
+            previous_digest=known.get(file_digest.hex())
+            if not previous_digest:
                 return None
-            file_digest=bytes.fromhex(PRE_RETRY_AI_SHA256)
+            file_digest=bytes.fromhex(previous_digest)
         digest.update(file_digest)
     return digest.hexdigest()
 
