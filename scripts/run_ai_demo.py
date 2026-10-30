@@ -111,6 +111,20 @@ async def restore_findings(report, checkpoint, stage, *, progress):
     return restored
 
 
+def explain_provider_failure(reason):
+    """Help users distinguish a provider-ended stream from a failed browser fix.
+
+    This is guidance only; it never invents an error code or a successful model
+    output. A provider response.failed may mean shared-capacity contention.
+    """
+    if reason=="BharatCode response failed":
+        return ("BharatCode ended an already-started model stream (response.failed). "
+                "Its documentation lists this as a possible busy-capacity outcome. "
+                "The exact provider reason is not available from this diagnostic; "
+                "no incomplete output was accepted.")
+    return reason
+
+
 def publish_report(stage, dest):
     """Do not overwrite previously successful outputs until rendering succeeds."""
     dest.mkdir(parents=True,exist_ok=True)
@@ -170,10 +184,13 @@ async def test(url,max_findings=1, *, resume=True):
                 print("  ",finding["detector"],"|",fix.get("status","not attempted"),
                       "| resumed" if finding.get("ai_resumed") else "")
                 if fix.get("status")=="unavailable":
-                    print("  DIAGNOSTIC:",fix.get("reason","Unknown model error"))
+                    print("  DIAGNOSTIC:",explain_provider_failure(fix.get("reason","Unknown model error")))
         unavailable=next(((f.get("fix") or {}).get("reason") for f in report["findings"]
                           if (f.get("fix") or {}).get("status")=="unavailable"),None)
         if unavailable:
+            if unavailable=="BharatCode response failed":
+                print("NEXT: Your verified AI checkpoint is intact. Retry the same "
+                      "--max-findings setting when BharatCode capacity is available.")
             raise RuntimeError("AI demo interrupted; saved progress can be resumed: "+unavailable)
         selected=[f for f in report["findings"] if f.get("severity")!="info"]
         selected.sort(key=lambda f: (0 if f.get("detector") in PATCHABLE else 1))
