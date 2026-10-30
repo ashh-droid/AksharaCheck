@@ -47,11 +47,23 @@ USER_AGENT="AksharaCheck/0.2 (public Indic rendering audit; project on GitHub)"
 SKIP_EXT=re.compile(r"\.(?:pdf|zip|rar|7z|docx?|xlsx?|pptx?|mp[34]|mov|png|jpe?g|gif|svg|webp)(?:$|\?)",re.I)
 
 
-async def element_capture(page, selector, path, pad=16, timeout=1200):
-    """Screenshot one element with breathing room around it, clipped to the viewport."""
+TEXT_BOX_JS="""e=>{const r=document.createRange();r.selectNodeContents(e);const b=r.getBoundingClientRect();
+return b.width>=1&&b.height>=1?{x:b.x,y:b.y,width:b.width,height:b.height}:null}"""
+
+
+async def element_capture(page, selector, path, pad=14, timeout=1200, tight=True):
+    """Screenshot one element with breathing room around it, clipped to the viewport.
+
+    With tight, the crop follows the text itself rather than the whole block, so a short
+    sentence in a wide box is shown large instead of lost in empty space. Clipping
+    findings pass tight=False: there the box edge that cuts the letters is the evidence."""
     el=page.locator(selector).first
     await el.scroll_into_view_if_needed(timeout=timeout)
     box=await el.bounding_box(timeout=timeout)
+    if tight and box:
+        text=await el.evaluate(TEXT_BOX_JS)
+        if text:
+            box=text
     view=page.viewport_size or {"width":1280,"height":900}
     if not box or box["width"]<1 or box["height"]<1:
         return False
@@ -84,7 +96,8 @@ class Scanner:
                 if self.allow_local and os.getenv("AKSHARA_UNSAFE_NO_SANDBOX")=="1":options["args"]=["--no-sandbox"]
                 browser=await p.chromium.launch(**options)
                 try:
-                    context=await browser.new_context(ignore_https_errors=False,accept_downloads=False,user_agent=USER_AGENT)
+                    # Twice the pixel density, so element crops stay sharp when the report shows them large.
+                    context=await browser.new_context(ignore_https_errors=False,accept_downloads=False,user_agent=USER_AGENT,device_scale_factor=2)
                     blocked=set()
                     async def route_handler(route):
                         request=route.request
@@ -147,7 +160,7 @@ class Scanner:
                                 findings+=failed_font_findings(page.url,viewport,failures)
                                 findings+=font_mismatch_findings(page.url,viewport,nodes)
                                 shot=self.output_dir / f"page-{len(visited):02d}-{viewport}.png"
-                                await page.screenshot(path=str(shot),full_page=False,animations="disabled")
+                                await page.screenshot(path=str(shot),full_page=False,animations="disabled",scale="css")
                                 for f in findings:
                                     f['screenshot']=shot.name
                                     f['bounds']=next((n['bounds'] for n in nodes if n['selector']==f['selector']),None)
@@ -155,7 +168,7 @@ class Scanner:
                                             and f['bounds'].get('h',0)>=8 and f['bounds'].get('w',0)>=8):
                                         image_name=f'element-{f["id"]}-{viewport}.png'
                                         try:
-                                            if await element_capture(page,f['selector'],self.output_dir/image_name):
+                                            if await element_capture(page,f['selector'],self.output_dir/image_name,tight=f['detector']!='possible-clipping'):
                                                 f['element_screenshot']=image_name
                                         except Exception:
                                             pass

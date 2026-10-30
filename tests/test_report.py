@@ -97,7 +97,7 @@ def test_verified_fix_shows_before_after_and_every_attempt(tmp_path):
                           {"css": {"height": "auto"}, "attributes": {}, "status": "verified", "reason": ""}]})])
     assert "Fix ready, tested in Chromium at 390 px" in page
     assert "Ask your developer to add this CSS to the element." in page
-    assert '<img src="element-abc123-390.png" alt="The element as Chromium drew it"><figcaption>Before</figcaption>' in page
+    assert '<img src="element-abc123-390.png" alt="The element as Chromium drew it"><figcaption>Before the fix</figcaption>' in page
     assert '<img src="element-abc123-390-fixed.png" alt="The element after the fix">' in page
     assert '<details class="attempts"><summary>BharatCode tried 2 repairs. Chromium rejected 1 before one passed.</summary>' in page
     assert "Rejected: Visible text area shrunk" in page
@@ -266,3 +266,14 @@ def test_card_sections_are_labelled_and_reasons_are_plain(tmp_path):
     assert "A vowel sign with no letter before it" in page
     assert "dependent vowel sign without" not in page.split("<details")[0]
     assert '<div class="steps">' in page and '<p class="todo-title">What to change</p>' in page
+
+
+def test_screenshot_sits_under_the_text_at_natural_size(tmp_path):
+    png(tmp_path / "element-abc123-390.png", 640, 120)
+    page = render(tmp_path, [finding(element_screenshot="element-abc123-390.png")])
+    evidence = page.split('<div class="evidence')[1].split('<div class="steps">')[0]
+    assert 'src="element-abc123-390.png"' in evidence
+    assert "How Chromium drew it at 390 px" in evidence
+    css = page.split("<style>")[1].split("</style>")[0]
+    assert ".figures img{display:block;width:auto;height:auto;max-width:100%;max-height:420px;margin:auto}" in css
+    assert ".glyph{flex:none;display:inline-flex;align-items:center;justify-content:center;" in css

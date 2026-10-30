@@ -345,7 +345,7 @@ def _repair(f):
 
 
 def _figures(f, folder):
-    """Right-hand column: how Chromium drew the element, and after a verified CSS fix, how it looks now."""
+    """How Chromium drew the element, and after a verified CSS fix, how it looks now. Shown large, under the text."""
     before=_usable_crop(f.get("element_screenshot"),folder)
     fix=f.get("fix") or {}
     after=_usable_crop(fix.get("after_screenshot"),folder) if fix.get("status")=="verified" and fix.get("css") else ""
@@ -353,11 +353,11 @@ def _figures(f, folder):
     parts=[]
     if before:
         parts.append('<figure><img src="'+esc(before)+'" alt="The element as Chromium drew it">'
-                     '<figcaption>'+("Before" if after else f"As Chromium drew it at {esc(width)} px")+'</figcaption></figure>')
+                     '<figcaption>'+("Before the fix" if after else "How Chromium drew it"+(f" at {esc(width)} px" if width else ""))+'</figcaption></figure>')
     if after:
         parts.append('<figure class="after"><img src="'+esc(after)+'" alt="The element after the fix">'
                      '<figcaption>After the fix</figcaption></figure>')
-    return '<div class="figures">'+"".join(parts)+'</div>' if parts else ""
+    return '<div class="figures'+(' pair' if after else '')+'">'+"".join(parts)+'</div>' if parts else ""
 
 
 def _card(f, folder):
@@ -542,15 +542,16 @@ details.notes[open]>summary:after{content:'Hide'}
 .card-top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:20px 28px 0;font-size:15px;color:var(--soft)}
 .tag{padding:1px 9px;border:1px solid #E5C88F;border-radius:4px;background:var(--amber-tint);color:var(--amber);font-size:13px;font-weight:600}
 .label{margin-bottom:6px;font-size:14px;font-weight:600;color:var(--soft)}
-.evidence{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,300px);gap:28px;align-items:start;margin:14px 28px 0;padding:20px 24px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
-.evidence.no-figures{grid-template-columns:minmax(0,1fr)}
+.evidence{margin:14px 28px 0;padding:20px 24px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
 .ev-text{min-width:0}
 .sample{font-size:25px;line-height:1.6;overflow-wrap:anywhere}
 .sample.code{font-size:15px}.sample.code code{display:inline-block;font-size:14px;padding:4px 10px;border:1px solid var(--line);border-radius:5px;background:#fff;overflow-wrap:anywhere}
 .measured{margin-top:8px;color:var(--ink)}
 .sequences{display:grid;gap:10px;margin-top:16px;padding:14px 0 0;list-style:none;border-top:1px dashed var(--edge)}
 .sequences li{display:flex;align-items:center;gap:14px}
-.glyph{flex:none;min-width:2.4ch;padding:0 8px;border-radius:6px;background:#fff;border:1px solid #F0C4CA;font-size:28px;line-height:1.45;text-align:center;color:var(--red-text)}
+.glyph{flex:none;display:inline-flex;align-items:center;justify-content:center;min-width:64px;height:56px;padding:0 12px;border-radius:8px;background:#fff;border:1px solid #F0C4CA;font-size:28px;line-height:1;color:var(--red-text)}
+/* Anek sits Indic letters high in the line box; nudge each script to the optical centre. */
+.glyph:lang(hi){padding-top:15px}.glyph:lang(kn){padding-top:8px}
 .seq-text{display:flex;flex-direction:column;gap:2px}
 .seq-why{font-size:15px;color:var(--ink)}
 .sequences code{font-size:12px;color:var(--soft)}
@@ -582,11 +583,12 @@ details.notes[open]>summary:after{content:'Hide'}
 .todo-title{margin-bottom:4px;font-weight:600;color:var(--amber)}
 .todo-note{margin-top:8px;font-size:15px;color:var(--soft)}
 .muted{color:var(--soft)}
-.figures{display:grid;gap:12px;align-content:start}
-.figures figure{margin:0;padding:12px;border:1px solid var(--edge);border-radius:8px;background:#fff}
+.figures{display:grid;gap:14px;margin-top:18px}.figures.pair{grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+.figures figure{display:flex;flex-direction:column;justify-content:space-between;margin:0;padding:16px;border:1px solid var(--edge);border-radius:8px;background:#fff}
 .figures figure.after{border-color:#9FCDB4}
-.figures img{display:block;max-width:100%;height:auto;margin:0 auto}
-figcaption{margin-top:8px;padding-top:8px;border-top:1px solid var(--line);text-align:center;font-size:13px;color:var(--soft)}
+/* Natural size: crops are taken at twice the density, so they show at twice the size and stay sharp. */
+.figures img{display:block;width:auto;height:auto;max-width:100%;max-height:420px;margin:auto}
+figcaption{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);text-align:center;font-size:14px;color:var(--soft)}
 .figures .after figcaption{color:var(--green);font-weight:600}
 .more{margin:16px 28px 22px;font-size:14px}
 .more summary{display:inline-flex;align-items:center;min-height:34px;padding:0 12px;border:1px solid var(--edge);border-radius:6px;background:#fff;cursor:pointer;color:var(--ink);font-weight:600}
@@ -597,7 +599,7 @@ figcaption{margin-top:8px;padding-top:8px;border-top:1px solid var(--line);text-
 .clean{margin-top:24px;padding:20px;border-radius:12px;background:var(--green-tint);color:var(--green);font-size:18px}
 .foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;margin-top:56px;padding:22px 0 40px;border-top:1px solid var(--line);font-size:14px;color:var(--soft)}
 @media(max-width:760px){
-.card-top{padding:16px 16px 0}.evidence{grid-template-columns:minmax(0,1fr);gap:16px;margin:12px 12px 0;padding:16px}.steps{margin:12px 12px 0}.more{margin:14px 12px 16px}.ai,.repair,.todo{padding:16px}.overview{padding:22px 18px}.band{padding-top:56px}.sample{font-size:23px}
+.card-top{padding:16px 16px 0}.evidence{margin:12px 12px 0;padding:16px}.figures figure{padding:12px}.steps{margin:12px 12px 0}.more{margin:14px 12px 16px}.ai,.repair,.todo{padding:16px}.overview{padding:22px 18px}.band{padding-top:56px}.sample{font-size:23px}
 .contents li{grid-template-columns:64px minmax(0,1fr) auto;gap:4px 12px}.contents a{grid-column:2/4}.places{grid-column:2}.state{grid-column:3;text-align:right;min-width:0}
 .key{grid-template-columns:minmax(0,1fr)}.more dl div{grid-template-columns:minmax(0,1fr);gap:0}
 .top{min-height:68px}.brand-name{font-size:20px}.brand-sub{font-size:12px;gap:8px}.logo{width:32px;height:32px}.downloads a{padding:0 10px}

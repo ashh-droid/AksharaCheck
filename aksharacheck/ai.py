@@ -255,7 +255,7 @@ async def verify_patch(finding, patch, *, allow_local=False, after_shot=None):
             options["args"] = ["--no-sandbox"]
         browser = await p.chromium.launch(**options)
         try:
-            page = await browser.new_page(viewport={"width":finding["viewport"],"height":900})
+            page = await browser.new_page(viewport={"width":finding["viewport"],"height":900},device_scale_factor=2)
             async def guard(route):
                 try:
                     validate_url(route.request.url, allow_local=allow_local)
@@ -296,7 +296,7 @@ async def verify_patch(finding, patch, *, allow_local=False, after_shot=None):
             result={"status":"verified","css":decl,"attributes":attrs,"rule":rule,"viewport":finding["viewport"]}
             if after_shot:
                 try:
-                    if await element_capture(page,selector,after_shot):
+                    if await element_capture(page,selector,after_shot,tight=detector!="possible-clipping"):
                         result["after_screenshot"]=Path(after_shot).name
                 except Exception:
                     pass
