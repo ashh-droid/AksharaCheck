@@ -639,6 +639,14 @@ def _html_report(data,folder):
         bands.append('<p class="clean">✓ Nothing broke in these checks. That covers this page at these widths, not every page on the site.</p>')
 
     notices=[]
+    ai_state=data.get("ai") or {}
+    if ai_state.get("partial"):
+        completed=int(ai_state.get("completed_findings") or 0)
+        requested=int(ai_state.get("requested_findings") or 0)
+        notices.append('<p class="notice"><strong>Partial AI report.</strong> '
+                       +esc(f"{completed} of {requested} requested findings have complete explanations. ")
+                       +'BharatCode could not finish the remaining work. '
+                       'Browser findings are still shown, but do not present this as a completed AI demonstration.</p>')
     if data.get("demo_mode"):
         notices.append('<p class="notice"><strong>Offline development demo.</strong> No BharatCode model call was made. Sample repairs are predefined rules.</p>')
     if any("error" in page for page in data.get("pages",[])):
@@ -685,6 +693,10 @@ def _markdown(data):
     if data.get("demo_mode"):
         lines+=["Offline development demo. No BharatCode model was called.",""]
     ai=data.get("ai") or {}
+    if ai.get("partial"):
+        lines+=["Partial AI report: "+str(ai.get("completed_findings",0))+" of "
+                +str(ai.get("requested_findings",0))+" requested findings completed. "
+                "The remaining AI work was not completed.",""]
     if ai.get("calls") or ai.get("resumed_findings"):
         lines+=[f"Explanations and repairs by BharatCode {ai.get('model','')}: "
                 f"{ai.get('calls',0)} calls this run, "
