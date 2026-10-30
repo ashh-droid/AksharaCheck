@@ -98,9 +98,12 @@ def parse_response(body):
 
 
 class BharatCodeClient:
-    def __init__(self, cache_dir=".cache/aksharacheck"):
+    def __init__(self, cache_dir=".cache/aksharacheck", *, use_cache=True):
         self.key=os.getenv("BHARATCODE_API_KEY","")
-        self.cache=Path(cache_dir);self.cache.mkdir(parents=True,exist_ok=True)
+        self.use_cache=use_cache
+        self.cache=Path(cache_dir)
+        if self.use_cache:
+            self.cache.mkdir(parents=True,exist_ok=True)
 
     async def propose(self,finding,previous=None):
         if not self.key: return {"explanation":"AI unavailable: set BHARATCODE_API_KEY", "css":{},"attributes":{},"status":"unavailable"}
@@ -117,7 +120,7 @@ class BharatCodeClient:
                 "stated reason: suggest a different repair that avoids those reasons. DATA_BEGIN\n"+json.dumps(data,ensure_ascii=False)+"\nDATA_END")
         cache_key=hashlib.sha256((MODEL+prompt).encode()).hexdigest()
         cache_file=self.cache/f"{cache_key}.json"
-        if cache_file.exists():
+        if self.use_cache and cache_file.exists():
             cached=json.loads(cache_file.read_text(encoding='utf-8'))
             cached["cached"]=True
             return cached
@@ -184,7 +187,8 @@ class BharatCodeClient:
                             "usage":{"input_tokens":int((body.get("usage") or {}).get("input_tokens") or 0),
                                      "output_tokens":int((body.get("usage") or {}).get("output_tokens") or 0),
                                      "seconds":round(time.monotonic()-started,2)}}
-                    cache_file.write_text(json.dumps(answer,ensure_ascii=False),encoding="utf-8")
+                    if self.use_cache:
+                        cache_file.write_text(json.dumps(answer,ensure_ascii=False),encoding="utf-8")
                     return answer
                 except (httpx.TimeoutException,httpx.TransportError):
                     last_issue="Network or queue timeout"
@@ -280,14 +284,14 @@ async def verify_css(finding, css, *, allow_local=False):
     return await verify_patch(finding, {"css":css}, allow_local=allow_local)
 
 
-async def explain_and_verify(report, allow_local=False, max_fixes=8, progress=None, output_dir=None, max_attempts=3):
+async def explain_and_verify(report, allow_local=False, max_fixes=8, progress=None, output_dir=None, max_attempts=3, use_cache=True):
     """Ask BharatCode for an explanation and a repair, then let Chromium judge it.
 
     A rejected repair goes back to the model with the browser's reason, up to
     max_attempts times. Every attempt is kept, so the report shows the whole
     trail and not only the winner.
     """
-    client=BharatCodeClient()
+    client=BharatCodeClient(use_cache=use_cache)
     if not client.key:raise ValueError("Set BHARATCODE_API_KEY on the server to use --ai")
     stats={"model":MODEL,"calls":0,"input_tokens":0,"output_tokens":0,"seconds":0.0}
 
