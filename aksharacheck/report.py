@@ -420,7 +420,7 @@ def _ai_line(data):
     tokens=int(ai.get("input_tokens") or 0)+int(ai.get("output_tokens") or 0)
     bits=[]
     if live:
-        bits.append(_label(live,"new model call"))
+        bits.append(_label(live,"call"))
     if resumed:
         bits.append(_label(resumed,"explanation")+" from an earlier BharatCode run"
                     +(" (repair rechecked in Chromium)" if resumed else ""))
