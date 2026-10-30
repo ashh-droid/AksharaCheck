@@ -8,3 +8,9 @@ output/
 node_modules/
 web/dist/
 *.log
+
+# Generated package metadata
+*.egg-info/
+# Generated visual audits and browser downloads
+playwright-report/
+test-results/

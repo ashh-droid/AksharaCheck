@@ -3,7 +3,7 @@ Category: Coding & developer tools
 Description: Evidence-first Hindi and Kannada browser rendering auditor with AI-proposed, browser-verified CSS repairs.
 BharatCode Model: qwen-3.8-27b
 BharatCode API: https://bharatcode.ai/api/model/v1/responses
-Where API is used: Optional --ai / web scan AI explanations and safe CSS suggestions; deterministic browser detectors generate all findings. CSS proposals are applied to a temporary Chromium session and rechecked before marked verified.
-Run: pip install -e . && python -m playwright install chromium && aksharacheck scan https://example.com --lang both
+Where API is used: For each browser finding, qwen-3.8-27b explains the problem in English, Hindi and Kannada and proposes a whitelisted CSS or lang repair. Chromium tests each repair in a fresh page; a rejected repair goes back to the model with the browser's reason, up to three tries. Only a repair that passes is marked verified. Findings themselves always come from the browser, never from the model.
+Run: pip install -e . && python -m playwright install chromium && aksharacheck scan https://example.com --lang both --ai
 Note: Set BHARATCODE_API_KEY in a server-side environment variable; never commit it.
 AI assisted development disclosure: Code and documentation were generated with AI assistance and require human testing and review.
