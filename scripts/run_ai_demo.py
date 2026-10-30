@@ -26,6 +26,11 @@ ROOT=Path(__file__).resolve().parents[1]
 FIXTURE=ROOT/"fixtures"/"toota-akshar"
 OUTPUT=ROOT/"output"/"ai-demo"
 CHECKPOINT_NAME=".ai-progress.json"
+# The only ai.py changes between these two builds are API retries and
+# diagnostics. Keep that one prior checkpoint compatible without disabling
+# normal code/fixture invalidation for future releases.
+PRE_RETRY_AI_SHA256="ae6908ce695075861fe7119e8e76c1245cdbb61915019a2dff434657c4af2dc4"
+RETRY_AI_SHA256="eb387e13255139690d8d589c6208abaaa5b596bc836bd0c5e8a1b46456521fff"
 
 class QuietHandler(SimpleHTTPRequestHandler):
     def __init__(self,*args,**kwargs):
@@ -34,14 +39,20 @@ class QuietHandler(SimpleHTTPRequestHandler):
         pass
 
 
-def scope_hash():
-    """Invalidate resumed AI output when fixture, scanner or prompt changes."""
+def scope_hash(*, previous_client=False):
+    """Invalidate changed semantics; allow only the known retry-only ai.py update."""
     digest=hashlib.sha256()
     sources=[ROOT/"aksharacheck"/name for name in ("ai.py","browser.py","detectors.py")]
     sources += sorted(p for p in FIXTURE.rglob("*") if p.is_file())
     for p in sources:
         digest.update(str(p.relative_to(ROOT)).encode("utf-8"))
-        digest.update(hashlib.sha256(p.read_bytes()).digest())
+        file_digest=hashlib.sha256(p.read_bytes()).digest()
+        if previous_client and p==ROOT/"aksharacheck"/"ai.py":
+            # Do not accept old checkpoints if ai.py changes again.
+            if file_digest.hex()!=RETRY_AI_SHA256:
+                return None
+            file_digest=bytes.fromhex(PRE_RETRY_AI_SHA256)
+        digest.update(file_digest)
     return digest.hexdigest()
 
 
@@ -166,6 +177,14 @@ async def test(url,max_findings=1, *, resume=True, partial_on_failure=False):
     state=read_checkpoint(checkpoint_path,scope) if resume else {
         "version":1,"scope":scope,"model":MODEL,"findings":{}
     }
+    migrated=False
+    if resume and not state["findings"]:
+        old_scope=scope_hash(previous_client=True)
+        prior=read_checkpoint(checkpoint_path,old_scope) if old_scope else None
+        if prior and prior["findings"]:
+            state={**prior,"scope":scope}
+            migrated=True
+            print("Found checkpoint from pre-retry AI client; verifying saved repairs in Chromium.")
     # Don't persist a new empty checkpoint until there is a completed finding.
     with tempfile.TemporaryDirectory(prefix=".ai-demo-stage-",dir=OUTPUT.parent) as folder:
         stage=Path(folder)
@@ -177,6 +196,12 @@ async def test(url,max_findings=1, *, resume=True, partial_on_failure=False):
             print(msg)
 
         restored=await restore_findings(report,state,stage,progress=progress) if resume else 0
+        if migrated and restored:
+            # Upgrade only the records actually accepted by this fresh scan.
+            valid={identity(f) for f in report["findings"] if f.get("ai_resumed")}
+            state["findings"]={k:v for k,v in state["findings"].items() if k in valid}
+            save_checkpoint(checkpoint_path,state)
+            print("CHECKPOINT MIGRATED:",restored,"finding(s) browser-rechecked.")
         if restored:
             print(f"RESUMED: {restored} prior BharatCode finding(s), with fresh Chromium verification for repairable fixes.")
         print(f"Processing up to {max_findings} browser finding(s) with BharatCode.")
