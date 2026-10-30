@@ -117,11 +117,11 @@ def explain_provider_failure(reason):
     This is guidance only; it never invents an error code or a successful model
     output. A provider response.failed may mean shared-capacity contention.
     """
-    if reason=="BharatCode response failed":
+    if reason.startswith("BharatCode response failed"):
         return ("BharatCode ended an already-started model stream (response.failed). "
                 "Its documentation lists this as a possible busy-capacity outcome. "
                 "The exact provider reason is not available from this diagnostic; "
-                "no incomplete output was accepted.")
+                "no incomplete output was accepted. "+reason)
     return reason
 
 
@@ -136,7 +136,30 @@ def publish_report(stage, dest):
         p.replace(dest/p.name)
 
 
-async def test(url,max_findings=1, *, resume=True):
+def publish_partial_report(stage, report, max_findings, reason):
+    """Save a labelled, incomplete report separately from the last full PASS."""
+    candidates=[f for f in report["findings"] if f.get("severity")!="info"]
+    candidates.sort(key=lambda f:(0 if f.get("detector") in PATCHABLE else 1))
+    requested=candidates[:max_findings]
+    completed=sum(
+        bool(f.get("ai_explanation") and f.get("summary_hi") and f.get("summary_kn"))
+        and (f.get("fix") or {}).get("status") in {"verified","unverified","not-applicable"}
+        for f in requested
+    )
+    report.setdefault("ai",{}).update(
+        partial=True, requested_findings=max_findings,
+        completed_findings=completed,
+        resumed_findings=sum(bool(f.get("ai_resumed")) for f in requested),
+        failure=str(reason)[:260],
+    )
+    write_reports(report,stage)
+    destination=OUTPUT/"partial"
+    publish_report(stage,destination)
+    print("PARTIAL REPORT:",destination/"report.html",f"({completed}/{max_findings} explained)")
+    print("NOTICE: The previous fully successful report was not replaced.")
+
+
+async def test(url,max_findings=1, *, resume=True, partial_on_failure=False):
     OUTPUT.parent.mkdir(parents=True,exist_ok=True)
     scope=scope_hash()
     checkpoint_path=OUTPUT/CHECKPOINT_NAME
@@ -171,7 +194,7 @@ async def test(url,max_findings=1, *, resume=True):
                 "fix":f["fix"],
             }
             save_checkpoint(checkpoint_path,state)
-            print("PROGRESS SAVED:",f["detector"],"|",status)
+            print("PROGRESS SAVED:",f["detector"],"|",status,"| finding",identity(f)[:10])
 
         await explain_and_verify(report,allow_local=True,max_fixes=max_findings,
                                  progress=progress,output_dir=stage,use_cache=False,
@@ -182,13 +205,19 @@ async def test(url,max_findings=1, *, resume=True):
             fix=finding.get("fix") or {}
             if fix:
                 print("  ",finding["detector"],"|",fix.get("status","not attempted"),
+                      "| finding",identity(f)[:10],
                       "| resumed" if finding.get("ai_resumed") else "")
                 if fix.get("status")=="unavailable":
                     print("  DIAGNOSTIC:",explain_provider_failure(fix.get("reason","Unknown model error")))
         unavailable=next(((f.get("fix") or {}).get("reason") for f in report["findings"]
                           if (f.get("fix") or {}).get("status")=="unavailable"),None)
         if unavailable:
-            if unavailable=="BharatCode response failed":
+            if partial_on_failure:
+                try:
+                    publish_partial_report(stage,report,max_findings,unavailable)
+                except Exception as exc:
+                    print("PARTIAL REPORT ERROR:",type(exc).__name__)
+            if unavailable.startswith("BharatCode response failed"):
                 print("NEXT: Your verified AI checkpoint is intact. Retry the same "
                       "--max-findings setting when BharatCode capacity is available.")
             raise RuntimeError("AI demo interrupted; saved progress can be resumed: "+unavailable)
@@ -199,12 +228,19 @@ async def test(url,max_findings=1, *, resume=True):
             not all(f.get("ai_explanation") and f.get("summary_hi") and f.get("summary_kn") and
                     (f.get("fix") or {}).get("status") in {"verified","unverified","not-applicable"}
                     for f in selected)):
+            if partial_on_failure:
+                try:
+                    publish_partial_report(stage,report,max_findings,"Requested AI findings are not complete")
+                except Exception as exc:
+                    print("PARTIAL REPORT ERROR:",type(exc).__name__)
             raise RuntimeError("Requested AI findings are not complete; saved progress can be resumed.")
         # Report metadata separates this session's actual model calls from
         # successful model explanations reused from previous local sessions.
         report.setdefault("ai",{})["resumed_findings"]=sum(bool(f.get("ai_resumed")) for f in selected)
         write_reports(report,stage)
         publish_report(stage,OUTPUT)
+        # Only a successful full run supersedes a previous partial run.
+        shutil.rmtree(OUTPUT/"partial",ignore_errors=True)
         print("REPORT:",OUTPUT/"report.html")
         print("PASS:",len(selected),"BharatCode-explained findings;",
               report["ai"]["resumed_findings"],"resumed from earlier API sessions.")
@@ -217,6 +253,8 @@ def main():
                         help="Number of browser findings to explain (1 to 5)")
     parser.add_argument("--fresh",action="store_true",
                         help="Ignore saved progress and request fresh model responses for every finding")
+    parser.add_argument("--no-partial-report",action="store_true",
+                        help="Disable separately labelled partial reports on provider failure")
     args=parser.parse_args()
     key=os.environ.get("BHARATCODE_API_KEY","").strip()
     if not key:
@@ -231,7 +269,8 @@ def main():
     worker.start()
     try:
         url=f"http://127.0.0.1:{server.server_port}/index.html"
-        asyncio.run(test(url,max_findings=args.max_findings,resume=not args.fresh))
+        asyncio.run(test(url,max_findings=args.max_findings,resume=not args.fresh,
+                         partial_on_failure=not args.no_partial_report))
         return 0
     except Exception as exc:
         print("DEMO FAILED:",type(exc).__name__,str(exc)[:220].replace(key,"[REDACTED]"))
