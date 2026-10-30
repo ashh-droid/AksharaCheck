@@ -14,7 +14,7 @@ import argparse
 from pathlib import Path
 from urllib.parse import urlparse
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_playwright
 
 SIZES = [(320, 640), (360, 780), (390, 844), (430, 932), (768, 1024), (1024, 800), (1280, 720), (1440, 900), (1920, 1080)]
 SECTIONS = ["reports", "how", "try", "checks", "run", "faq"]
@@ -22,8 +22,22 @@ SECTIONS = ["reports", "how", "try", "checks", "run", "faq"]
 
 def check(page, width, height):
     errors = []
+    missing = []
     page.on("pageerror", lambda err: errors.append(str(err)))
-    page.locator("#hero-title").wait_for()
+    page.on("requestfailed", lambda req: missing.append(req.url.split("?")[0]))
+    try:
+        page.locator("#hero-title").wait_for(timeout=12000)
+    except PlaywrightTimeoutError as exc:
+        scripts = page.locator("script[src]").evaluate_all(
+            "(nodes) => nodes.map(node => node.getAttribute('src'))"
+        )
+        raise AssertionError(
+            f"{width}px: React homepage did not mount (#hero-title missing). "
+            "Rebuild for localhost with 'cd web && npm run build' "
+            "(not 'npm run build:pages'). "
+            f"Script paths: {scripts}; failed requests: {missing[:3]}; "
+            f"JavaScript errors: {errors[:3]}"
+        ) from exc
     page.evaluate("document.fonts.ready")
     assert page.title().startswith("AksharaCheck"), "Unexpected browser title"
     for family, weight in (("Anek Latin Variable", 600), ("Anek Devanagari Variable", 400), ("Anek Kannada Variable", 400)):
