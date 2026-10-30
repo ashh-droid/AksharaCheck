@@ -111,5 +111,17 @@ def test_trilingual_brand_header_footer_are_in_active_frontend():
     assert 'className="footer-brand-languages"' in page
     assert page.count('lang="hi">अक्षर चेक') == 2
     assert page.count('lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ') == 2
-    assert ".topbar .brand-name{font-size:clamp(28px,2.15vw,36px)" in css
-    assert ".footer-brand strong{font-size:clamp(23px,1.7vw,30px)" in css
+    assert ".topbar .brand-name{display:block;font-size:clamp(23px,1.7vw,27px)" in css
+    assert ".footer-brand strong{font-size:clamp(21px,1.5vw,24px)" in css
+
+def test_mobile_tablet_and_desktop_identity_has_breathing_room():
+    css=(FRONTEND/"src"/"style.css").read_text(encoding="utf-8")
+    assert "/* Shared trilingual identity." in css
+    assert ".topbar-inner{min-height:80px;padding-block:11px" in css
+    assert ".brand-lettering{display:flex;flex-direction:column;justify-content:center;min-width:0;gap:4px}" in css
+    assert ".topbar .brand .brand-symbol{display:block;width:40px;height:40px;flex:0 0 40px}" in css
+    assert "@media(max-width:980px)" in css
+    assert ".topbar nav.is-open{display:flex}" in css
+    assert ".topbar .brand-name{font-size:21px;line-height:1.12}" in css
+    assert ".topbar .brand-subtitle{font-size:10.5px" in css
+    assert ".footer-brand-copy{display:flex;flex-direction:column;gap:4px;min-width:0}" in css
