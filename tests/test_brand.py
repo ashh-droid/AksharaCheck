@@ -33,7 +33,7 @@ def test_viewer_facing_homepage_is_consistent():
     page=(FRONTEND/"src"/"main.tsx").read_text(encoding="utf-8")
     css=(FRONTEND/"src"/"style.css").read_text(encoding="utf-8")
     assert 'className="brand-subtitle"' in page
-    assert "अक्षर जाँच" in page and "ಅಕ್ಷರ ಪರಿಶೀಲನೆ" in page
+    assert "अक्षर चेक" in page and "ಅಕ್ಷರ ಪರಿಶೀಲನೆ" in page
     assert "390 px example" in page
     assert 'className="menu-toggle"' in page
     assert 'setMenuOpen(v=>!v)' in page
@@ -101,3 +101,15 @@ def test_closing_banner_stays_compact():
     assert "min-height:112px;margin-bottom:48px" in css
     assert ".bottom-cta h2{font-size:clamp(20px,1.65vw,28px)" in css
     assert ".bottom-cta .brand-symbol{width:42px;height:42px}" in css
+
+def test_trilingual_brand_header_footer_are_in_active_frontend():
+    page=(FRONTEND/"src"/"main.tsx").read_text(encoding="utf-8")
+    css=(FRONTEND/"src"/"style.css").read_text(encoding="utf-8")
+    assert 'className="brand-lettering"' in page
+    assert 'className="brand-subtitle"' in page
+    assert 'className="footer-brand-copy"' in page
+    assert 'className="footer-brand-languages"' in page
+    assert page.count('lang="hi">अक्षर चेक') == 2
+    assert page.count('lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ') == 2
+    assert ".topbar .brand-name{font-size:clamp(28px,2.15vw,36px)" in css
+    assert ".footer-brand strong{font-size:clamp(23px,1.7vw,30px)" in css
