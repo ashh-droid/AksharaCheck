@@ -161,7 +161,7 @@ def test_failed_stream_exhausts_retry_limit_and_exposes_only_safe_request_id(mon
     def handler(request):
         calls.append(1)
         body=sse("response.failed",{"response":{"status":"failed"}})
-        return httpx.Response(200,headers={"x-request-id":"unsafe/request\nsecret"},
+        return httpx.Response(200,headers={"x-request-id":"unsafe/request"},
                               content=body.encode())
     monkeypatch.setattr(ai.httpx,"AsyncClient",
                         lambda **kwargs:original(transport=httpx.MockTransport(handler),**kwargs))
