@@ -1,2 +1,7 @@
 import { defineConfig } from 'vite';
-export default defineConfig({server:{proxy:{'/api':'http://127.0.0.1:8000'}}});
+
+// GitHub Pages project sites use a repository path; local dev and FastAPI use '/'.
+export default defineConfig(({ mode }) => ({
+  base: mode === 'pages' ? '/AksharaCheck/' : '/',
+  server: { proxy: { '/api': 'http://127.0.0.1:8000' } },
+}));
