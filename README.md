@@ -6,6 +6,36 @@
 
 **Status:** Functional MVP undergoing public-demo validation. Browser detection and AI repairs have different verification states; the public report will use only measured findings.
 
+## Try AksharaCheck
+
+[Try the Hindi/Kannada text checker (GitHub Pages)](https://ashh-droid.github.io/AksharaCheck/) · [Source code](https://github.com/ashh-droid/AksharaCheck) · [Submission instructions](https://bharatcode.ai/hackathon)
+
+The static Pages preview lets visitors check Hindi/Kannada text in their own browser. **Full website scans run locally with Python + Chromium**; GitHub Pages alone cannot run the scanner or store a BharatCode API key. The recorded-report gallery is populated only after genuine reports have been run, reviewed and published.
+
+### How BharatCode is used
+
+1. **Chromium finds evidence.** AksharaCheck measures real rendered text at phone and desktop widths. Deterministic checks identify language tags, broken character clusters, overflow and other text-rendering problems; BharatCode never invents the findings.
+2. **BharatCode explains and proposes.** The `qwen-3.8-27b` Responses API produces structured English explanations, Hindi and Kannada summaries, and a restricted CSS or language-attribute proposal. Site content is treated as untrusted.
+3. **Chromium judges the repair.** A fresh browser checks the proposed change against the original problem and catches regressions such as hidden, shrunken or displaced text. Only a passing result is marked **verified**. Failed model streams and rejected suggestions are disclosed, not hidden.
+
+### Three steps to run a real scan on Windows
+
+```cmd
+git clone https://github.com/ashh-droid/AksharaCheck.git
+cd AksharaCheck
+py -3 -m venv .venv
+.venv\Scripts\python.exe -m pip install -e ".[test]"
+.venv\Scripts\python.exe -m playwright install chromium
+.venv\Scripts\python.exe -m aksharacheck scan https://hi.wikipedia.org/ --lang both --output output\first-scan
+start output\first-scan\report.html
+```
+
+The browser scan does not require an AI key. For the optional real BharatCode demo, run `.venv\Scripts\python.exe scripts\run_ai_demo.py --max-findings 9`; enter your key only at the hidden prompt. The test fixture deliberately contains nine actionable findings. The demo saves and rechecks progress so previous verified explanations are not requested again unless the underlying evidence changes.
+
+For automated checks, `.venv\Scripts\python.exe -m aksharacheck scan https://hi.wikipedia.org/ --fail-on error --output output\ci-scan` exits unsuccessfully when an error-level finding is detected. These results are scoped rendering checks, **not** a comprehensive accessibility certification.
+
+For the hackathon, public proof should include the actual report screenshot and a reviewed recorded scan. Do not substitute generated screenshots or claim live scans until they have been performed.
+
 ## Website experience
 
 The frontend follows the **Attested school-copybook** identity: paper ground, ruled blue lines, correction red, verified green, fountain-pen blue-black and the circular AksharaCheck mark. Fonts are bundled from Fontsource's Anek Latin, Devanagari and Kannada variable families so visitors do not depend on a Google Fonts request. The masthead, browser tab title and SVG favicon use this identity.
@@ -85,7 +115,7 @@ The demo runs the scanner in an isolated working directory and preserves your pr
 
 The local demonstration uses BharatCode's **streaming Responses** endpoint. Its documented keepalive events help sustain a request while shared-capacity generation is queued. A stream is considered successful only after a `response.completed` event and valid structured output; incomplete streams are not accepted as model results. If the request still fails, the terminal distinguishes connection failure, missing response/keepalives, and provider status codes.
 
-**If streaming ends with `response.failed`:** BharatCode's documentation says this can happen when shared model capacity is busy after the stream starts. This is **not** a failed Chromium repair, and it does **not** establish that your key was rejected. The current diagnostic cannot distinguish every provider-side cause. The client retries an explicit `response.failed` at most twice (three attempts total), with exponential backoff. If all attempts fail, the diagnostic includes the last provider request ID when supplied and safe to show. Keep the previously generated checkpoint and retry during a less congested period. Rather than repeatedly starting five fresh requests, you can progress in stages: `--max-findings 2`, then `3`, `4`, and `5`. Each successful finding is saved, and earlier verified repairs are rechecked in Chromium.
+**If streaming ends with `response.failed`:** BharatCode's documentation says this can happen when shared model capacity is busy after the stream starts. This is **not** a failed Chromium repair, and it does **not** establish that your key was rejected. The current diagnostic cannot distinguish every provider-side cause. The client retries an explicit `response.failed` at most twice (three attempts total), with exponential backoff. If all attempts fail, the diagnostic includes the last provider request ID when supplied and safe to show. Keep the previously generated checkpoint and retry during a less congested period. Rather than repeatedly starting nine fresh requests, progress in stages: `--max-findings 3`, then `5`, then `9`. Each successful finding is saved, and earlier verified repairs are rechecked in Chromium.
 
 **If the second (or later) finding times out:** run the **same command again**, `.venv\Scripts\python.exe scripts\run_ai_demo.py --max-findings 5`. Completed findings are resumed from previous BharatCode model calls, and verified repairs must pass a **fresh Chromium check**. Only pending findings request new model generations. The completed report labels how many explanations came from previous successful sessions, and does not count reused answers as new model calls.
 
