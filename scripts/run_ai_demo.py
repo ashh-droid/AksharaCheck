@@ -279,8 +279,10 @@ async def test(url,max_findings=1, *, resume=True, partial_on_failure=False):
 
 def main():
     parser=argparse.ArgumentParser(description="Resumable BharatCode-to-Chromium demonstration")
-    parser.add_argument("--max-findings",type=int,choices=range(1,6),default=1,
-                        help="Number of browser findings to explain (1 to 5)")
+    # The fixture has nine findings to fix or check. Saved progress means a
+    # larger number only spends model calls on findings not yet explained.
+    parser.add_argument("--max-findings",type=int,choices=range(1,10),default=1,
+                        help="Number of browser findings to explain (1 to 9)")
     parser.add_argument("--fresh",action="store_true",
                         help="Ignore saved progress and request fresh model responses for every finding")
     parser.add_argument("--no-partial-report",action="store_true",

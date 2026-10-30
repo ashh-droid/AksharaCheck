@@ -83,7 +83,7 @@ def test_bharatcode_explanation_and_translations_are_on_the_card(tmp_path):
     css = page.split("<style>")[1].split("</style>")[0]
     assert ".panes .pane{display:none}.panes .p-en{display:block}" in css
     assert "@media print{.panes .pane{display:block!important}" in css
-    assert "BharatCode <code>qwen-3.8-27b</code>, 3 calls, 2,500 tokens, 6.5 s." in page
+    assert "BharatCode <code>qwen-3.8-27b</code> explained 1 of the 1 findings to fix or check (3 model calls, 2,500 tokens, 6.5 s)." in page
 
 
 def test_verified_fix_shows_before_after_and_every_attempt(tmp_path):
@@ -254,7 +254,8 @@ def test_overview_explains_its_labels_in_plain_words(tmp_path):
     assert '<dl class="key"' in page
     assert "Readers see broken text. Start here." in page
     assert '<span class="state">Edit the text</span>' in page
-    assert '<span class="state ok">✓ Fix ready</span>' in page
+    assert '<span class="state ok"><svg class="ico"' in page and 'Fix ready</span>' in page
+    assert "✓" not in page.split("<style>")[0] + page.split("</style>")[1]
     assert "Seen on phone" in page
 
 
@@ -287,9 +288,9 @@ def test_report_discloses_resumed_bharatcode_work(tmp_path):
         ai_resumed=True,
         fix={"status":"verified","attributes":{"lang":"hi"},"viewport":390},
     )],ai={"model":"qwen-3.8-27b","calls":0,"resumed_findings":1})
-    assert "1 explanation from an earlier BharatCode run (repair rechecked in Chromium)" in page
+    assert "explained 1 of the 1 findings to fix or check. 1 explanation comes from an earlier run; its fixes were tested again in Chromium." in page
     md=(tmp_path/"report.md").read_text(encoding="utf-8")
-    assert "0 calls this run, 1 findings resumed" in md
+    assert "BharatCode qwen-3.8-27b explained 1 of the 1 findings to fix or check. 1 explanation comes from an earlier run" in md
 
 
 def test_partial_ai_report_is_visibly_labelled_in_html_and_markdown(tmp_path):
@@ -297,8 +298,26 @@ def test_partial_ai_report_is_visibly_labelled_in_html_and_markdown(tmp_path):
                 ai={"model":"qwen-3.8-27b","partial":True,
                     "requested_findings":3,"completed_findings":2,
                     "resumed_findings":2,"calls":0})
-    assert "Partial AI report." in page
-    assert "2 of 3 requested findings have complete explanations" in page
-    assert "do not present this as a completed AI demonstration" in page
+    assert "BharatCode stopped early." in page
+    assert "It finished 2 of the 3 findings it was asked about." in page
+    assert "BharatCode could not answer for this one" in page
     md=(tmp_path/"report.md").read_text(encoding="utf-8")
-    assert "Partial AI report: 2 of 3 requested findings completed" in md
+    assert "BharatCode stopped early: it finished 2 of the 3 findings it was asked about." in md
+
+
+def test_findings_the_model_was_not_asked_about_say_so(tmp_path):
+    page = render(tmp_path, [
+        finding(ai_explanation="The box is too short.", summary_hi="डिब्बा छोटा है।", summary_kn="ಪೆಟ್ಟಿಗೆ ಚಿಕ್ಕದು.",
+                fix={"status": "verified", "css": {"height": "auto"}, "viewport": 390}),
+        finding(id="b", severity="error", detector="broken-cluster", evidence={"invalid_sequences": []}),
+    ], ai={"model": "qwen-3.8-27b", "calls": 1})
+    assert "explained 1 of the 2 findings to fix or check" in page
+    assert "BharatCode was not asked about this one in this run." in page
+
+
+def test_header_has_large_name_and_matching_download_buttons(tmp_path):
+    page = render(tmp_path, [finding()])
+    css = page.split("<style>")[1].split("</style>")[0]
+    assert ".brand-name{font-size:30px;" in css
+    assert '<a href="report.md" download aria-label="Download Markdown"><svg class="ico"' in page
+    assert '<span class="dl-word">Download </span>JSON' in page

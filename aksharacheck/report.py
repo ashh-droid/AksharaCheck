@@ -312,7 +312,7 @@ def _attempts(fix):
     rows=[]
     for t in tries:
         ok=t.get("status")=="verified"
-        rows.append('<li class="'+("ok" if ok else "bad")+'"><span class="mark" aria-hidden="true">'+("✓" if ok else "✗")+'</span>'
+        rows.append('<li class="'+("ok" if ok else "bad")+'"><span class="mark">'+(CHECK if ok else CROSS)+'</span>'
                     '<code>'+esc(_css_text(t).replace("\n"," "))+'</code>'
                     '<span>'+("Passed" if ok else "Rejected: "+esc(t.get("reason") or "did not pass"))+'</span></li>')
     if rejected<len(tries):
@@ -322,7 +322,7 @@ def _attempts(fix):
     return '<details class="attempts"><summary>'+esc(summary)+'</summary><ol>'+"".join(rows)+'</ol></details>'
 
 
-def _repair(f):
+def _repair(f, ai_ran=False):
     """What to do next: a verified fix, a failed attempt with its reasons, or a change to make by hand."""
     _,_,action=FINDING_COPY.get(f.get("detector"),("","","Review the element on the page."))
     fix=f.get("fix") or {}
@@ -334,13 +334,18 @@ def _repair(f):
             how=f"Add this attribute to the element, so browsers and screen readers treat the text as {LANG_NAMES.get(lang,lang)}."
         else:
             how="Ask your developer to add this CSS to the element. With it the whole text shows, at full size."
-        return ('<div class="repair ok"><p class="repair-title"><span aria-hidden="true">✓</span> Fix ready, tested in Chromium at '
+        return ('<div class="repair ok"><p class="repair-title">'+CHECK+'Fix ready, tested in Chromium at '
                 +esc(width)+' px</p><p class="repair-note">'+esc(how)+'</p><pre>'+esc(_css_text(fix))+'</pre>'+_attempts(fix)+'</div>')
     if state=="unverified":
         reason=str(fix.get("reason") or "it did not pass the browser check").rstrip(".")
         return ('<div class="todo"><p class="todo-title">What to change</p><p>'+esc(action)+'</p>'
                 '<p class="todo-note">No suggested fix passed in Chromium: '+esc(reason[0].lower()+reason[1:])+'.</p>'+_attempts(fix)+'</div>')
-    note='<p class="todo-note">BharatCode was not available for this finding.</p>' if state=="unavailable" else ""
+    if state=="unavailable":
+        note='<p class="todo-note">BharatCode could not answer for this one, so there is no explanation or suggested fix.</p>'
+    elif ai_ran and f.get("severity")!="info" and not _explanation(f):
+        note='<p class="todo-note">BharatCode was not asked about this one in this run.</p>'
+    else:
+        note=""
     return '<div class="todo"><p class="todo-title">What to change</p><p>'+esc(action)+'</p>'+note+'</div>'
 
 
@@ -360,7 +365,7 @@ def _figures(f, folder):
     return '<div class="figures'+(' pair' if after else '')+'">'+"".join(parts)+'</div>' if parts else ""
 
 
-def _card(f, folder):
+def _card(f, folder, ai_ran=False):
     severity=f.get("severity","info")
     word=SEVERITY.get(severity,SEVERITY["info"])[0]
     sample=str(f.get("sample") or "").strip()
@@ -387,14 +392,14 @@ def _card(f, folder):
             '<p class="card-top"><span class="sev">'+esc(word)+'</span>'
             '<span class="where">'+esc(_where(f))+'</span>'+check+'</p>'
             '<div class="evidence'+('' if figures else ' no-figures')+'"><div class="ev-text"><p class="label">On the page</p>'+evidence+'</div>'+figures+'</div>'
-            '<div class="steps">'+_explanation(f)+_repair(f)+'</div>'+more+'</article>')
+            '<div class="steps">'+_explanation(f)+_repair(f,ai_ran)+'</div>'+more+'</article>')
 
 
-def _group(detector, findings, folder):
+def _group(detector, findings, folder, ai_ran=False):
     title,why,_=FINDING_COPY.get(detector,("Rendering observation","Measurements are available for review.",""))
     count=(' <span class="count">'+_label(len(findings),"place")+'</span>') if len(findings)>1 else ""
     return ('<section class="group" id="'+esc(detector)+'"><h3>'+esc(title)+count+'</h3><p class="why">'+esc(why)+'</p>'
-            +"".join(_card(f,folder) for f in findings)+'</section>')
+            +"".join(_card(f,folder,ai_ran) for f in findings)+'</section>')
 
 
 def _summary_sentence(counts):
@@ -411,25 +416,39 @@ def _summary_sentence(counts):
     return text[0].upper()+text[1:]+"."
 
 
+def _ai_counts(data):
+    """Findings BharatCode explained, findings it could have been asked about, and whether it ran at all."""
+    findings=data.get("findings",[])
+    eligible=[f for f in findings if f.get("severity")!="info"]
+    explained=sum(1 for f in findings if _explanation(f))
+    ai=data.get("ai") or {}
+    ran=bool(int(ai.get("calls") or 0) or int(ai.get("resumed_findings") or 0) or explained)
+    return explained,len(eligible),ran
+
+
 def _ai_line(data):
     ai=data.get("ai") or {}
+    explained,eligible,ran=_ai_counts(data)
+    if not ran:
+        return ""
     live=int(ai.get("calls") or 0)
     resumed=int(ai.get("resumed_findings") or 0)
-    if not (live or resumed):
-        return ""
     tokens=int(ai.get("input_tokens") or 0)+int(ai.get("output_tokens") or 0)
-    bits=[]
+    model=esc(ai.get("model") or "")
+    first=(f"BharatCode <code>{model}</code> explained {explained} of the {eligible} findings to fix or check"
+           if eligible else f"BharatCode <code>{model}</code> explained {explained} findings")
+    usage=[]
     if live:
-        bits.append(_label(live,"call"))
-    if resumed:
-        bits.append(_label(resumed,"explanation")+" from an earlier BharatCode run"
-                    +(" (repair rechecked in Chromium)" if resumed else ""))
+        usage.append(_label(live,"model call"))
     if tokens:
-        bits.append(_label(tokens,"token"))
+        usage.append(_label(tokens,"token"))
     if live and ai.get("seconds"):
-        bits.append(_duration(ai["seconds"]))
-    return ('<p class="meta">Explanations and repairs by BharatCode <code>'+esc(ai.get("model",""))+'</code>, '
-            +esc(", ".join(bits))+'.</p>')
+        usage.append(_duration(ai["seconds"]))
+    text=first+(" ("+esc(", ".join(usage))+")" if usage else "")+"."
+    if resumed:
+        text+=(" "+esc(_label(resumed,"explanation"))+" "+("comes" if resumed==1 else "come")
+               +" from an earlier run; "+("its" if resumed==1 else "their")+" fixes were tested again in Chromium.")
+    return '<p class="meta">'+text+'</p>'
 
 
 def _overview(groups, counts):
@@ -441,9 +460,9 @@ def _overview(groups, counts):
             verified=sum(1 for f in items if (f.get("fix") or {}).get("status")=="verified")
             failed=sum(1 for f in items if (f.get("fix") or {}).get("status")=="unverified")
             if verified and verified==len(items):
-                state='<span class="state ok">✓ Fix ready</span>'
+                state='<span class="state ok">'+CHECK+'Fix ready</span>'
             elif verified:
-                state='<span class="state ok">✓ '+str(verified)+' of '+str(len(items))+' fixes ready</span>'
+                state='<span class="state ok">'+CHECK+str(verified)+' of '+str(len(items))+' fixes ready</span>'
             elif detector in {"broken-cluster","legacy-font","mixed-language"}:
                 state='<span class="state">Edit the text</span>'
             elif failed or detector=="font-load-failed":
@@ -460,9 +479,13 @@ def _overview(groups, counts):
             '<ol class="contents">'+"".join(rows)+'</ol>'
             '<dl class="key" aria-label="What the labels mean">'
             '<div class="error"><dt><span class="sev">Fix</span></dt><dd>Readers see broken text. Start here.</dd></div>'
-            '<div class="warning"><dt><span class="sev">Check</span></dt><dd>Probably wrong. The screenshot shows you.</dd></div>'
+            '<div class="warning"><dt><span class="sev">Check</span></dt><dd>Likely wrong. Check the screenshot.</dd></div>'
             '<div class="info"><dt><span class="sev">Note</span></dt><dd>Worth knowing. Often fine as it is.</dd></div></dl></section>') if total and rows else ""
 
+
+CHECK='<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.8"/></svg>'
+CROSS='<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>'
+DOWNLOAD='<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7.5L8 11l3.5-3.5M3 13.5h10"/></svg>'
 
 LOGO=('<svg class="logo" viewBox="0 0 120 120" aria-hidden="true">'
       '<path d="M49.65 21.36 A40 40 0 1 1 49.65 98.64" fill="none" stroke="#0E6B4E" stroke-width="13" stroke-linecap="round"/>'
@@ -488,15 +511,17 @@ code,pre{font-family:var(--mono);font-size:13px}
 h1,h2,h3,p,dl,dd,ul,ol,figure{margin:0}h1,h2,h3{font-weight:600;letter-spacing:-.01em}
 .shell{max-width:1040px;margin:0 auto;padding:0 clamp(16px,4vw,32px)}
 /* Header: the same lockup as the website */
-.top{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:76px}
-.brand{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none}
-.logo{width:36px;height:36px;flex:none}
-.brand-text{display:flex;flex-direction:column;gap:3px}
-.brand-name{font-size:22px;font-weight:600;line-height:1;letter-spacing:-.015em}
-.brand-sub{display:flex;gap:10px;font-size:13px;line-height:1.2;color:var(--soft)}
-.downloads{display:flex;gap:8px}
-.downloads a{display:inline-flex;align-items:center;min-height:36px;padding:0 14px;border:1px solid var(--edge);border-radius:6px;background:#fff;color:var(--ink);font-size:14px;font-weight:600;line-height:1;text-decoration:none}
-.downloads a:hover{border-color:#6E88AE}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:96px}
+.brand{display:flex;align-items:center;gap:14px;color:var(--ink);text-decoration:none}
+.logo{width:48px;height:48px;flex:none}
+.brand-text{display:flex;flex-direction:column;gap:5px}
+.brand-name{font-size:30px;font-weight:600;line-height:1;letter-spacing:-.02em}
+.brand-sub{display:flex;gap:12px;font-size:15px;line-height:1.2;color:var(--soft)}
+.downloads{display:flex;gap:10px}
+.downloads a{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border:1px solid var(--edge);border-radius:8px;background:#fff;color:var(--ink);font-size:15px;font-weight:600;line-height:1;text-decoration:none;box-shadow:0 1px 2px rgba(27,36,64,.06)}
+.downloads a:hover{border-color:var(--green);color:var(--green)}
+.downloads .ico{width:16px;height:16px}
+.ico{display:inline-block;flex:none;width:1em;height:1em;vertical-align:-.12em;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 /* Cover: one dark panel, like the website hero */
 .cover{margin-top:8px;padding:clamp(26px,4vw,40px);border-radius:16px;background:var(--night);color:#F3F5FA}
 .cover .for{font-size:15px;color:var(--night-soft)}
@@ -528,7 +553,7 @@ h1,h2,h3,p,dl,dd,ul,ol,figure{margin:0}h1,h2,h3{font-weight:600;letter-spacing:-
 .state{font-size:15px;color:var(--soft);text-align:right;min-width:120px}.state.ok{color:var(--green);font-weight:600}.state.bad{color:var(--red-text)}
 /* Severity words */
 .sev{display:inline-flex;align-items:center;justify-content:center;padding:2px 9px;border-radius:4px;font-size:13px;font-weight:600;line-height:1.5;width:fit-content}
-.error .sev{background:var(--red-tint);color:var(--red-text)}.error .sev:before{content:'✗\00a0'}
+.error .sev{background:var(--red-tint);color:var(--red-text)}.error .sev:before{content:'';width:.72em;height:.72em;margin-right:5px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 3l10 10M13 3L3 13' stroke='black' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 3l10 10M13 3L3 13' stroke='black' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat}
 .warning .sev{background:var(--amber-tint);color:var(--amber)}
 .info .sev{background:var(--blue-tint);color:var(--blue)}
 /* Detail bands */
@@ -585,7 +610,7 @@ details.notes[open]>summary:after{content:'Hide'}
 .attempts ol{display:grid;gap:8px;margin-top:10px;padding:0;list-style:none}
 .attempts li{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;color:var(--ink)}
 .attempts code{padding:1px 6px;border-radius:4px;background:#fff;overflow-wrap:anywhere}
-.mark{font-weight:600}.attempts .ok .mark{color:var(--green)}.attempts .bad .mark{color:var(--red-text)}
+.state .ico,.repair-title .ico,.clean .ico{margin-right:6px}.mark{display:inline-flex}.attempts .ok .mark{color:var(--green)}.attempts .bad .mark{color:var(--red-text)}
 .todo{padding:18px 22px;border:1px solid #E8CF9F;border-radius:10px;background:var(--amber-tint)}
 .todo-title{margin-bottom:4px;font-weight:600;color:var(--amber)}
 .todo-note{margin-top:8px;font-size:15px;color:var(--soft)}
@@ -609,9 +634,9 @@ figcaption{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);tex
 .card-top{padding:16px 16px 0}.evidence{margin:12px 12px 0;padding:16px}.figures figure{padding:12px}.steps{margin:12px 12px 0}.more{margin:14px 12px 16px}.ai,.repair,.todo{padding:16px}.overview{padding:22px 18px}.band{padding-top:56px}.sample{font-size:23px}
 .contents li{grid-template-columns:64px minmax(0,1fr) auto;gap:4px 12px}.contents a{grid-column:2/4}.places{grid-column:2}.state{grid-column:3;text-align:right;min-width:0}
 .key{grid-template-columns:minmax(0,1fr)}.more dl div{grid-template-columns:minmax(0,1fr);gap:0}
-.top{min-height:68px}.brand-name{font-size:20px}.brand-sub{font-size:12px;gap:8px}.logo{width:32px;height:32px}.downloads a{padding:0 10px}
+.top{min-height:76px}.brand{gap:10px}.brand-name{font-size:24px}.brand-sub{font-size:13px;gap:8px}.logo{width:38px;height:38px}.downloads{gap:6px}.downloads a{min-height:40px;padding:0 12px;font-size:14px}.dl-word{display:none}
 }
-@media(max-width:420px){.downloads a:first-child{display:none}}
+@media(max-width:420px){.downloads a:last-child{display:none}}@media(max-width:360px){.downloads a>span{display:none}.downloads a{padding:0 12px}.downloads .ico{width:18px;height:18px}}
 @media print{.panes .pane{display:block!important}.tabs,.attempts summary{display:none}.attempts ol{display:grid!important}.downloads,.more summary{display:none}.cover{background:#fff;color:var(--ink);border:1px solid var(--line)}.cover .for,.cover .meta{color:var(--soft)}.card,.overview{break-inside:avoid;box-shadow:none}details.notes>*{display:block}}
 """
 
@@ -628,7 +653,8 @@ def _html_report(data,folder):
         if severity not in groups:
             continue
         detectors=sorted(groups[severity].items(),key=lambda pair:(-len(pair[1]),pair[0]))
-        body="".join(_group(d,items,folder) for d,items in detectors)
+        ai_ran=bool(_ai_counts(data)[2])
+        body="".join(_group(d,items,folder,ai_ran) for d,items in detectors)
         title=SEVERITY[severity][1]
         number='<span class="n">'+str(counts[severity])+'</span>'
         if severity=="info":
@@ -636,17 +662,16 @@ def _html_report(data,folder):
         else:
             bands.append('<section class="band"><h2>'+title+' '+number+'</h2>'+body+'</section>')
     if not bands:
-        bands.append('<p class="clean">✓ Nothing broke in these checks. That covers this page at these widths, not every page on the site.</p>')
+        bands.append('<p class="clean">'+CHECK+'Nothing broke in these checks. That covers this page at these widths, not every page on the site.</p>')
 
     notices=[]
     ai_state=data.get("ai") or {}
     if ai_state.get("partial"):
         completed=int(ai_state.get("completed_findings") or 0)
         requested=int(ai_state.get("requested_findings") or 0)
-        notices.append('<p class="notice"><strong>Partial AI report.</strong> '
-                       +esc(f"{completed} of {requested} requested findings have complete explanations. ")
-                       +'BharatCode could not finish the remaining work. '
-                       'Browser findings are still shown, but do not present this as a completed AI demonstration.</p>')
+        notices.append('<p class="notice"><strong>BharatCode stopped early.</strong> '
+                       +esc(f"It finished {completed} of the {requested} findings it was asked about. ")
+                       +'Every browser finding below is complete; only some explanations are missing.</p>')
     if data.get("demo_mode"):
         notices.append('<p class="notice"><strong>Offline development demo.</strong> No BharatCode model call was made. Sample repairs are predefined rules.</p>')
     if any("error" in page for page in data.get("pages",[])):
@@ -667,7 +692,8 @@ def _html_report(data,folder):
         '<title>'+esc(name)+' | AksharaCheck report</title><style>'+CSS+'</style></head><body>'
         '<header class="shell"><div class="top"><span class="brand">'+LOGO+'<span class="brand-text"><span class="brand-name">AksharaCheck</span>'
         '<span class="brand-sub"><span lang="hi">अक्षर जाँच</span><span lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ</span></span></span></span>'
-        '<nav class="downloads" aria-label="Download this report"><a href="report.json" download>JSON</a><a href="report.md" download>Markdown</a></nav></div></header>'
+        '<nav class="downloads" aria-label="Download this report"><a href="report.md" download aria-label="Download Markdown">'+DOWNLOAD+'<span><span class="dl-word">Download </span>Markdown</span></a>'
+        '<a href="report.json" download aria-label="Download JSON">'+DOWNLOAD+'<span><span class="dl-word">Download </span>JSON</span></a></nav></div></header>'
         '<main class="shell"><section class="cover" aria-labelledby="report-title"><p class="for">Rendering report</p>'
         '<h1 id="report-title">'+_safe_link(target,name)+'</h1>'
         '<p class="verdict">'+esc(_summary_sentence(counts))+'</p>'
@@ -694,13 +720,11 @@ def _markdown(data):
         lines+=["Offline development demo. No BharatCode model was called.",""]
     ai=data.get("ai") or {}
     if ai.get("partial"):
-        lines+=["Partial AI report: "+str(ai.get("completed_findings",0))+" of "
-                +str(ai.get("requested_findings",0))+" requested findings completed. "
-                "The remaining AI work was not completed.",""]
-    if ai.get("calls") or ai.get("resumed_findings"):
-        lines+=[f"Explanations and repairs by BharatCode {ai.get('model','')}: "
-                f"{ai.get('calls',0)} calls this run, "
-                f"{ai.get('resumed_findings',0)} findings resumed from previous model runs.",""]
+        lines+=["BharatCode stopped early: it finished "+str(ai.get("completed_findings",0))+" of the "
+                +str(ai.get("requested_findings",0))+" findings it was asked about. Every browser finding is complete.",""]
+    line=_ai_line(data)
+    if line:
+        lines+=[re.sub(r"<[^>]+>","",line).replace("&#x27;","'").replace("&amp;","&"),""]
     for severity in ORDER:
         items=[f for f in findings if f.get("severity","info")==severity]
         if not items:

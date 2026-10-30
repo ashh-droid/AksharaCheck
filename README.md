@@ -68,16 +68,16 @@ Use an API key from [your BharatCode account](https://bharatcode.ai/account). Ne
 
 A passing result confirms an authenticated API request and structured English, Hindi and Kannada response fields. It does **not** prove the browser repair loop yet.
 
-After that, run a single real model-assisted finding before attempting all five, to keep failures easy to diagnose:
+After that, run a single real model-assisted finding before attempting all nine, to keep failures easy to diagnose:
 
 ```cmd
 .venv\Scripts\python.exe scripts\run_ai_demo.py --max-findings 1
 ```
 
-Once that succeeds, run the full AI demonstration:
+Once that succeeds, run the full AI demonstration. The test page has nine findings to fix or check; saved progress means each run only asks BharatCode about the ones not yet explained, so you can also climb in steps (5, then 9):
 
 ```cmd
-.venv\Scripts\python.exe scripts\run_ai_demo.py --max-findings 5
+.venv\Scripts\python.exe scripts\run_ai_demo.py --max-findings 9
 start output\ai-demo\report.html
 ```
 
@@ -232,13 +232,13 @@ An older `report.json` can be **restyled**, but the old findings will not change
 git pull
 .venv\Scripts\python.exe -m pytest -q
 .venv\Scripts\python.exe -m aksharacheck render output\hi-wikipedia\report.json
-start output\hi-wikipedia\report.html
+start output\ai-demo\report.html
 ```
 
-Check the report at phone, tablet, and desktop widths. The following automated QA runs a local Chromium review and captures its layout at 360, 390, 768, and 1440 pixels:
+Check the report at phone, tablet, and desktop widths. The following automated QA runs a local Chromium review and captures its layout at 320, 360, 390, 768 and 1440 pixels:
 
 ```cmd
-.venv\Scripts\python.exe scripts\check_report_ui.py output\hi-wikipedia\report.html
+.venv\Scripts\python.exe scripts\check_report_ui.py output\ai-demo\report.html
 ```
 
 The screenshots are saved under `output\hi-wikipedia\report-visual-qa`.

@@ -48,7 +48,7 @@ async def run_scan(scan_id:str,request:ScanRequest):
         output=ROOT/scan_id
         data=await Scanner(output_dir=output,max_pages=1).scan(request.url,request.lang,progress)
         if request.use_ai and os.getenv('BHARATCODE_API_KEY') and os.getenv('BHARATCODE_API_ENABLED','').strip()=='1':
-            await explain_and_verify(data,progress=progress,max_fixes=5,output_dir=output)
+            await explain_and_verify(data,progress=progress,max_fixes=5,output_dir=output,stream=True)
         write_reports(data,output)
         job.update(status='complete',summary=data['summary'])
     except Exception as exc:

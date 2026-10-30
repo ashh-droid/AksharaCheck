@@ -411,7 +411,7 @@ function FindingCard({ f, asset }: { f: Finding; asset: (name: string) => string
         )}
         {f.ai_explanation && (
           <div className="ai">
-            <p className="ai-label">BharatCode explanation</p>
+            <p className="ai-label">What BharatCode says</p>
             <p>{f.ai_explanation}</p>
             {f.summary_hi && (
               <p className="translation">
@@ -845,7 +845,7 @@ function App() {
                     </li>
                   </ul>
                   <div className="ai">
-                    <p className="ai-label">BharatCode explanation</p>
+                    <p className="ai-label">What BharatCode says</p>
                     <p>The vowel sign ि was typed after a space, so it has no consonant to sit on. Remove the space in the page text.</p>
                     <p className="translation">
                       <span className="lang-name" lang="hi">
