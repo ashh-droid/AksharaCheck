@@ -256,3 +256,13 @@ def test_overview_explains_its_labels_in_plain_words(tmp_path):
     assert '<span class="state">Edit the text</span>' in page
     assert '<span class="state ok">✓ Fix ready</span>' in page
     assert "Seen on phone" in page
+
+
+def test_card_sections_are_labelled_and_reasons_are_plain(tmp_path):
+    page = render(tmp_path, [finding(severity="error", detector="broken-cluster", evidence={"invalid_sequences": [
+        {"position": 3, "sequence": "मा ा", "codepoints": ["U+092E", "U+093E", "U+0020", "U+093E"],
+         "reason": "dependent vowel sign without a preceding consonant"}]})])
+    assert '<div class="evidence no-figures"><div class="ev-text"><p class="label">On the page</p>' in page
+    assert "A vowel sign with no letter before it" in page
+    assert "dependent vowel sign without" not in page.split("<details")[0]
+    assert '<div class="steps">' in page and '<p class="todo-title">What to change</p>' in page
