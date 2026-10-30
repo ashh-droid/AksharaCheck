@@ -413,13 +413,20 @@ def _summary_sentence(counts):
 
 def _ai_line(data):
     ai=data.get("ai") or {}
-    if not ai.get("calls"):
+    live=int(ai.get("calls") or 0)
+    resumed=int(ai.get("resumed_findings") or 0)
+    if not (live or resumed):
         return ""
     tokens=int(ai.get("input_tokens") or 0)+int(ai.get("output_tokens") or 0)
-    bits=[_label(int(ai["calls"]),"call")]
+    bits=[]
+    if live:
+        bits.append(_label(live,"new model call"))
+    if resumed:
+        bits.append(_label(resumed,"explanation")+" from an earlier BharatCode run"
+                    +(" (repair rechecked in Chromium)" if resumed else ""))
     if tokens:
         bits.append(_label(tokens,"token"))
-    if ai.get("seconds"):
+    if live and ai.get("seconds"):
         bits.append(_duration(ai["seconds"]))
     return ('<p class="meta">Explanations and repairs by BharatCode <code>'+esc(ai.get("model",""))+'</code>, '
             +esc(", ".join(bits))+'.</p>')
@@ -678,8 +685,10 @@ def _markdown(data):
     if data.get("demo_mode"):
         lines+=["Offline development demo. No BharatCode model was called.",""]
     ai=data.get("ai") or {}
-    if ai.get("calls"):
-        lines+=[f"Explanations and repairs by BharatCode {ai.get('model','')} ({ai['calls']} calls).",""]
+    if ai.get("calls") or ai.get("resumed_findings"):
+        lines+=[f"Explanations and repairs by BharatCode {ai.get('model','')}: "
+                f"{ai.get('calls',0)} calls this run, "
+                f"{ai.get('resumed_findings',0)} findings resumed from previous model runs.",""]
     for severity in ORDER:
         items=[f for f in findings if f.get("severity","info")==severity]
         if not items:
