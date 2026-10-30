@@ -18,8 +18,12 @@ class FakeScanner:
 
     async def scan(self,*args,**kwargs):
         return {"findings":[
-            {"id":"first","detector":"wrong-lang","severity":"warning","fix":None},
-            {"id":"second","detector":"broken-cluster","severity":"error","fix":None}
+            {"id":"first","detector":"wrong-lang","severity":"warning",
+             "viewport":390,"selector":'[data-akshara-id="ak-1"]',
+             "sample":"यह पाठ है","fix":None},
+            {"id":"second","detector":"broken-cluster","severity":"error",
+             "viewport":390,"selector":'[data-akshara-id="ak-2"]',
+             "sample":"ह िंदी","fix":None}
         ],"summary":{"error":1,"warning":1,"info":0}}
 
 
