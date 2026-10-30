@@ -90,3 +90,7 @@ def test_footer_restoration_and_desktop_hero_viewport():
     assert "min-height: calc(100svh - 88px)" in css
     assert ".hero h1 { font-size: clamp(46px, 5.55vw, 80px); }" in css
     assert ".demo-glyphs { font-size: clamp(44px, 4.7vw, 70px); }" in css
+
+def test_check_cards_have_extra_breathing_room_before_run_section():
+    css = (WEB / "src" / "style.css").read_text(encoding="utf-8")
+    assert "padding-top: var(--section); margin-top: clamp(12px, 2vw, 24px);" in css
