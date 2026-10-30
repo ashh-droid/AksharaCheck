@@ -1,7 +1,16 @@
 """Recorded Pages samples must be genuine, reviewed and safely named."""
 import json
 import pytest
-from scripts import publish_recorded_scan as publish
+import importlib.util
+from pathlib import Path
+
+# Import this development-only publisher by file path. The scripts folder
+# is not installed as a Python application package in CI.
+_path=Path(__file__).resolve().parents[1]/"scripts"/"publish_recorded_scan.py"
+_spec=importlib.util.spec_from_file_location("publish_recorded_scan",_path)
+assert _spec and _spec.loader
+publish=importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(publish)
 
 
 def test_rejects_private_scans():
