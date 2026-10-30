@@ -235,7 +235,7 @@ async def test(url,max_findings=1, *, resume=True, partial_on_failure=False):
             fix=finding.get("fix") or {}
             if fix:
                 print("  ",finding["detector"],"|",fix.get("status","not attempted"),
-                      "| finding",identity(f)[:10],
+                      "| finding",identity(finding)[:10],
                       "| resumed" if finding.get("ai_resumed") else "")
                 if fix.get("status")=="unavailable":
                     print("  DIAGNOSTIC:",explain_provider_failure(fix.get("reason","Unknown model error")))
