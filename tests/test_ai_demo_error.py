@@ -184,3 +184,16 @@ def test_checkpoint_invalidated_when_fixture_or_code_scope_differs(tmp_path):
     assert demo.read_checkpoint(p,"previous-code-version")["findings"]==state["findings"]
     p.write_text("not JSON",encoding="utf-8")
     assert demo.read_checkpoint(p,"previous-code-version")["findings"]=={}
+
+
+def test_failed_stream_explains_capacity_without_mislabeling_browser_or_key():
+    reason="BharatCode response failed"
+    message=demo.explain_provider_failure(reason)
+    assert "response.failed" in message
+    assert "busy-capacity" in message
+    assert "possible" in message
+    assert "no incomplete output was accepted" in message
+    assert "invalid API key" not in message.lower()
+    assert "verified fix failed" not in message.lower()
+    assert demo.explain_provider_failure("HTTP 401: API authentication rejected") == "HTTP 401: API authentication rejected"
+    assert demo.explain_provider_failure("Network or queue timeout") == "Network or queue timeout"
