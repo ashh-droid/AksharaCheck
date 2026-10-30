@@ -43,6 +43,17 @@ def public_url(value: str) -> bool:
         return False
 
 
+def fixture_demo_url(value: str) -> bool:
+    """Only AksharaCheck's localhost fixture route, never arbitrary intranet sites."""
+    try:
+        u=urlsplit(value)
+        return (u.scheme=="http" and u.hostname=="127.0.0.1"
+                and u.port is not None and u.username is None and u.password is None
+                and u.path=="/index.html" and not u.query and not u.fragment)
+    except ValueError:
+        return False
+
+
 def highlight(findings):
     """The most serious finding with visible text, shown on the gallery card."""
     rank = {"error": 0, "warning": 1, "info": 2}
@@ -54,14 +65,24 @@ def highlight(findings):
     return {"detector": best.get("detector", ""), "sample": sample[:117] + "…" if len(sample) > 120 else sample}
 
 
-def copy_scan(folder: Path, slug: str, title: str, reviewed: bool):
+def copy_scan(folder: Path, slug: str, title: str, reviewed: bool, *, fixture_demo: bool=False):
     if not reviewed:
         raise ValueError("Review the report for sensitive text and pass --reviewed-public-content.")
     if not SAFE_SLUG.fullmatch(slug):
         raise ValueError("Slug must use lowercase words separated by hyphens.")
     data_path = folder / "report.json"
     data = json.loads(data_path.read_text(encoding="utf-8"))
-    if not isinstance(data, dict) or not public_url(data.get("target", "")):
+    if not isinstance(data, dict):
+        raise ValueError("Report must be an object.")
+    target_url=str(data.get("target",""))
+    if fixture_demo:
+        if not fixture_demo_url(target_url):
+            raise ValueError("Fixture demo option only accepts the local /index.html test fixture.")
+        if any(page.get("url")!=target_url for page in data.get("pages",[])):
+            raise ValueError("Fixture page URL does not match the demo target.")
+        if (data.get("ai") or {}).get("partial"):
+            raise ValueError("An incomplete AI run cannot be published as a finished demo.")
+    elif not public_url(target_url):
         raise ValueError("Only reports for public web pages can be published.")
     if not isinstance(data.get("findings"), list) or not data.get("pages"):
         raise ValueError("Incomplete or invalid scan report.")
@@ -107,6 +128,7 @@ def copy_scan(folder: Path, slug: str, title: str, reviewed: bool):
     created = str(data.get("generated_at") or datetime.now(timezone.utc).isoformat(timespec="seconds"))
     collection["scans"].append({
         "slug": slug,
+        "kind": "fixture" if fixture_demo else "public",
         "title": title.strip(),
         "target": data["target"],
         "scanned_at": created,
@@ -126,8 +148,11 @@ if __name__ == "__main__":
     parser.add_argument("--slug", required=True)
     parser.add_argument("--title", required=True)
     parser.add_argument("--reviewed-public-content", action="store_true")
+    parser.add_argument("--fixture-demo", action="store_true",
+                        help="Publish the reviewed localhost fixture only as a labelled demo")
     args = parser.parse_args()
     try:
-        copy_scan(args.folder, args.slug, args.title, args.reviewed_public_content)
+        copy_scan(args.folder, args.slug, args.title, args.reviewed_public_content,
+                  fixture_demo=args.fixture_demo)
     except (ValueError, OSError, KeyError, json.JSONDecodeError) as exc:
         parser.error(str(exc))
