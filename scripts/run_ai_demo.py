@@ -4,6 +4,7 @@ Run: .venv\\Scripts\\python.exe scripts\\run_ai_demo.py
 API key entry is hidden and stays in the current process. Reports go into
 output/ai-demo. Only the bundled public, deliberately broken fixture is scanned.
 """
+import argparse
 import asyncio
 import os
 from getpass import getpass
@@ -25,30 +26,38 @@ class QuietHandler(SimpleHTTPRequestHandler):
     def log_message(self,*args):
         pass
 
-async def test(url):
+async def test(url,max_findings=1):
     report=await Scanner(OUTPUT,allow_local=True,max_pages=1).scan(url,lang="both")
     print("BROWSER SCAN:",report["summary"])
     if not report["findings"]:
         raise RuntimeError("Fixture unexpectedly produced no findings")
-    print("Sending up to five browser findings to BharatCode for explanations and suggested repairs.")
+    print(f"Sending up to {max_findings} browser finding(s) to BharatCode for an explanation and a potential repair.")
     async def progress(msg):
         print(msg)
-    await explain_and_verify(report,allow_local=True,max_fixes=5,progress=progress,output_dir=OUTPUT)
+    await explain_and_verify(report,allow_local=True,max_fixes=max_findings,progress=progress,output_dir=OUTPUT)
     write_reports(report,OUTPUT)
     checked=[f for f in report["findings"] if f.get("ai_explanation")]
     print("AI FINDINGS:",len(checked))
-    for finding in checked:
+    for finding in report["findings"]:
         label=finding.get("fix") or {}
-        print("  ",finding["detector"],"|",label.get("status","not attempted"))
+        if label:
+            print("  ",finding["detector"],"|",label.get("status","not attempted"))
+            if label.get("status")=="unavailable":
+                print("  DIAGNOSTIC:",label.get("reason","Unknown model error"))
     print("REPORT:",OUTPUT/"report.html")
     if not any(f.get("summary_hi") and f.get("summary_kn") for f in checked):
-        raise RuntimeError("No bilingual AI explanation returned. See the report and API smoke test.")
+        failure=next((f.get("fix",{}).get("reason") for f in report["findings"] if f.get("fix",{}).get("status")=="unavailable"),None)
+        raise RuntimeError("No bilingual AI explanation returned: "+(failure or "no valid model output"))
     if not any(f.get("ai_explanation") for f in checked):
         raise RuntimeError("No valid BharatCode explanation returned.")
     print("PASS: real AI explanations were written to the report.")
     return report
 
 def main():
+    parser=argparse.ArgumentParser(description="Run a real BharatCode-to-Chromium demonstration")
+    parser.add_argument("--max-findings",type=int,choices=range(1,6),default=1,
+                        help="Number of browser findings to send (default 1; full demo 5)")
+    args=parser.parse_args()
     key=os.environ.get("BHARATCODE_API_KEY","").strip()
     if not key:
         try:key=getpass("BharatCode API key (typing hidden): ").strip()
@@ -62,7 +71,7 @@ def main():
     worker.start()
     try:
         url=f"http://127.0.0.1:{server.server_port}/index.html"
-        asyncio.run(test(url))
+        asyncio.run(test(url,max_findings=args.max_findings))
         return 0
     except Exception as exc:
         print("DEMO FAILED:",type(exc).__name__,str(exc)[:200].replace(key,"[REDACTED]"))
