@@ -277,3 +277,16 @@ def test_screenshot_sits_under_the_text_at_natural_size(tmp_path):
     css = page.split("<style>")[1].split("</style>")[0]
     assert ".figures img{display:block;width:auto;height:auto;max-width:100%;max-height:420px;margin:auto}" in css
     assert ".glyph{flex:none;display:inline-flex;align-items:center;justify-content:center;" in css
+
+
+def test_report_discloses_resumed_bharatcode_work(tmp_path):
+    page=render(tmp_path,[finding(
+        ai_explanation="The language tag does not match.",
+        summary_hi="भाषा का टैग गलत है।",
+        summary_kn="ಭಾಷಾ ಗುರುತು ತಪ್ಪಾಗಿದೆ.",
+        ai_resumed=True,
+        fix={"status":"verified","attributes":{"lang":"hi"},"viewport":390},
+    )],ai={"model":"qwen-3.8-27b","calls":0,"resumed_findings":1})
+    assert "1 explanation from an earlier BharatCode run (repair rechecked in Chromium)" in page
+    md=(tmp_path/"report.md").read_text(encoding="utf-8")
+    assert "0 calls this run, 1 findings resumed" in md
