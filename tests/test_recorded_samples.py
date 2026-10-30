@@ -69,3 +69,37 @@ def test_publishes_fix_captures_fonts_and_gallery_details(tmp_path, monkeypatch)
     entry = json.loads((tmp_path / "samples" / "catalog.json").read_text(encoding="utf-8"))["scans"][0]
     assert entry["ai_calls"] == 4 and entry["verified_fixes"] == 1
     assert entry["highlight"] == {"detector": "broken-cluster", "sample": "ह िंदी"}
+
+
+def test_fixture_is_explicitly_marked_and_other_local_urls_remain_blocked(tmp_path,monkeypatch):
+    monkeypatch.setattr(publish,"SAMPLES",tmp_path/"samples")
+    source=tmp_path/"demo"
+    source.mkdir()
+    demo_url="http://127.0.0.1:8765/index.html"
+    payload={"target":demo_url,
+             "pages":[{"url":demo_url,"viewport":390}],
+             "findings":[{"id":"one","severity":"warning",
+                          "detector":"wrong-lang","sample":"हिंदी",
+                          "fix":{"status":"verified"}}],
+             "summary":{"error":0,"warning":1,"info":0},
+             "generated_at":"2026-10-31T01:00:00+05:30",
+             "ai":{"model":"qwen-3.8-27b","calls":1}}
+    (source/"report.json").write_text(json.dumps(payload,ensure_ascii=False),encoding="utf-8")
+    (source/"report.html").write_text("<h1>Local demo</h1>",encoding="utf-8")
+    (source/"report.md").write_text("# Local demo",encoding="utf-8")
+
+    with pytest.raises(ValueError,match="public web pages"):
+        publish.copy_scan(source,"local-demo","Local demo",True)
+    with pytest.raises(ValueError,match="Review"):
+        publish.copy_scan(source,"local-demo","Local demo",False,fixture_demo=True)
+    publish.copy_scan(source,"local-demo","Local demo",True,fixture_demo=True)
+    saved=json.loads((tmp_path/"samples"/"catalog.json").read_text(encoding="utf-8"))["scans"][0]
+    assert saved["kind"]=="fixture"
+    assert saved["verified_fixes"]==1
+
+    payload["target"]="http://127.0.0.1:8765/admin"
+    (source/"report.json").write_text(json.dumps(payload),encoding="utf-8")
+    with pytest.raises(ValueError,match="local /index.html"):
+        publish.copy_scan(source,"other-private","Other",True,fixture_demo=True)
+    assert not publish.fixture_demo_url("http://192.168.1.3:8765/index.html")
+    assert not publish.fixture_demo_url("http://127.0.0.1:8765/private")
