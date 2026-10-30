@@ -91,3 +91,91 @@ def test_partial_ai_response_does_not_replace_successful_report(monkeypatch,tmp_
     with pytest.raises(RuntimeError,match="401"):
         asyncio.run(demo.test("http://127.0.0.1:55555/index.html",max_findings=5))
     assert p.read_text(encoding="utf-8")=="previous good report"
+
+
+def test_partial_timeout_saves_progress_without_overwriting_json_then_resumes(monkeypatch,tmp_path):
+    """Every completed model explanation is durable; verification is fresh."""
+    setup_fake(monkeypatch,tmp_path)
+    prior=tmp_path/"report.json"
+    prior.write_text('{"successful_old_report":true}',encoding="utf-8")
+    (tmp_path/"report.html").write_text("previous report",encoding="utf-8")
+    monkeypatch.setenv("BHARATCODE_API_KEY","private-test-key")
+
+    class ScannerThatWritesJSON(FakeScanner):
+        async def scan(self,*args,**kwargs):
+            result=await super().scan(*args,**kwargs)
+            self_path=self.output_dir
+            (self_path/"report.json").write_text('{"incomplete_scanner_report":true}',encoding="utf-8")
+            (self_path/"page-01-390.png").write_bytes(b"new screenshot")
+            return result
+        def __init__(self,output_dir,*args,**kwargs):
+            self.output_dir=Path(output_dir)
+
+    monkeypatch.setattr(demo,"Scanner",ScannerThatWritesJSON)
+    sent=[]
+
+    async def partial(report,**options):
+        assert options["use_cache"] is False
+        assert options["max_fixes"]==2
+        first=report["findings"][0]
+        first.update(ai_explanation="Incorrect language tag",
+                     summary_hi="भाषा का टैग गलत है",
+                     summary_kn="ಭಾಷಾ ಗುರುತು ತಪ್ಪಾಗಿದೆ",
+                     fix={"status":"verified","css":{},
+                          "attributes":{"lang":"hi"},"viewport":390})
+        options["on_completed"](first)
+        sent.append("first")
+        report["findings"][1]["fix"]={"status":"unavailable","reason":"Network or queue timeout"}
+
+    monkeypatch.setattr(demo,"explain_and_verify",partial)
+    with pytest.raises(RuntimeError,match="Network or queue timeout"):
+        asyncio.run(demo.test("http://127.0.0.1:12345/index.html",max_findings=2))
+    assert prior.read_text(encoding="utf-8")=='{"successful_old_report":true}'
+    assert (tmp_path/"report.html").read_text(encoding="utf-8")=="previous report"
+    progress=tmp_path/demo.CHECKPOINT_NAME
+    data=demo.read_checkpoint(progress,demo.scope_hash())
+    assert len(data["findings"])==1
+    assert "private-test-key" not in progress.read_text(encoding="utf-8")
+
+    verified=[]
+    async def fake_verify(finding,patch,**kwargs):
+        verified.append(finding["id"])
+        assert patch["attributes"]=={"lang":"hi"}
+        return {"status":"verified","css":{},"attributes":{"lang":"hi"},"viewport":390}
+    monkeypatch.setattr(demo,"verify_patch",fake_verify)
+
+    async def finish(report,**options):
+        assert report["findings"][0]["ai_resumed"] is True
+        assert report["findings"][0]["fix"]["status"]=="verified"
+        assert options["max_fixes"]==2
+        f=report["findings"][1]
+        f.update(ai_explanation="Fix the text manually",
+                 summary_hi="मूल पाठ बदलें",
+                 summary_kn="ಮೂಲ ಪಠ್ಯ ಬದಲಾಯಿಸಿ",
+                 fix={"status":"not-applicable"})
+        options["on_completed"](f)
+        report["ai"]={"model":"qwen-3.8-27b","calls":1}
+
+    def fake_write(report,output):
+        (output/"report.json").write_text('{"complete":true}',encoding="utf-8")
+        (output/"report.md").write_text("completed",encoding="utf-8")
+        (output/"report.html").write_text("new completed report",encoding="utf-8")
+    monkeypatch.setattr(demo,"explain_and_verify",finish)
+    monkeypatch.setattr(demo,"write_reports",fake_write)
+    result=asyncio.run(demo.test("http://127.0.0.1:23456/index.html",max_findings=2))
+    assert verified==["first"]
+    assert result["ai"]["resumed_findings"]==1
+    assert (tmp_path/"report.html").read_text(encoding="utf-8")=="new completed report"
+    assert prior.read_text(encoding="utf-8")=='{"complete":true}'
+    assert (tmp_path/"page-01-390.png").read_bytes()==b"new screenshot"
+
+
+def test_checkpoint_invalidated_when_fixture_or_code_scope_differs(tmp_path):
+    state={"version":1,"scope":"previous-code-version","model":demo.MODEL,
+           "findings":{"previous":{"ai_explanation":"stale"}}}
+    p=tmp_path/"checkpoint.json"
+    demo.save_checkpoint(p,state)
+    assert demo.read_checkpoint(p,"new-code-version")["findings"]=={}
+    assert demo.read_checkpoint(p,"previous-code-version")["findings"]==state["findings"]
+    p.write_text("not JSON",encoding="utf-8")
+    assert demo.read_checkpoint(p,"previous-code-version")["findings"]=={}
