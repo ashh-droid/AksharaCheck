@@ -83,6 +83,8 @@ start output\ai-demo\report.html
 
 The demo runs the scanner in an isolated working directory and preserves your previous HTML/JSON/Markdown report and screenshots if a model request fails. After each **completed** model explanation it writes a credential-free local progress checkpoint to `output/ai-demo/.ai-progress.json`.
 
+The local demonstration uses BharatCode's **streaming Responses** endpoint. Its documented keepalive events help sustain a request while shared-capacity generation is queued. A stream is considered successful only after a `response.completed` event and valid structured output; incomplete streams are not accepted as model results. If the request still fails, the terminal distinguishes connection failure, missing response/keepalives, and provider status codes.
+
 **If the second (or later) finding times out:** run the **same command again**, `.venv\Scripts\python.exe scripts\run_ai_demo.py --max-findings 5`. Completed findings are resumed from previous BharatCode model calls, and verified repairs must pass a **fresh Chromium check**. Only pending findings request new model generations. The completed report labels how many explanations came from previous successful sessions, and does not count reused answers as new model calls.
 
 To deliberately ignore earlier progress and make new model requests for every finding, use `--fresh` (for example, `scripts\run_ai_demo.py --max-findings 5 --fresh`). The checkpoint contains only public fixture explanations and repair data, **never API keys**. If the fixture or scanner/AI implementation changes, its saved results are invalidated automatically.

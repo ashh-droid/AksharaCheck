@@ -161,7 +161,7 @@ async def test(url,max_findings=1, *, resume=True):
 
         await explain_and_verify(report,allow_local=True,max_fixes=max_findings,
                                  progress=progress,output_dir=stage,use_cache=False,
-                                 on_completed=on_completed)
+                                 on_completed=on_completed,stream=True)
         checked=[f for f in report["findings"] if f.get("ai_explanation")]
         print("AI FINDINGS:",len(checked))
         for finding in report["findings"]:

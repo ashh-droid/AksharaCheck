@@ -120,6 +120,7 @@ def test_partial_timeout_saves_progress_without_overwriting_json_then_resumes(mo
 
     async def partial(report,**options):
         assert options["use_cache"] is False
+        assert options["stream"] is True
         assert options["max_fixes"]==2
         first=report["findings"][0]
         first.update(ai_explanation="Incorrect language tag",
