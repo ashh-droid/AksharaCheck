@@ -73,10 +73,16 @@ def test_bharatcode_explanation_and_translations_are_on_the_card(tmp_path):
         summary_hi="डिब्बा पाठ से छोटा है।", summary_kn="ಪೆಟ್ಟಿಗೆ ಪಠ್ಯಕ್ಕಿಂತ ಚಿಕ್ಕದು.")],
         ai={"model": "qwen-3.8-27b", "calls": 3, "input_tokens": 2000, "output_tokens": 500, "seconds": 6.5})
     body = page.split("<details")[0]  # visible without opening anything
-    assert "BharatCode explains" in body
-    assert "The box is shorter than its text." in body
-    assert '<span lang="hi">डिब्बा पाठ से छोटा है।</span>' in body
-    assert '<span lang="kn">ಪೆಟ್ಟಿಗೆ ಪಠ್ಯಕ್ಕಿಂತ ಚಿಕ್ಕದು.</span>' in body
+    assert "What BharatCode says" in body
+    assert '<p class="pane p-en">The box is shorter than its text.</p>' in body
+    assert '<p class="pane p-hi" lang="hi">डिब्बा पाठ से छोटा है।</p>' in body
+    assert '<p class="pane p-kn" lang="kn">ಪೆಟ್ಟಿಗೆ ಪಠ್ಯಕ್ಕಿಂತ ಚಿಕ್ಕದು.</p>' in body
+    # One language at a time: English is chosen, and each card has its own switch.
+    assert 'type="radio" name="l-abc123" id="l-abc123-en" checked' in body
+    assert '<label for="l-abc123-hi" class="tab-hi" lang="hi">हिंदी</label>' in body
+    css = page.split("<style>")[1].split("</style>")[0]
+    assert ".panes .pane{display:none}.panes .p-en{display:block}" in css
+    assert "@media print{.panes .pane{display:block!important}" in css
     assert "BharatCode <code>qwen-3.8-27b</code>, 3 calls, 2,500 tokens, 6.5 s." in page
 
 
@@ -89,10 +95,11 @@ def test_verified_fix_shows_before_after_and_every_attempt(tmp_path):
              "after_screenshot": "element-abc123-390-fixed.png",
              "attempts": [{"css": {"height": "1px"}, "attributes": {}, "status": "unverified", "reason": "Visible text area shrunk"},
                           {"css": {"height": "auto"}, "attributes": {}, "status": "verified", "reason": ""}]})])
-    assert "Fix verified in a fresh Chromium at 390 px" in page
+    assert "Fix ready, tested in Chromium at 390 px" in page
+    assert "Ask your developer to add this CSS to the element." in page
     assert '<img src="element-abc123-390.png" alt="The element as Chromium drew it"><figcaption>Before</figcaption>' in page
     assert '<img src="element-abc123-390-fixed.png" alt="The element after the fix">' in page
-    assert "BharatCode suggested 2 repairs and Chromium tested each one." in page
+    assert '<details class="attempts"><summary>BharatCode tried 2 repairs. Chromium rejected 1 before one passed.</summary>' in page
     assert "Rejected: Visible text area shrunk" in page
     assert "height: auto;" in page
 
@@ -101,8 +108,9 @@ def test_failure_does_not_claim_verified(tmp_path):
     page = render(tmp_path, [finding(fix={"status": "unverified", "reason": "Original issue still present",
                                           "attempts": [{"css": {"line-height": "1.8"}, "attributes": {}, "status": "unverified",
                                                         "reason": "Original issue still present"}]})])
-    assert "No suggested fix passed: original issue still present." in page
-    assert "Fix verified" not in page
+    assert "No suggested fix passed in Chromium: original issue still present." in page
+    assert "What to change" in page
+    assert "Fix ready" not in page
     assert "repair ok" not in page
 
 
@@ -175,13 +183,13 @@ def test_model_text_in_the_wrong_script_or_with_selectors_is_cleaned(tmp_path):
     body = page.split('<details class="more"')[0]
     assert "The element has a fixed height." in body
     assert "data-akshara-id" not in body and "ak-29ef8dc6" not in body
-    assert '<span class="lang-name" lang="hi">' not in body
-    assert '<span lang="kn">ಈ ಪಠ್ಯ ಕನ್ನಡದಲ್ಲಿದೆ.</span>' in body
+    assert 'class="pane p-hi"' not in body
+    assert '<p class="pane p-kn" lang="kn">ಈ ಪಠ್ಯ ಕನ್ನಡದಲ್ಲಿದೆ.</p>' in body
 
 
 def test_unavailable_model_placeholder_is_not_shown_as_an_explanation(tmp_path):
     page = render(tmp_path, [finding(ai_explanation="BharatCode unavailable; browser findings remain available")])
-    assert "BharatCode explains" not in page
+    assert "What BharatCode says" not in page
 
 
 def test_language_fix_does_not_show_identical_before_and_after(tmp_path):
@@ -192,7 +200,7 @@ def test_language_fix_does_not_show_identical_before_and_after(tmp_path):
         fix={"status": "verified", "css": {}, "attributes": {"lang": "hi"}, "viewport": 390,
              "after_screenshot": "element-abc123-390-fixed.png"})])
     assert "element-abc123-390-fixed.png" not in page
-    assert "Chromium reads the text as Hindi" in page
+    assert "screen readers treat the text as Hindi" in page
     assert "Tagged as English (en), but written in Devanagari." in page
 
 
@@ -236,3 +244,15 @@ def test_json_does_not_repeat_findings_inside_pages(tmp_path):
 def test_duration_reads_naturally():
     from aksharacheck.report import _duration
     assert _duration(6.5) == "6.5 s" and _duration(42.2) == "42 s" and _duration(110.15) == "1 min 50 s"
+
+
+def test_overview_explains_its_labels_in_plain_words(tmp_path):
+    page = render(tmp_path, [
+        finding(severity="error", detector="broken-cluster", evidence={"invalid_sequences": []}),
+        finding(id="w", fix={"status": "verified", "css": {"height": "auto"}, "viewport": 390}),
+    ])
+    assert '<dl class="key"' in page
+    assert "Readers see broken text. Start here." in page
+    assert '<span class="state">Edit the text</span>' in page
+    assert '<span class="state ok">✓ Fix ready</span>' in page
+    assert "Seen on phone" in page

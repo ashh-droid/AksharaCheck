@@ -127,7 +127,7 @@ def _widths(finding):
 def _where(finding):
     widths=sorted(set(finding.get("viewports") or [finding.get("viewport",390)]))
     kinds=list(dict.fromkeys("Phone" if w<=430 else "Tablet" if w<=1024 else "Desktop" for w in widths))
-    return " and ".join([kinds[0]]+[k.lower() for k in kinds[1:]])
+    return "Seen on "+" and ".join(k.lower() for k in kinds)
 
 
 def _safe_link(url, text=None):
@@ -277,27 +277,40 @@ def _explanation(f):
     # Placeholder text from an unavailable model is not an explanation.
     if not english or english.startswith(("BharatCode unavailable","AI unavailable","BharatCode API")):
         return ""
-    lines=['<p class="ai-en">'+esc(english)+'</p>']
+    panes=[("en","English",english)]
     for code,name,low,high in (("hi","हिंदी",0x0900,0x097F),("kn","ಕನ್ನಡ",0x0C80,0x0CFF)):
         text=_clean(f.get("summary_"+code))
         if text and _mostly(text,low,high):
-            lines.append('<p class="translation"><span class="lang-name" lang="'+code+'">'+name+'</span>'
-                         '<span lang="'+code+'">'+esc(text)+'</span></p>')
-    return '<div class="ai"><p class="ai-label">BharatCode explains</p>'+"".join(lines)+'</div>'
+            panes.append((code,name,text))
+    if len(panes)==1:
+        return '<div class="ai"><div class="ai-head"><p class="ai-label">What BharatCode says</p></div><p class="pane p-en">'+esc(english)+'</p></div>'
+    # One language at a time. Radio buttons keep the switch working without JavaScript.
+    key="l-"+re.sub(r"[^a-zA-Z0-9-]","",str(f.get("id","x")))
+    radios="".join('<input class="sr-only t-'+code+'" type="radio" name="'+key+'" id="'+key+'-'+code+'"'+(' checked' if n==0 else '')+'>'
+                   for n,(code,_,_) in enumerate(panes))
+    labels="".join('<label for="'+key+'-'+code+'" class="tab-'+code+'"'+('' if code=="en" else ' lang="'+code+'"')+'>'+esc(name)+'</label>'
+                   for code,name,_ in panes)
+    texts="".join('<p class="pane p-'+code+'"'+('' if code=="en" else ' lang="'+code+'"')+'>'+esc(text)+'</p>' for code,_,text in panes)
+    return ('<div class="ai">'+radios+'<div class="ai-head"><p class="ai-label">What BharatCode says</p>'
+            '<span class="tabs" role="group" aria-label="Language">'+labels+'</span></div><div class="panes">'+texts+'</div></div>')
 
 
 def _attempts(fix):
     tries=fix.get("attempts") or []
     if not tries or (len(tries)==1 and tries[0].get("status")=="verified"):
         return ""
+    rejected=sum(1 for t in tries if t.get("status")!="verified")
     rows=[]
     for t in tries:
         ok=t.get("status")=="verified"
         rows.append('<li class="'+("ok" if ok else "bad")+'"><span class="mark" aria-hidden="true">'+("✓" if ok else "✗")+'</span>'
                     '<code>'+esc(_css_text(t).replace("\n"," "))+'</code>'
                     '<span>'+("Passed" if ok else "Rejected: "+esc(t.get("reason") or "did not pass"))+'</span></li>')
-    return ('<div class="attempts"><p>BharatCode suggested '+_label(len(tries),"repair")
-            +' and Chromium tested each one.</p><ol>'+"".join(rows)+'</ol></div>')
+    if rejected<len(tries):
+        summary="BharatCode tried "+_label(len(tries),"repair")+". Chromium rejected "+str(rejected)+" before one passed."
+    else:
+        summary="BharatCode tried "+_label(len(tries),"repair")+". Chromium rejected each one."
+    return '<details class="attempts"><summary>'+esc(summary)+'</summary><ol>'+"".join(rows)+'</ol></details>'
 
 
 def _repair(f):
@@ -308,17 +321,18 @@ def _repair(f):
     width=fix.get("viewport") or f.get("viewport")
     if state=="verified":
         lang=(fix.get("attributes") or {}).get("lang")
-        what=(f"With this change Chromium reads the text as {LANG_NAMES.get(lang,lang)}." if lang and not fix.get("css")
-              else "The whole text shows, at full size and on screen.")
-        return ('<div class="repair ok"><p class="repair-title"><span aria-hidden="true">✓</span> Fix verified in a fresh Chromium at '
-                +esc(width)+' px</p><pre>'+esc(_css_text(fix))+'</pre><p class="repair-note">'+esc(what)+'</p>'+_attempts(fix)+'</div>')
+        if lang and not fix.get("css"):
+            how=f"Add this attribute to the element, so browsers and screen readers treat the text as {LANG_NAMES.get(lang,lang)}."
+        else:
+            how="Ask your developer to add this CSS to the element. With it the whole text shows, at full size."
+        return ('<div class="repair ok"><p class="repair-title"><span aria-hidden="true">✓</span> Fix ready, tested in Chromium at '
+                +esc(width)+' px</p><p class="repair-note">'+esc(how)+'</p><pre>'+esc(_css_text(fix))+'</pre>'+_attempts(fix)+'</div>')
     if state=="unverified":
         reason=str(fix.get("reason") or "it did not pass the browser check").rstrip(".")
-        return ('<div class="repair bad"><p class="repair-title"><span aria-hidden="true">✗</span> No suggested fix passed: '
-                +esc(reason[0].lower()+reason[1:])+'.</p>'+_attempts(fix)+'</div>'
-                '<p class="todo"><strong>What to change</strong>'+esc(action)+'</p>')
-    note='<span class="muted"> BharatCode was not available for this finding.</span>' if state=="unavailable" else ""
-    return '<p class="todo"><strong>What to change</strong>'+esc(action)+note+'</p>'
+        return ('<div class="todo"><p class="todo-title">What to change</p><p>'+esc(action)+'</p>'
+                '<p class="todo-note">No suggested fix passed in Chromium: '+esc(reason[0].lower()+reason[1:])+'.</p>'+_attempts(fix)+'</div>')
+    note='<p class="todo-note">BharatCode was not available for this finding.</p>' if state=="unavailable" else ""
+    return '<div class="todo"><p class="todo-title">What to change</p><p>'+esc(action)+'</p>'+note+'</div>'
 
 
 def _figures(f, folder):
@@ -348,12 +362,12 @@ def _card(f, folder):
         sample_html='<p class="sample code"><code>'+esc(details["font_url"])+'</code></p>'
     else:
         sample_html='<p class="sample" lang="'+_lang_of(sample)+'">'+esc(sample)+'</p>' if sample else ""
-    check='<span class="tag">Needs a visual check</span>' if f.get("confidence")=="suspected" else ""
+    check='<span class="tag">Confirm with the screenshot</span>' if f.get("confidence")=="suspected" else ""
     measured=_observed(f)
     shot=_asset(f.get("screenshot"),folder)
     figures=_figures(f,folder)
     raw=esc(json.dumps(details,ensure_ascii=False,indent=2))
-    more=('<details class="more"><summary>Measurements and element</summary><dl>'
+    more=('<details class="more"><summary>Technical details</summary><dl>'
           '<div><dt>Page</dt><dd>'+_safe_link(f.get("url",""))+'</dd></div>'
           +('<div><dt>Element</dt><dd><code>'+esc(f.get("selector",""))+'</code></dd></div>' if f.get("selector") not in (None,"","document") else "")
           +'<div><dt>Checked at</dt><dd>'+esc(_widths(f))+'</dd></div>'
@@ -409,14 +423,16 @@ def _overview(groups, counts):
             title=FINDING_COPY.get(detector,("Rendering observation",))[0]
             verified=sum(1 for f in items if (f.get("fix") or {}).get("status")=="verified")
             failed=sum(1 for f in items if (f.get("fix") or {}).get("status")=="unverified")
-            if verified:
-                state='<span class="state ok">✓ '+_label(verified,"fix","fixes")+' verified</span>'
-            elif failed:
-                state='<span class="state bad">No fix passed</span>'
+            if verified and verified==len(items):
+                state='<span class="state ok">✓ Fix ready</span>'
+            elif verified:
+                state='<span class="state ok">✓ '+str(verified)+' of '+str(len(items))+' fixes ready</span>'
             elif detector in {"broken-cluster","legacy-font","mixed-language"}:
                 state='<span class="state">Edit the text</span>'
+            elif failed or detector=="font-load-failed":
+                state='<span class="state">Needs a developer</span>'
             else:
-                state='<span class="state">Review</span>'
+                state='<span class="state">Take a look</span>'
             rows.append('<li class="'+severity+'"><span class="sev">'+SEVERITY[severity][0]+'</span>'
                         '<a href="#'+esc(detector)+'">'+esc(title)+'</a><span class="places">'+_label(len(items),"place")+'</span>'+state+'</li>')
     total=sum(counts.values()) or 1
@@ -424,7 +440,11 @@ def _overview(groups, counts):
     legend="".join(f'<li class="{k}"><span class="dot"></span>{counts[k]} {SEVERITY[k][1].lower()}</li>' for k in ORDER if counts[k])
     return ('<section class="overview" aria-labelledby="overview-title"><div class="overview-head"><h2 id="overview-title">What was found</h2>'
             '<div class="meter" role="img" aria-label="'+esc(_summary_sentence(counts))+'"><span class="bar">'+bar+'</span><ul>'+legend+'</ul></div></div>'
-            '<ol class="contents">'+"".join(rows)+'</ol></section>') if total and rows else ""
+            '<ol class="contents">'+"".join(rows)+'</ol>'
+            '<dl class="key" aria-label="What the labels mean">'
+            '<div class="error"><dt><span class="sev">Fix</span></dt><dd>Readers see broken text. Start here.</dd></div>'
+            '<div class="warning"><dt><span class="sev">Check</span></dt><dd>Probably wrong. The screenshot shows you.</dd></div>'
+            '<div class="info"><dt><span class="sev">Note</span></dt><dd>Worth knowing. Often fine as it is.</dd></div></dl></section>') if total and rows else ""
 
 
 LOGO=('<svg class="logo" viewBox="0 0 120 120" aria-hidden="true">'
@@ -444,7 +464,7 @@ CSS=r"""
 --blue:#3B4F73;--blue-tint:#E8EEF7;--blue-bar:#8FA3C4;--ai:#F1F4FA;--night:#141B30;--night-2:#1C2541;--night-soft:#AAB3CC;--night-green:#3FB58A;
 --font:'Anek Latin','Anek Devanagari','Anek Kannada','Nirmala UI',system-ui,sans-serif;--mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace}
 *{box-sizing:border-box}html{background:var(--paper);scroll-behavior:smooth;scroll-padding-top:20px}
-body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 var(--font);-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.6 var(--font);-webkit-font-smoothing:antialiased}
 :lang(hi){font-family:'Anek Devanagari','Anek Latin',sans-serif}:lang(kn){font-family:'Anek Kannada','Anek Latin',sans-serif}
 a{color:var(--green)}a:focus-visible,summary:focus-visible{outline:3px solid var(--green);outline-offset:3px;border-radius:3px}
 code,pre{font-family:var(--mono);font-size:13px}
@@ -470,9 +490,9 @@ h1,h2,h3,p,dl,dd,ul,ol,figure{margin:0}h1,h2,h3{font-weight:600;letter-spacing:-
 .cover .meta code{font-size:13px;padding:1px 6px;border-radius:4px;background:var(--night-2);color:#F3F5FA}
 .notice{margin-top:16px;padding:12px 14px;border-radius:8px;background:#3A2E17;color:#F2D49A;font-size:15px}.notice strong{font-weight:600;color:#fff}
 /* Overview */
-.overview{margin-top:24px;padding:22px 24px;background:var(--sheet);border:1px solid var(--line);border-radius:12px}
+.overview{margin-top:28px;padding:28px 30px;background:var(--sheet);border:1px solid var(--line);border-radius:12px}
 .overview-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px}
-.overview h2{font-size:20px}
+.overview h2{font-size:22px}
 .meter{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px}
 .bar{display:flex;width:180px;height:8px;overflow:hidden;border-radius:4px;background:var(--line);gap:2px}
 .seg.error{background:var(--red)}.seg.warning{background:var(--amber-bar)}.seg.info{background:var(--blue-bar)}
@@ -480,59 +500,71 @@ h1,h2,h3,p,dl,dd,ul,ol,figure{margin:0}h1,h2,h3{font-weight:600;letter-spacing:-
 .meter li{display:inline-flex;align-items:center;gap:6px}
 .dot{width:9px;height:9px;border-radius:50%}
 .meter .error .dot{background:var(--red)}.meter .warning .dot{background:var(--amber-bar)}.meter .info .dot{background:var(--blue-bar)}
-.contents{margin-top:14px;padding:0;list-style:none;border-top:1px solid var(--line)}
-.contents li{display:grid;grid-template-columns:72px minmax(0,1fr) auto auto;align-items:center;gap:6px 16px;padding:10px 0;border-bottom:1px solid var(--line)}
+.contents{margin-top:18px;padding:0;list-style:none;border-top:1px solid var(--line)}
+.contents li{display:grid;grid-template-columns:72px minmax(0,1fr) auto auto;align-items:center;gap:6px 18px;padding:14px 0;border-bottom:1px solid var(--line)}
 .contents li:last-child{border-bottom:0}
 .contents a{color:var(--ink);font-weight:600;text-decoration:none}.contents a:hover{color:var(--green);text-decoration:underline;text-underline-offset:4px}
-.places{font-size:14px;color:var(--soft)}
-.state{font-size:14px;color:var(--soft);text-align:right;min-width:120px}.state.ok{color:var(--green);font-weight:600}.state.bad{color:var(--red-text)}
+.places{font-size:15px;color:var(--soft)}
+.key{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 24px;margin:18px 0 0;padding-top:18px;border-top:1px solid var(--line)}
+.key div{display:flex;align-items:baseline;gap:10px}.key dt{flex:none;width:64px}.key dd{margin:0;font-size:14px;line-height:1.45;color:var(--soft)}
+.state{font-size:15px;color:var(--soft);text-align:right;min-width:120px}.state.ok{color:var(--green);font-weight:600}.state.bad{color:var(--red-text)}
 /* Severity words */
 .sev{display:inline-flex;align-items:center;justify-content:center;padding:2px 9px;border-radius:4px;font-size:13px;font-weight:600;line-height:1.5;width:fit-content}
 .error .sev{background:var(--red-tint);color:var(--red-text)}.error .sev:before{content:'✗\00a0'}
 .warning .sev{background:var(--amber-tint);color:var(--amber)}
 .info .sev{background:var(--blue-tint);color:var(--blue)}
 /* Detail bands */
-.band{padding-top:48px}
-.band>h2,details.notes>summary{display:flex;align-items:baseline;gap:10px;padding-bottom:10px;border-bottom:2px solid var(--ink);font-size:24px}
+.band{padding-top:72px}
+.band>h2,details.notes>summary{display:flex;align-items:baseline;gap:10px;padding-bottom:12px;border-bottom:2px solid var(--ink);font-size:26px}
 .band>h2 .n,details.notes>summary .n{font-size:16px;font-weight:400;color:var(--soft)}
 details.notes>summary{cursor:pointer;list-style:none;font-weight:600}
 details.notes>summary::-webkit-details-marker{display:none}
 details.notes>summary:after{content:'Show';margin-left:auto;font-size:15px;color:var(--green)}
 details.notes[open]>summary:after{content:'Hide'}
-.group{padding-top:28px;scroll-margin-top:16px}
-.group h3{font-size:19px}.group h3 .count{margin-left:6px;font-size:15px;font-weight:400;color:var(--soft)}
-.why{margin-top:4px;max-width:70ch;color:var(--soft)}
+.group{padding-top:40px;scroll-margin-top:16px}
+.group h3{font-size:21px}.group h3 .count{margin-left:6px;font-size:15px;font-weight:400;color:var(--soft)}
+.why{margin-top:6px;max-width:64ch;color:var(--soft)}
 /* Finding card */
-.card{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,280px);gap:28px;margin-top:14px;padding:22px 24px;background:var(--sheet);border:1px solid var(--line);border-radius:12px}
+.card{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,260px);gap:36px;margin-top:20px;padding:30px 32px;background:var(--sheet);border:1px solid var(--line);border-radius:12px}
 .card.no-figures{grid-template-columns:minmax(0,1fr)}
+.card-body{min-width:0;max-width:64ch}
 .card-top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;font-size:14px;color:var(--soft)}
-.tag{padding:1px 8px;border:1px solid var(--line);border-radius:4px;font-size:13px}
-.sample{margin-top:12px;font-size:23px;line-height:1.6;overflow-wrap:anywhere}
+.tag{padding:1px 8px;color:var(--amber);border-color:#EBCF9E;border:1px solid var(--line);border-radius:4px;font-size:13px}
+.sample{margin-top:16px;font-size:25px;line-height:1.6;overflow-wrap:anywhere}
 .sample.code{font-size:15px}.sample.code code{font-size:14px;padding:3px 8px;border-radius:4px;background:var(--paper);overflow-wrap:anywhere}
-.measured{margin-top:4px;color:var(--soft)}
-.sequences{display:grid;gap:8px;margin-top:12px;padding:0;list-style:none}
+.measured{margin-top:6px;color:var(--soft)}
+.sequences{display:grid;gap:10px;margin-top:16px;padding:0;list-style:none}
 .sequences li{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
 .glyph{min-width:2.2ch;font-size:26px;line-height:1.3;color:var(--red-text)}
-.sequences code{padding:2px 7px;border-radius:4px;background:var(--paper)}
+.sequences code{padding:2px 7px;border-radius:4px;background:var(--paper);font-size:12px;color:var(--soft)}
 .seq-why{font-size:14px;color:var(--soft)}
-.ai{margin-top:16px;padding:14px 16px;border-radius:10px;background:var(--ai)}
-.ai-label{margin-bottom:4px;font-size:14px;font-weight:600;color:var(--blue)}
-.ai p+p{margin-top:8px}
-.translation{display:grid;grid-template-columns:4.5em minmax(0,1fr);gap:8px;line-height:1.65}
-.lang-name{padding-top:2px;font-size:14px;color:var(--soft)}
-.repair{margin-top:14px;padding:14px 16px;border-radius:10px}
+.ai{position:relative;margin-top:26px;padding:18px 20px;border-radius:10px;background:var(--ai)}
+.ai-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;margin-bottom:10px}
+.ai-label{font-size:14px;font-weight:600;color:var(--blue)}
+.tabs{display:inline-flex;gap:2px;padding:3px;border-radius:8px;background:#E0E6F1}
+.tabs label{display:inline-flex;align-items:center;height:30px;padding:0 12px;border-radius:6px;font-size:14px;font-weight:600;line-height:30px;color:var(--blue);cursor:pointer}
+.tabs label:hover{color:var(--ink)}.tabs label[lang]{padding-top:5px}
+.pane{line-height:1.7}.panes .pane{display:none}.panes .p-en{display:block}
+.ai .t-hi:checked~.panes .p-en,.ai .t-kn:checked~.panes .p-en{display:none}
+.ai .t-hi:checked~.panes .p-hi,.ai .t-kn:checked~.panes .p-kn{display:block}
+.ai .t-en:checked~.ai-head .tab-en,.ai .t-hi:checked~.ai-head .tab-hi,.ai .t-kn:checked~.ai-head .tab-kn{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(27,36,64,.14)}
+.ai .t-en:focus-visible~.ai-head .tab-en,.ai .t-hi:focus-visible~.ai-head .tab-hi,.ai .t-kn:focus-visible~.ai-head .tab-kn{outline:3px solid var(--green);outline-offset:1px}
+.sr-only{position:absolute;width:1px;height:1px;margin:0;opacity:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.repair{margin-top:16px;padding:18px 20px;border-radius:10px}
 .repair-title{font-weight:600}
 .repair.ok{background:var(--green-tint)}.repair.ok .repair-title{color:var(--green)}
 .repair.bad{background:var(--red-tint)}.repair.bad .repair-title{color:var(--red-text)}
-.repair pre{margin-top:8px;padding:10px 12px;border-radius:6px;background:#fff;white-space:pre-wrap;overflow-wrap:anywhere}
-.repair-note{margin-top:8px;font-size:15px;color:var(--soft)}
-.attempts{margin-top:12px;font-size:14px;color:var(--soft)}
-.attempts ol{display:grid;gap:6px;margin-top:6px;padding:0;list-style:none}
+.repair pre{margin-top:12px;padding:12px 14px;border-radius:6px;background:#fff;white-space:pre-wrap;overflow-wrap:anywhere}
+.repair-note{margin-top:4px;font-size:15px;color:var(--ink)}
+.attempts{margin-top:14px;font-size:14px;color:var(--soft)}
+.attempts summary{width:fit-content;cursor:pointer;font-weight:600;color:var(--green)}
+.attempts ol{display:grid;gap:8px;margin-top:10px;padding:0;list-style:none}
 .attempts li{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;color:var(--ink)}
 .attempts code{padding:1px 6px;border-radius:4px;background:#fff;overflow-wrap:anywhere}
 .mark{font-weight:600}.attempts .ok .mark{color:var(--green)}.attempts .bad .mark{color:var(--red-text)}
-.todo{margin-top:16px;padding-top:12px;border-top:1px solid var(--line)}
-.todo strong{display:block;margin-bottom:2px;font-weight:600}
+.todo{margin-top:16px;padding:18px 20px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.todo-title{margin-bottom:4px;font-weight:600}
+.todo-note{margin-top:8px;font-size:15px;color:var(--soft)}
 .muted{color:var(--soft)}
 .figures{display:grid;gap:12px;align-content:start}
 .figures figure{padding:10px;border:1px solid var(--line);border-radius:8px;background:#fff}
@@ -540,20 +572,20 @@ details.notes[open]>summary:after{content:'Hide'}
 .figures img{display:block;max-width:100%;height:auto;margin:0 auto}
 figcaption{margin-top:6px;text-align:center;font-size:13px;color:var(--soft)}
 .figures .after figcaption{color:var(--green);font-weight:600}
-.more{margin-top:14px;font-size:14px}.more summary{width:fit-content;cursor:pointer;color:var(--green);font-weight:600}
+.more{margin-top:22px;font-size:14px}.more summary{width:fit-content;cursor:pointer;color:var(--green);font-weight:600}
 .more dl{display:grid;gap:6px;margin-top:10px}.more dl div{display:grid;grid-template-columns:7em minmax(0,1fr);gap:10px}
 .more dt{color:var(--soft)}.more dd{overflow-wrap:anywhere}
 .more pre{max-height:240px;margin-top:10px;padding:12px;overflow:auto;border:1px solid var(--line);border-radius:6px;background:var(--paper);white-space:pre-wrap;overflow-wrap:anywhere}
 .clean{margin-top:24px;padding:20px;border-radius:12px;background:var(--green-tint);color:var(--green);font-size:18px}
 .foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;margin-top:56px;padding:22px 0 40px;border-top:1px solid var(--line);font-size:14px;color:var(--soft)}
 @media(max-width:760px){
-.card{grid-template-columns:minmax(0,1fr);gap:16px;padding:16px}.figures{order:-1;max-width:420px}
-.contents li{grid-template-columns:64px minmax(0,1fr);gap:2px 12px}.places,.state{grid-column:2;text-align:left;min-width:0}
-.translation{grid-template-columns:minmax(0,1fr);gap:0}.more dl div{grid-template-columns:minmax(0,1fr);gap:0}
+.card{grid-template-columns:minmax(0,1fr);gap:18px;padding:20px 18px}.ai,.repair,.todo{padding:16px}.overview{padding:22px 18px}.band{padding-top:56px}.figures{order:-1;max-width:420px}
+.contents li{grid-template-columns:64px minmax(0,1fr) auto;gap:4px 12px}.contents a{grid-column:2/4}.places{grid-column:2}.state{grid-column:3;text-align:right;min-width:0}
+.key{grid-template-columns:minmax(0,1fr)}.more dl div{grid-template-columns:minmax(0,1fr);gap:0}
 .top{min-height:68px}.brand-name{font-size:20px}.brand-sub{font-size:12px;gap:8px}.logo{width:32px;height:32px}.downloads a{padding:0 10px}
 }
 @media(max-width:420px){.downloads a:first-child{display:none}}
-@media print{.downloads,.more summary{display:none}.cover{background:#fff;color:var(--ink);border:1px solid var(--line)}.cover .for,.cover .meta{color:var(--soft)}.card,.overview{break-inside:avoid}details.notes>*{display:block}}
+@media print{.panes .pane{display:block!important}.tabs,.attempts summary{display:none}.attempts ol{display:grid!important}.downloads,.more summary{display:none}.cover{background:#fff;color:var(--ink);border:1px solid var(--line)}.cover .for,.cover .meta{color:var(--soft)}.card,.overview{break-inside:avoid}details.notes>*{display:block}}
 """
 
 
