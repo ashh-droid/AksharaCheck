@@ -236,6 +236,7 @@ class BharatCodeClient:
         # Model capacity can queue requests, and complex multilingual output
         # can be cut short at a small token budget (HTTP 200 is not sufficient).
         last_issue="No usable model response"
+        last_request_id=""
         timeout=httpx.Timeout(connect=15.0,read=90.0,write=20.0,pool=15.0)
         async with httpx.AsyncClient(timeout=timeout,follow_redirects=False) as client:
             for attempt in range(3):
@@ -249,14 +250,16 @@ class BharatCodeClient:
                         ) as resp:
                             status=resp.status_code
                             request_id=resp.headers.get("x-request-id","")
+                            last_request_id=request_id if isinstance(request_id,str) and re.fullmatch(r"[A-Za-z0-9_-]{3,80}",request_id) else ""
                             body=await asyncio.wait_for(read_bharatcode_stream(resp),timeout=300) if status==200 else None
                     else:
                         resp=await client.post(API_URL,headers={"Authorization":f"Bearer {self.key}"},json=payload)
                         status=resp.status_code
                         request_id=resp.headers.get("x-request-id","")
+                        last_request_id=request_id if isinstance(request_id,str) and re.fullmatch(r"[A-Za-z0-9_-]{3,80}",request_id) else ""
                         body=resp.json() if status==200 else None
-                    if status in {429,503}:
-                        last_issue=f"HTTP {status}: model busy or rate limited"
+                    if status in {429,500,502,503,504}:
+                        last_issue=f"HTTP {status}: provider temporarily unavailable or rate limited"
                         if attempt < 2:
                             await asyncio.sleep(2**(attempt+1))
                             continue
@@ -272,8 +275,6 @@ class BharatCodeClient:
                             422:"HTTP 422: request validation failed",
                         }
                         last_issue=messages.get(code,f"HTTP {code}: provider returned an error")
-                        if isinstance(request_id,str) and re.fullmatch(r"[A-Za-z0-9_-]{3,80}",request_id):
-                            last_issue+=f"; request ID: {request_id}"
                         break
                     try:
                         result=parse_response(body)
@@ -336,8 +337,17 @@ class BharatCodeClient:
                         "Invalid BharatCode streaming JSON event",
                     )
                     last_issue=diagnostic if diagnostic.startswith(safe) else "Provider streaming response could not be decoded"
+                    if diagnostic=="BharatCode response failed" and attempt<2:
+                        # The provider ended this stream in failure. Never
+                        # accept partial output or retry non-transient errors.
+                        await asyncio.sleep(2**(attempt+1))
+                        continue
+                    if diagnostic=="BharatCode response failed":
+                        last_issue+=" (3 attempts)"
                     break
         # Do not display fallback text as AI work or log credentials/page text.
+        if last_request_id:
+            last_issue+=f"; request ID: {last_request_id}"
         return {"explanation":"","css":{},"attributes":{},"status":"unavailable","error_code":last_issue}
 
 
@@ -447,9 +457,9 @@ async def explain_and_verify(report, allow_local=False, max_fixes=8, progress=No
     candidates.sort(key=lambda f: (0 if f["detector"] in PATCHABLE else 1))
     for f in candidates[:max_fixes]:
         if f.get("ai_resumed") and f.get("ai_explanation") and (f.get("fix") or {}).get("status") in {"verified","unverified","not-applicable"}:
-            if progress:await progress(f"Reusing earlier BharatCode explanation for {f['detector']} (browser rechecked if repairable)")
+            if progress:await progress(f"Reusing earlier BharatCode explanation for {f['detector']} [{f['id']}] (browser rechecked if repairable)")
             continue
-        if progress:await progress(f"BharatCode is analysing {f['detector']}")
+        if progress:await progress(f"BharatCode is analysing {f['detector']} [{f['id']}]")
         proposal=await client.propose(f)
         account(proposal)
         if proposal.get("status")=="unavailable":
