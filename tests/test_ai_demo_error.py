@@ -197,3 +197,51 @@ def test_failed_stream_explains_capacity_without_mislabeling_browser_or_key():
     assert "verified fix failed" not in message.lower()
     assert demo.explain_provider_failure("HTTP 401: API authentication rejected") == "HTTP 401: API authentication rejected"
     assert demo.explain_provider_failure("Network or queue timeout") == "Network or queue timeout"
+
+
+def test_partial_report_is_separate_from_last_complete_report(monkeypatch,tmp_path):
+    """The CLI can show current browser evidence without replacing a prior PASS."""
+    setup_fake(monkeypatch,tmp_path)
+    completed=tmp_path/"report.html"
+    completed.write_text("LAST COMPLETE PASS",encoding="utf-8")
+    (tmp_path/"report.json").write_text('{"complete":true}',encoding="utf-8")
+    saved_partial=[]
+
+    async def provider_fails_after_first(report,**options):
+        first,second=report["findings"]
+        first.update(ai_explanation="This is tagged incorrectly.",
+                     summary_hi="भाषा का टैग गलत है।",
+                     summary_kn="ಭಾಷಾ ಗುರುತು ತಪ್ಪಾಗಿದೆ.",
+                     fix={"status":"verified","attributes":{"lang":"hi"}})
+        options["on_completed"](first)
+        second["fix"]={"status":"unavailable","reason":"BharatCode response failed (3 attempts); request ID: req-77"}
+        report["ai"]={"model":demo.MODEL,"calls":1}
+
+    def write_partial(report,stage):
+        saved_partial.append(report["ai"].copy())
+        assert report["ai"]["partial"] is True
+        assert report["ai"]["completed_findings"]==1
+        assert report["ai"]["requested_findings"]==2
+        (stage/"report.html").write_text("PARTIAL AI REPORT",encoding="utf-8")
+        (stage/"report.json").write_text('{"partial":true}',encoding="utf-8")
+
+    monkeypatch.setattr(demo,"explain_and_verify",provider_fails_after_first)
+    monkeypatch.setattr(demo,"write_reports",write_partial)
+    with pytest.raises(RuntimeError,match="BharatCode response failed"):
+        asyncio.run(demo.test("http://127.0.0.1:8080/index.html",max_findings=2,
+                              partial_on_failure=True))
+    assert completed.read_text(encoding="utf-8")=="LAST COMPLETE PASS"
+    assert (tmp_path/"report.json").read_text(encoding="utf-8")=='{"complete":true}'
+    assert (tmp_path/"partial"/"report.html").read_text(encoding="utf-8")=="PARTIAL AI REPORT"
+    assert len(saved_partial)==1
+    assert len(demo.read_checkpoint(tmp_path/demo.CHECKPOINT_NAME,demo.scope_hash())["findings"])==1
+
+
+def test_checkpoint_identity_distinguishes_same_rule_at_different_elements():
+    first={"detector":"wrong-lang","severity":"warning",
+           "selector":'[data-akshara-id="ak-one"]',"sample":"नमस्ते","viewport":390}
+    second={**first,"selector":'[data-akshara-id="ak-two"]'}
+    third={**first,"viewport":1440}
+    assert demo.identity(first)!=demo.identity(second)
+    assert demo.identity(first)!=demo.identity(third)
+    assert demo.identity(first)==demo.identity(dict(first))
