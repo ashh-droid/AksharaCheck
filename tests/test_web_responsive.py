@@ -1,7 +1,8 @@
 """Full rendered frontend QA at nine viewport widths, not just static CSS assertions.
 
-Runs against a local Vite production preview. No calls to live websites or
-BharatCode occur. The source project must already have been built.
+Builds the current frontend for localhost before starting a Vite production
+preview. No calls to live websites or BharatCode occur. Generated dist files
+are refreshed; the source code and user edits are not changed.
 """
 from __future__ import annotations
 import shutil
@@ -20,14 +21,35 @@ WEB = ROOT / "web"
 QA = ROOT / "scripts" / "check_web_ui.py"
 
 
-@pytest.mark.skipif(
-    not (WEB / "dist" / "index.html").exists(),
-    reason="Run 'npm run build' in web/ to enable production-preview browser QA",
-)
 def test_production_frontend_at_nine_responsive_widths():
     npm = shutil.which("npm") or shutil.which("npm.cmd")
     if not npm:
         pytest.skip("npm not available")
+    if not (WEB / "node_modules").is_dir():
+        pytest.skip("Frontend packages not installed; run 'npm install' in web/")
+    # A previous 'npm run build:pages' writes /AksharaCheck/ asset paths
+    # into dist/index.html. Vite preview at localhost / then returns HTML 200,
+    # but its JS never mounts React, causing a misleading missing #hero-title.
+    # Always build for the local '/' base before previewing. Also picks up
+    # any uncommitted frontend fixes without changing their source files.
+    build = subprocess.run(
+        [npm, "run", "build"],
+        cwd=WEB,
+        capture_output=True,
+        text=True,
+        timeout=180,
+        check=False,
+    )
+    assert build.returncode == 0, (
+        "Local frontend build failed:\n"
+        + build.stdout[-5000:] + "\n" + build.stderr[-5000:]
+    )
+    index = (WEB / "dist" / "index.html")
+    assert index.is_file(), "The frontend build did not generate dist/index.html"
+    html = index.read_text(encoding="utf-8")
+    assert '/AksharaCheck/assets/' not in html, (
+        "Local preview contains GitHub Pages asset paths; use 'npm run build' rather than 'npm run build:pages'"
+    )
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.bind(("127.0.0.1", 0))
         port = sock.getsockname()[1]
