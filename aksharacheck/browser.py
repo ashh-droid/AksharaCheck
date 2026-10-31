@@ -203,7 +203,7 @@ class Scanner:
         if pages and all("error" in item for item in pages):
             raise RuntimeError("Browser navigation failed at both viewports: " + str(pages[0].get("error", "unknown failure"))[:200])
         all_findings=merge_findings([f for p in pages for f in p['findings']])
-        output={"version":"0.1.0","engine_version":"2026-10-29-visibility-v2",
+        output={"version":"0.1.0","engine_version":"2026-10-31-precision",
                 "generated_at":datetime.now(timezone.utc).isoformat(timespec="seconds"),
                 "target":url,"language":lang,"pages":pages,
                 "findings":all_findings,"summary":{s:sum(f['severity']==s for f in all_findings) for s in ('error','warning','info')}}

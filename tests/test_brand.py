@@ -128,7 +128,8 @@ def test_recorded_public_reports_are_honest_including_clean_snapshots():
     """A zero-finding DD News follow-up must not be labelled AI-verified or a site-wide pass."""
     assert "Explore recorded reports" in PAGE
     assert "not full accessibility certifications" in PAGE
-    assert "Browser-only scan · no findings at the tested widths" in PAGE
+    assert "Browser-only scan · no findings at the tested widths" not in PAGE
+    assert "No findings in the recorded scan at its tested widths." in PAGE
     assert "No findings in the recorded scan at its tested widths." in PAGE
     assert "Browser-only scan · informational observations, not confirmed defects" in PAGE
     assert "Browser-only scan · findings require manual review" in PAGE

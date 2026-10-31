@@ -604,7 +604,7 @@ function RecordedScans({ scans }: { scans: RecordedScan[] }) {
               ? 'Browser-only scan · findings require manual review'
               : counts.info
                 ? 'Browser-only scan · informational observations, not confirmed defects'
-                : 'Browser-only scan · no findings at the tested widths';
+                : '';
           return (
             <a key={s.slug} className={'recorded-card ' + (fixture ? 'fixture' : 'public')} href={recordedReportUrl(s.slug)} target="_blank" rel="noopener noreferrer">
               <span className="recorded-kind">{fixture ? 'BharatCode demonstration' : 'Public website'}</span>

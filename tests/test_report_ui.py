@@ -49,3 +49,24 @@ def test_report_layout_in_chromium(tmp_path):
         if "Executable doesn't exist" in str(exc) or "playwright install" in str(exc):
             pytest.skip("Chromium for Playwright is not installed")
         raise
+
+
+def test_clean_public_report_with_saved_ddnews_images_at_five_widths(tmp_path):
+    """The real zero-finding case must have usable visual evidence at every width."""
+    pytest.importorskip("playwright.sync_api")
+    import json
+    import shutil
+    spec=importlib.util.spec_from_file_location("check_report_ui", ROOT/"scripts"/"check_report_ui.py")
+    module=importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    source=ROOT/"web"/"public"/"samples"/"dd-news-hindi"
+    data=json.loads((source/"report.json").read_text(encoding="utf-8"))
+    for item in data["pages"]:
+        shutil.copy2(source/item["screenshot"],tmp_path/item["screenshot"])
+    write_reports(data,tmp_path)
+    try:
+        module.check(tmp_path/"report.html")
+    except Exception as exc:
+        if "Executable doesn't exist" in str(exc) or "playwright install" in str(exc):
+            pytest.skip("Chromium for Playwright is not installed")
+        raise

@@ -663,9 +663,24 @@ figcaption{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);tex
 .more dt{color:var(--soft)}.more dd{margin:0;overflow-wrap:anywhere}
 .more pre{max-height:240px;margin-top:10px;padding:12px;overflow:auto;border:1px solid var(--line);border-radius:6px;background:var(--panel);white-space:pre-wrap;overflow-wrap:anywhere}
 .clean{margin-top:24px;padding:20px;border-radius:12px;background:var(--green-tint);color:var(--green);font-size:18px}
+.clean-evidence{margin-top:24px;padding:26px 28px;background:#fff;border:1px solid var(--edge);border-radius:12px;box-shadow:0 1px 2px rgba(27,36,64,.05),0 8px 24px rgba(27,36,64,.05)}
+.clean-evidence h2{font-size:23px}.clean-evidence h3{margin-top:24px;font-size:18px}
+.clean-description{margin-top:6px;color:var(--soft)}
+.clean-pages{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px;margin-top:18px}
+.clean-page{min-width:0;margin:0;padding:12px;border:1px solid var(--line);border-radius:9px;background:var(--panel)}
+.clean-shot{display:flex;justify-content:center;align-items:flex-start;min-height:120px;max-height:260px;overflow:hidden;border-radius:6px;background:#fff}
+.clean-shot a{display:block;width:100%;text-align:center}
+.clean-shot img{display:block;width:100%;height:auto;max-height:250px;object-fit:contain;object-position:top}
+.clean-page figcaption{padding-top:10px;font-size:14px}
+.clean-no-image{margin:32px 10px;color:var(--soft);font-size:14px}
+.clean-checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px 20px;list-style:none;margin:12px 0 0;padding:0}
+.clean-checks li{display:flex;align-items:flex-start;gap:8px;color:var(--ink)}
+.clean-checks .ico{margin-top:6px;color:var(--green)}
+.clean-limit{margin-top:18px;color:var(--soft);font-size:14px}
+
 .foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;margin-top:56px;padding:22px 0 40px;border-top:1px solid var(--line);font-size:14px;color:var(--soft)}
 @media(max-width:760px){
-.card-top{padding:16px 16px 0}.evidence{margin:12px 12px 0;padding:16px}.figures figure{padding:12px}.steps{margin:12px 12px 0}.more{margin:14px 12px 16px}.ai,.repair,.todo{padding:16px}.overview{padding:22px 18px}.band{padding-top:56px}.sample{font-size:23px}
+ .clean-evidence{padding:18px}.card-top{padding:16px 16px 0}.evidence{margin:12px 12px 0;padding:16px}.figures figure{padding:12px}.steps{margin:12px 12px 0}.more{margin:14px 12px 16px}.ai,.repair,.todo{padding:16px}.overview{padding:22px 18px}.band{padding-top:56px}.sample{font-size:23px}
 .contents li{grid-template-columns:64px minmax(0,1fr) auto;gap:4px 12px}.contents a{grid-column:2/4}.places{grid-column:2}.state{grid-column:3;text-align:right;min-width:0}
 .key{grid-template-columns:minmax(0,1fr)}.more dl div{grid-template-columns:minmax(0,1fr);gap:0}
 .top{min-height:76px}.brand{gap:10px}.brand-name{font-size:24px}.brand-sub{font-size:13px;gap:8px}.logo{width:38px;height:38px}.downloads{gap:6px}.downloads a{min-height:40px;padding:0 12px;font-size:14px}.dl-word{display:none}
@@ -723,6 +738,56 @@ def _language_script():
             '})();</script>')
 
 
+def _clean_scan_evidence(data, folder):
+    """Show real page coverage and screenshots without inventing a site-wide pass.
+
+    Only scanned pages without an error are eligible. Screenshot filenames must
+    pass the existing on-disk asset validator, so JSON cannot inject remote links.
+    """
+    pages=[p for p in data.get("pages",[]) if isinstance(p,dict) and not p.get("error")]
+    if not pages:
+        return ""
+    cells=[]
+    total=0
+    for page in pages:
+        width=page.get("viewport")
+        try:
+            width=int(width)
+        except (ValueError,TypeError):
+            continue
+        count=page.get("nodes_checked")
+        if isinstance(count,int) and not isinstance(count,bool) and count>=0:
+            total+=count
+            quantity=esc(f"{count:,} sampled text elements")
+        else:
+            quantity="Text element count unavailable"
+        shot=_asset(page.get("screenshot"),folder)
+        image=('<a href="'+esc(shot)+'" target="_blank" rel="noopener noreferrer" aria-label="Open the '+str(width)+' pixel Chromium screenshot">'
+               '<img src="'+esc(shot)+'" alt="Chromium screenshot of the scanned page at '+str(width)+' pixels" loading="lazy"></a>') if shot else '<p class="clean-no-image">No saved page screenshot available.</p>'
+        cells.append('<figure class="clean-page"><div class="clean-shot">'+image+'</div>'
+                     '<figcaption><strong>'+str(width)+' px</strong> · '+quantity+'</figcaption></figure>')
+    if not cells:
+        return ""
+    widths=len(cells)
+    count_text=(f"{total:,} text-element checks across {widths} captured viewports"
+                if total else f"{widths} captured viewports")
+    checks=[
+        "Indic character sequences",
+        "Language tags and mixed scripts",
+        "Overflow and possible clipping",
+        "Font loading and rendered font names",
+        "Unusually tight line spacing",
+    ]
+    return ('<section class="clean-evidence" aria-labelledby="clean-evidence-title">'
+            '<h2 id="clean-evidence-title">What Chromium checked</h2>'
+            '<p class="clean-description">'+esc(count_text)+'. These are sampled text elements, not a count of every element on the website.</p>'
+            '<div class="clean-pages">'+"".join(cells)+'</div>'
+            '<h3>Checks with no findings in this scan</h3><ul class="clean-checks">'+
+            "".join('<li>'+CHECK+esc(item)+'</li>' for item in checks)+'</ul>'
+            '<p class="clean-limit">Scope: this page, its captured states, and the reported viewports only. '
+            'No BharatCode model calls were needed for this browser-only scan.</p></section>')
+
+
 def _html_report(data,folder,files=None):
     findings=data.get("findings",[])
     counts=Counter(f.get("severity","info") for f in findings)
@@ -744,8 +809,13 @@ def _html_report(data,folder,files=None):
             bands.append('<section class="band"><details class="notes"><summary>'+title+' '+number+'</summary>'+body+'</details></section>')
         else:
             bands.append('<section class="band"><h2>'+title+' '+number+'</h2>'+body+'</section>')
+    incomplete=any(isinstance(p,dict) and p.get("error") for p in data.get("pages",[]))
     if not bands:
-        bands.append('<p class="clean">'+CHECK+'Nothing broke in these checks. That covers this page at these widths, not every page on the site.</p>')
+        if incomplete:
+            bands.append('<p class="notice">No findings in the completed checks, but part of this scan failed. Do not treat missing results as a clean pass.</p>')
+        else:
+            bands.append('<p class="clean">'+CHECK+'Nothing broke in these checks. That covers this page at these widths, not every page on the site.</p>')
+            bands.append(_clean_scan_evidence(data,folder))
 
     notices=[]
     ai_state=data.get("ai") or {}
@@ -783,7 +853,7 @@ def _html_report(data,folder,files=None):
         '<a href="report.json" download="'+esc(stem)+'.json" data-file="json" aria-label="Download JSON">'+DOWNLOAD+'<span><span class="dl-word">Download </span>JSON</span></a></nav></div></header>'
         '<main class="shell"><section class="cover" aria-labelledby="report-title"><p class="for">Rendering report</p>'
         '<h1 id="report-title">'+(esc(name) if local else _safe_link(target,name))+'</h1>'
-        '<p class="verdict">'+esc(_summary_sentence(counts))+'</p>'
+        '<p class="verdict">'+esc("No findings in completed checks; some viewports were not scanned." if incomplete and not findings else _summary_sentence(counts))+'</p>'
         '<p class="meta">'+esc(checked)+'</p>'+_ai_line(data)+''.join(notices)+'</section>'
         +_overview(groups,counts)+"".join(bands)+'</main>'
         '<footer class="shell"><div class="foot"><span>AksharaCheck measures how Chromium draws the page. It is not a full accessibility audit.</span>'
