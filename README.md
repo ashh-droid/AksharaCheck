@@ -292,7 +292,7 @@ Check the report at phone, tablet, and desktop widths. The following automated Q
 .venv\Scripts\python.exe scripts\check_report_ui.py output\ai-demo\report.html
 ```
 
-The screenshots are saved under `output\hi-wikipedia\report-visual-qa`.
+The screenshots are saved under `output\ai-demo\report-visual-qa` for the command above. Running the checker on another report saves screenshots alongside that report.
 
 After reviewing the appearance, make a **fresh scan** to update the findings:
 
@@ -301,12 +301,12 @@ After reviewing the appearance, make a **fresh scan** to update the findings:
 start output\hi-wikipedia-fresh\report.html
 ```
 
-Compare the warning count with the original six and inspect the remaining flags. Never describe a suspected warning as confirmed without checking the page evidence.
+Compare the fresh public-site scan with the recorded Hindi Wikipedia result (0 errors, 0 warnings, 3 informational notes on 31 October 2026). Treat notes as observations; do not describe them as confirmed defects without visual evidence.
 
 
-## Release preflight without BharatCode API access
+## Release preflight (no additional BharatCode API calls)
 
-BharatCode API generation currently returns HTTP 402 on accounts without a qualifying entitlement. This does not block the Chromium detector, reports or local repair verification tests.
+The nine-finding BharatCode run completed successfully on 31 October 2026, with 9 actionable explanations, 4 Chromium-verified repairs, 6 new model calls and 3 resumed explanations. Rebuilding the saved HTML/Markdown reports or running the local browser regression tests does not require new BharatCode calls. Account entitlements may differ; some API keys may still receive an HTTP 402 response.
 
 From the repository root on Windows:
 
@@ -335,4 +335,4 @@ Do not publish a 100-site claim until the methodology and finding accuracy are r
 
 The scanner, the BharatCode loop and both recorded reports are in place. What remains before submission is a short demonstration video of a real run, a final check of the live Pages site on a phone and a Windows PC, and the hackathon form. Do not claim detection precision or large-scale site scans until they are measured.
 
-**Development disclosure:** ChatGPT assisted with architecture, implementation, testing plans and interface design. The team independently reviewed the original MVP and identified detector and verifier defects that are being corrected in PR #1. A real browser and BharatCode API run is required before calling this release fully validated.
+**Development disclosure:** AI tools including ChatGPT and Claude assisted with planning, coding, debugging, UI design, and documentation. The development team reviewed and tested the changes; GitHub Actions and local Chromium checks provide reproducible verification. The nine-finding demonstration used real BharatCode API responses and fresh browser checks, with all resumed results identified. This is a scoped rendering audit, not a certification of every site or browser. No AI tool should be credited as having performed a test it did not actually run.
