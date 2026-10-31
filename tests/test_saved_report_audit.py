@@ -1,6 +1,13 @@
 """Standalone evidence review must never rewrite reports or call BharatCode."""
 import json
-from scripts import audit_saved_reports as review
+import importlib.util
+from pathlib import Path
+
+ROOT=Path(__file__).resolve().parents[1]
+spec=importlib.util.spec_from_file_location("akshara_audit_local_reports", ROOT/"scripts"/"audit_saved_reports.py")
+assert spec and spec.loader
+review=importlib.util.module_from_spec(spec)
+spec.loader.exec_module(review)
 
 
 def test_custom_font_aliases_are_candidates_not_confirmed_defects():
