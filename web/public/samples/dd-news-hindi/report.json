@@ -1,0 +1,29 @@
+{
+  "version": "0.1.0",
+  "engine_version": "2026-10-29-visibility-v2",
+  "generated_at": "2026-10-31T15:14:08+00:00",
+  "target": "https://ddnews.gov.in/",
+  "language": "hi",
+  "pages": [
+    {
+      "url": "https://ddnews.gov.in/",
+      "viewport": 390,
+      "screenshot": "page-01-390.png",
+      "nodes_checked": 162,
+      "finding_count": 0
+    },
+    {
+      "url": "https://ddnews.gov.in/",
+      "viewport": 1440,
+      "screenshot": "page-01-1440.png",
+      "nodes_checked": 213,
+      "finding_count": 0
+    }
+  ],
+  "findings": [],
+  "summary": {
+    "error": 0,
+    "warning": 0,
+    "info": 0
+  }
+}
