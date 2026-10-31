@@ -135,6 +135,9 @@ def copy_scan(folder: Path, slug: str, title: str, reviewed: bool, *, fixture_de
         "counts": data.get("summary", {}),
         "ai_calls": int((data.get("ai") or {}).get("calls") or 0),
         "verified_fixes": sum(1 for f in data["findings"] if (f.get("fix") or {}).get("status") == "verified"),
+        # How much of the report BharatCode explained, for the website's report cards.
+        "ai_explained": sum(1 for f in data["findings"] if str(f.get("ai_explanation") or "").strip()),
+        "ai_eligible": sum(1 for f in data["findings"] if f.get("severity") != "info"),
         "highlight": highlight(data["findings"]),
     })
     catalog.write_text(json.dumps(collection, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

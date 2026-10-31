@@ -16,7 +16,7 @@ import struct
 from collections import Counter, defaultdict
 from datetime import datetime
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
 # title, why it matters, what to do when no automatic repair applies
 FINDING_COPY={
@@ -155,6 +155,22 @@ def _safe_link(url, text=None):
     return esc(text or url)
 
 
+def _is_local(url):
+    try:
+        host=urlsplit(str(url or "")).hostname or ""
+    except ValueError:
+        return False
+    return host in {"localhost","127.0.0.1","::1"} or host.endswith(".localhost")
+
+
+def _display_url(url):
+    """Addresses as people read them: हिन्दी, not %E0%A4%B9."""
+    try:
+        return unquote(str(url or ""))
+    except Exception:
+        return str(url or "")
+
+
 def _page_name(url):
     try:
         parts=urlsplit(str(url or ""))
@@ -163,7 +179,7 @@ def _page_name(url):
     if parts.scheme not in {"http","https"} or not parts.hostname:
         return str(url or "Scanned page")
     path=parts.path.rstrip("/")
-    return (parts.netloc+path) or str(url)
+    return _display_url((parts.netloc+path) or str(url))
 
 
 def _when(value):
@@ -396,7 +412,7 @@ def _card(f, folder, ai_ran=False):
     figures=_figures(f,folder)
     raw=esc(json.dumps(details,ensure_ascii=False,indent=2))
     more=('<details class="more"><summary>Technical details</summary><dl>'
-          '<div><dt>Page</dt><dd>'+_safe_link(f.get("url",""))+'</dd></div>'
+          '<div><dt>Page</dt><dd>'+(esc(_display_url(f.get("url",""))) if _is_local(f.get("url")) else _safe_link(f.get("url",""),_display_url(f.get("url",""))))+'</dd></div>'
           +'<div><dt>Checked at</dt><dd>'+esc(_widths(f))+'</dd></div>'
           +('<div><dt>Screenshot</dt><dd><a href="'+esc(shot)+'" target="_blank" rel="noopener noreferrer">Whole page at '+esc(f.get("viewport",""))+' px</a></dd></div>' if shot else "")
           +'</dl><pre>'+raw+'</pre></details>')
@@ -464,6 +480,13 @@ def _ai_line(data):
     return '<p class="meta">'+text+'</p>'
 
 
+KEY={
+    "error":'<div class="error"><dt><span class="sev">Fix</span></dt><dd>Readers see broken text. Start here.</dd></div>',
+    "warning":'<div class="warning"><dt><span class="sev">Check</span></dt><dd>Likely wrong. Check the screenshot.</dd></div>',
+    "info":'<div class="info"><dt><span class="sev">Note</span></dt><dd>Worth knowing. Often fine as it is.</dd></div>',
+}
+
+
 def _overview(groups, counts):
     """A contents list: every kind of problem, how often, and where it stands."""
     rows=[]
@@ -491,9 +514,7 @@ def _overview(groups, counts):
             '<div class="meter" role="img" aria-label="'+esc(_summary_sentence(counts))+'"><span class="bar">'+bar+'</span><ul>'+legend+'</ul></div></div>'
             '<ol class="contents">'+"".join(rows)+'</ol>'
             '<dl class="key" aria-label="What the labels mean">'
-            '<div class="error"><dt><span class="sev">Fix</span></dt><dd>Readers see broken text. Start here.</dd></div>'
-            '<div class="warning"><dt><span class="sev">Check</span></dt><dd>Likely wrong. Check the screenshot.</dd></div>'
-            '<div class="info"><dt><span class="sev">Note</span></dt><dd>Worth knowing. Often fine as it is.</dd></div></dl></section>') if total and rows else ""
+            +"".join(KEY[k] for k in ORDER if counts.get(k))+'</dl></section>') if total and rows else ""
 
 
 CHECK='<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.8"/></svg>'
@@ -746,7 +767,10 @@ def _html_report(data,folder,files=None):
     width_text=" and ".join(("phone" if w<=430 else "tablet" if w<=1024 else "desktop")+f" ({w} px)" for w in widths)
     when=_when(data.get("generated_at"))
     checked=("Checked in Chromium"+(" at "+width_text if width_text else "")+(" on "+when if when else "")+".")
-    name=_page_name(target)
+    local=_is_local(target)
+    name="Local test page" if local else _page_name(target)
+    if local:
+        checked+=" The page was served from "+_page_name(target)+" on the scanning computer, so that address only worked during the scan."
     return (
         '<!doctype html><html lang="en"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
@@ -758,7 +782,7 @@ def _html_report(data,folder,files=None):
         '<nav class="downloads" aria-label="Download this report"><a href="report.md" download="'+esc(stem)+'.md" data-file="md" aria-label="Download Markdown">'+DOWNLOAD+'<span><span class="dl-word">Download </span>Markdown</span></a>'
         '<a href="report.json" download="'+esc(stem)+'.json" data-file="json" aria-label="Download JSON">'+DOWNLOAD+'<span><span class="dl-word">Download </span>JSON</span></a></nav></div></header>'
         '<main class="shell"><section class="cover" aria-labelledby="report-title"><p class="for">Rendering report</p>'
-        '<h1 id="report-title">'+_safe_link(target,name)+'</h1>'
+        '<h1 id="report-title">'+(esc(name) if local else _safe_link(target,name))+'</h1>'
         '<p class="verdict">'+esc(_summary_sentence(counts))+'</p>'
         '<p class="meta">'+esc(checked)+'</p>'+_ai_line(data)+''.join(notices)+'</section>'
         +_overview(groups,counts)+"".join(bands)+'</main>'
@@ -826,8 +850,10 @@ def write_reports(data,dest):
     folder=Path(dest)
     folder.mkdir(parents=True,exist_ok=True)
     # Findings live once, at the top level; pages keep their own counts and screenshots.
-    saved={**data,"pages":[{**{k:v for k,v in page.items() if k!="findings"},"finding_count":len(page.get("findings") or [])}
-                            if isinstance(page,dict) else page for page in data.get("pages",[])]}
+    # A report rendered again from its own JSON has counts but no per-page findings; keep those counts.
+    saved={**data,"pages":[{**{k:v for k,v in page.items() if k!="findings"},
+                            "finding_count":len(page["findings"]) if isinstance(page.get("findings"),list) else page.get("finding_count",0)}
+                           if isinstance(page,dict) else page for page in data.get("pages",[])]}
     json_text=json.dumps(saved,indent=2,ensure_ascii=False)
     markdown=_markdown(data)
     (folder/"report.json").write_text(json_text,encoding="utf-8")

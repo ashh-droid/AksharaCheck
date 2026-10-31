@@ -6,6 +6,8 @@
 
 **Status (31 October 2026):** The controlled nine-finding BharatCode demo passed on Windows: 9/9 actionable findings received explanations, and Chromium independently verified 4 proposed repairs. A separately recorded scan of Hindi Wikipedia returned 0 errors, 0 warnings and 3 informational notes. The public Pages preview hosts these reviewed *recordings* and a local-in-browser text checker; it does not run the Python/Chromium scanning backend.
 
+<p align="center"><img src="docs/report-overview.png" alt="An AksharaCheck report: the summary of what was found, with each kind of problem, how often it occurs and whether a fix is ready" width="49%"> <img src="docs/report-finding.png" alt="One finding: Hindi text tagged as English, how Chromium drew it, BharatCode's explanation with an English, Hindi and Kannada switch, and the lang fix verified in Chromium" width="49%"></p>
+
 ## Try AksharaCheck
 
 [Try the Hindi/Kannada text checker (GitHub Pages)](https://ashh-droid.github.io/AksharaCheck/) · [Source code](https://github.com/ashh-droid/AksharaCheck) · [Submission instructions](https://bharatcode.ai/hackathon)
@@ -327,10 +329,10 @@ Open `output/hi-wikipedia/report.html`. Record any errors, warnings and false po
 
 For a machine-readable report with diagnostic progress on stderr, add `--json`. The CLI defaults to localhost-only serving; `serve --host 0.0.0.0` is intended only for infrastructure that isolates Chromium, blocks private-network egress, and limits public requests.
 
-Do not publish a 100-site claim until the methodology and finding accuracy are reviewed. Do not claim live BharatCode integration success until `scripts/check_bharatcode.py` returns HTTP 200 for generation.
+Do not publish a 100-site claim until the methodology and finding accuracy are reviewed.
 
 ## Next milestone
 
-Run the updated golden tests, test the React build and a live BharatCode API call, validate on a small real-site sample, then deploy and record a 60-second demonstration. Do not claim 90% detection precision or completed 100-site scans until those are actually measured.
+The scanner, the BharatCode loop and both recorded reports are in place. What remains before submission is a short demonstration video of a real run, a final check of the live Pages site on a phone and a Windows PC, and the hackathon form. Do not claim detection precision or large-scale site scans until they are measured.
 
 **Development disclosure:** ChatGPT assisted with architecture, implementation, testing plans and interface design. The team independently reviewed the original MVP and identified detector and verifier defects that are being corrected in PR #1. A real browser and BharatCode API run is required before calling this release fully validated.

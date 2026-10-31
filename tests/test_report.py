@@ -376,3 +376,25 @@ def test_html_report_includes_standalone_aksharacheck_tab_icon(tmp_path):
     assert decoded == REPORT_FAVICON_SVG
     assert 'viewBox="0 0 32 32"' in decoded
     assert "AksharaCheck report" in page
+
+
+def test_local_page_cover_and_readable_addresses(tmp_path):
+    page = render(tmp_path, [finding(url="http://127.0.0.1:49205/index.html", severity="info")],
+                  target="http://127.0.0.1:49205/index.html")
+    assert '<h1 id="report-title">Local test page</h1>' in page
+    assert "served from 127.0.0.1:49205/index.html on the scanning computer" in page
+    assert 'href="http://127.0.0.1' not in page
+    # Only the labels this report uses are explained.
+    assert "Worth knowing" in page and "Readers see broken text" not in page
+    wiki = render(tmp_path / "w", [finding(url="https://hi.wikipedia.org/wiki/%E0%A4%AE%E0%A5%81%E0%A4%96")],
+                  target="https://hi.wikipedia.org/")
+    assert ">https://hi.wikipedia.org/wiki/मुख</a>" in wiki
+
+
+def test_rendering_a_saved_report_keeps_its_page_counts(tmp_path):
+    render(tmp_path, [finding()], pages=[{"url": "https://example.org", "viewport": 390, "findings": [finding()]}])
+    saved = json.loads((tmp_path / "report.json").read_text(encoding="utf-8"))
+    assert saved["pages"][0]["finding_count"] == 1
+    write_reports(saved, tmp_path)
+    again = json.loads((tmp_path / "report.json").read_text(encoding="utf-8"))
+    assert again["pages"][0]["finding_count"] == 1
