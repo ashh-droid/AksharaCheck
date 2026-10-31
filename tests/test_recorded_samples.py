@@ -124,7 +124,7 @@ def test_published_report_snapshots_have_tab_icon_and_working_language_preferenc
         assert [x["slug"] for x in catalog["scans"]][:3]==[
             "akshara-fixture-demo","karnataka-varthe-kannada","dd-news-hindi"]
         assert byslug["karnataka-varthe-kannada"]["kind"]=="public"
-        assert "72 Kannada text observations" in byslug["karnataka-varthe-kannada"]["review_note"]
+        assert "72 of these share one cause" in byslug["karnataka-varthe-kannada"]["review_note"]
         assert "hindi-wikipedia" not in byslug
     else:
         assert byslug["hindi-wikipedia"]["kind"]=="public"

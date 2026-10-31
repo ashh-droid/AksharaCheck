@@ -8,9 +8,15 @@
 
 <p align="center"><img src="docs/report-overview.png" alt="An AksharaCheck report: the summary of what was found, with each kind of problem, how often it occurs and whether a fix is ready" width="49%"> <img src="docs/report-finding.png" alt="One finding: Hindi text tagged as English, how Chromium drew it, BharatCode's explanation with an English, Hindi and Kannada switch, and the lang fix verified in Chromium" width="49%"></p>
 
+### A three-minute tour
+
+1. Open the [BharatCode demo report](https://ashh-droid.github.io/AksharaCheck/samples/akshara-fixture-demo/report.html). Switch an explanation between English, हिंदी and ಕನ್ನಡ, then open "Text runs off the screen on phones" to see a repair Chromium rejected and the one it accepted, with before and after screenshots.
+2. Open the [Karnataka Varthe report](https://ashh-droid.github.io/AksharaCheck/samples/karnataka-varthe-kannada/report.html): a real Kannada government page whose `<html>` tag says English, so 72 pieces of Kannada text are announced as English.
+3. Try the [text checker](https://ashh-droid.github.io/AksharaCheck/#try) on the website: paste Hindi or Kannada text and see broken letters marked as you type.
+
 ## The problem
 
-A page can look fine to an English-speaking developer and still be broken for Hindi and Kannada readers. A vowel sign typed after a space floats on a dotted circle. A fixed-height box cuts off the marks above the line. Hindi tagged as English is read aloud in an English voice. These bugs are rarely caught, because the people who would notice them are not the people testing the site.
+A page can look fine to an English-speaking developer and still be broken for Hindi and Kannada readers. A vowel sign typed after a space floats on a dotted circle. A fixed-height box cuts off the marks above the line. Kannada tagged as English is read aloud by screen readers with English pronunciation, and browsers may pick the wrong font for it. These bugs are rarely caught, because the people who would notice them are not the people testing the site.
 
 ## How it works
 
@@ -32,10 +38,12 @@ flowchart LR
 | Recorded scan | What it shows |
 | --- | --- |
 | [BharatCode demo report](https://ashh-droid.github.io/AksharaCheck/samples/akshara-fixture-demo/report.html) (a test page with planted bugs, not a real website) | 3 problems to fix, 6 to check, 2 notes. BharatCode explained 9 of 9 findings in three languages; Chromium verified 4 repairs, including one that passed only after a first suggestion was rejected. |
-| [Karnataka Varthe (Kannada)](https://ashh-droid.github.io/AksharaCheck/samples/karnataka-varthe-kannada/report.html), 31 Oct 2026 | 0 errors; 72 Kannada text observations inherit `lang=en` from one HTML ancestor. One possible mobile-overflow warning remains unverified; 13 font-name observations are informational. Browser-only scan, not a site-wide audit. |
-| [DD News (Hindi)](https://ashh-droid.github.io/AksharaCheck/samples/dd-news-hindi/report.html), 31 Oct 2026 | 0 findings at the two tested widths. Chromium sampled 162 phone and 213 desktop text elements; the report includes both page screenshots. Browser-only scan, no AI calls. |
+| [Karnataka Varthe (Kannada)](https://ashh-droid.github.io/AksharaCheck/samples/karnataka-varthe-kannada/report.html), 31 Oct 2026 | 72 pieces of Kannada text are tagged as English because the page's `<html>` element says `lang="en"`; changing that one tag fixes all 72. One possible overflow needs a visual check, and 13 notes record fonts drawn by fallback. No problems to fix. |
+| [DD News (Hindi)](https://ashh-droid.github.io/AksharaCheck/samples/dd-news-hindi/report.html), 31 Oct 2026 | No findings at either width. Chromium checked 162 text elements on the phone layout and 213 on desktop, and the report shows both page screenshots. |
 
-These are dated Chromium snapshots. The BharatCode test fixture shows AI explanations and verified repairs; public-site reports contain browser-only evidence, not BharatCode-generated findings. The earlier Hindi Wikipedia report remains available at its archived link.
+All three are dated snapshots, published exactly as AksharaCheck wrote them. The public-site scans are browser checks only; BharatCode's explanations and verified repairs are shown on the demo page, which is built to contain every kind of problem.
+
+While scanning real sites we also tightened the rules: ordinary line spacing around 1.2 and Windows' expected font substitution for Hindi are no longer reported, which took DD News from 63 notes to none. Fewer false alarms matter more than a bigger count.
 
 ## What it checks
 

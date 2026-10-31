@@ -75,7 +75,10 @@ async def test_clean_page_has_no_errors_or_warnings(tmp_path,fixture_url,chromiu
 async def test_visible_text_sampling_ignores_collapsed_and_offscreen_widgets(chromium_available):
     """Real-site regression: hidden navigation must not inflate language warnings."""
     async with async_playwright() as p:
-        browser=await p.chromium.launch(headless=True)
+        options={"headless":True}
+        if os.getenv("AKSHARA_CHROMIUM_PATH"):
+            options["executable_path"]=os.environ["AKSHARA_CHROMIUM_PATH"]
+        browser=await p.chromium.launch(**options)
         try:
             page=await browser.new_page(viewport={"width":390,"height":850})
             await page.set_content('''<!doctype html><html lang="en"><body>

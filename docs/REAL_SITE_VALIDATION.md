@@ -8,7 +8,9 @@ On 31 October 2026, an initial scan showed **1 error, 134 warnings and 50 inform
 
 The 133 `wrong-lang` warnings mean that many text elements are inheriting or declaring a language inconsistent with the observed Kannada script (the captured examples reported `en`). This may represent a legitimate accessibility issue, but **133 separate elements are not necessarily 133 distinct root-cause defects**. Inspect whether the document or a common ancestor uses `lang="en"`, and validate whether its `lang` attribute is overridden for Kannada text. The one mobile-overflow warning also requires checking whether any text is actually clipped or inaccessible.
 
-The browser sampler checks a limited set of visible text nodes, so results are not a comprehensive audit of every page or every on-screen element.\n\nDo **not** publish the pre-fix "1 broken letter" headline as a confirmed government website defect.
+The browser sampler checks a limited set of visible text nodes, so results are not a comprehensive audit of every page or every on-screen element.
+
+Do **not** publish the pre-fix "1 broken letter" headline as a confirmed government website defect.
 
 ## Prajavani (Kannada news)
 
@@ -25,6 +27,8 @@ start output\karnataka-varthe-v2\report.html
 ```
 
 Expected from the corrected rule: the specific `ಆ್ಯಪ್` sequence is no longer an invalid-cluster error. Other findings may change if the live page has changed. Verify the resulting counts and examine the `wrong-lang` warning details before drawing conclusions.
+
+**Published result (31 October 2026, scanner `2026-10-31-precision`):** 0 errors, 73 warnings and 13 notes. 72 of the warnings are Kannada text inheriting `lang="en"` from the page's `<html>` element, one root cause that a single tag change fixes; the report says so above the cards. The remaining warning is one possible overflow at phone width that needs a visual check. This is the report linked from the website.
 
 ## One Hindi page: DD News
 
@@ -48,7 +52,7 @@ cd /d C:\Projects\AksharaCheck
 
 This creates **only** `output\karnataka-varthe\audit-review.json` and `output\prajavani\audit-review.json`. The original reports and all image evidence are left untouched. If your outputs use different folder names, substitute their exact paths.
 
-For a genuinely deep per-finding review, send both original `report.json` files and the element screenshots, preferably as two separate ZIP archives. Include the complete HTML and image files when possible. Source text, screenshot evidence and original Unicode codepoints are essential; a summary of counts alone cannot establish whether the 133 warnings share a root cause or whether Prajavani's custom font was actually substituted.
+A count summary alone cannot show whether many warnings share one root cause or whether a custom font was really substituted; review the source text, screenshots and codepoints in each report.
 
 ## Publication gate
 

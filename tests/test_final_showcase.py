@@ -55,7 +55,14 @@ def test_final_kannada_capture_requires_reviewed_source_and_version(tmp_path):
 
 
 def test_readme_showcase_replaces_wikipedia_but_keeps_archive_link():
-    source=(ROOT/"README.md").read_text(encoding="utf-8")
+    # The script migrated the README once; test it on the README as it was before.
+    source=("[Hindi Wikipedia report]("+showcase.WIKI_LINK+")\n\n"
+            "| [Hindi Wikipedia]("+showcase.WIKI_LINK+"), 31 Oct 2026 | "
+            "0 problems, 0 to check, 3 notes (font fallback and line spacing observations). "
+            "Browser checks only, no model calls. |\n\n"
+            "Both reports are published exactly as AksharaCheck wrote them. Open them "
+            "to see the screenshots, the character codes, every repair attempt "
+            "and the Markdown and JSON downloads.\n")
     modified=showcase.replace_readme(source)
     assert "[Karnataka Varthe (Kannada) report]" in modified
     assert modified.count(showcase.NEW_LINK)==2

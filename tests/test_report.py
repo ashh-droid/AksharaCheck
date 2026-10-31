@@ -443,3 +443,22 @@ def test_unscanned_viewport_is_not_called_clean(tmp_path):
     assert "Do not treat missing results as a clean pass." in page
     assert 'id="clean-evidence-title"' not in page
     assert '<p class="clean">' not in page
+
+
+def test_many_places_from_one_parent_tag_are_explained_once_and_folded(tmp_path):
+    items = [finding(id=f"k{i}", detector="wrong-lang", sample="ಕರ್ನಾಟಕ ವಾರ್ತೆ " + str(i),
+                     evidence={"script": "kannada", "effective": "en", "lang_source": "html"}) for i in range(8)]
+    page = render(tmp_path, items)
+    assert "All 8 places take their language from the page&#x27;s &lt;html&gt; element, which says lang=&quot;en&quot;." in page
+    assert 'marking the Kannada sections with lang=&quot;kn&quot;' in page
+    assert '<span class="state">One tag to change</span>' in page
+    assert '<details class="more-cards"><summary>Show the other 5 places</summary>' in page
+    assert page.count('<article class="card') == 8
+
+
+def test_short_lists_are_not_folded_and_own_tags_are_not_called_shared(tmp_path):
+    items = [finding(id=f"s{i}", detector="wrong-lang", evidence={"script": "devanagari", "effective": "en", "lang_source": "self"})
+             for i in range(4)]
+    page = render(tmp_path, items)
+    assert "more-cards" not in page.split("<style>")[0] + page.split("</style>")[1]
+    assert 'class="shared"' not in page

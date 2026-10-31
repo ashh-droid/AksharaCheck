@@ -424,11 +424,41 @@ def _card(f, folder, ai_ran=False):
             '<div class="steps">'+_explanation(f)+_repair(f,ai_ran)+'</div>'+more+'</article>')
 
 
+SHOWN_CARDS=3
+
+
+def _shared_source(detector, findings):
+    """When many language findings inherit one parent tag, say so once: one edit fixes them all."""
+    if detector not in {"wrong-lang","mixed-language"} or len(findings)<3:
+        return ""
+    sources=Counter((str((f.get("evidence") or {}).get("lang_source") or ""),
+                     str((f.get("evidence") or {}).get("effective") or "")) for f in findings)
+    (source,effective),shared=sources.most_common(1)[0]
+    if shared<3 or source in {"","self","(unknown)","(missing)"}:
+        return ""
+    where={"html":"the page's <html> element","body":"the page's <body> element"}.get(source,"one parent element")
+    scripts=Counter(str((f.get("evidence") or {}).get("script") or "") for f in findings)
+    target={"kannada":"kn","devanagari":"hi"}.get(scripts.most_common(1)[0][0],"")
+    lead=(f"All {shared} places" if shared==len(findings) else f"{shared} of these {len(findings)} places")
+    tag=f'lang="{effective}"' if effective and effective!="(missing)" else "no language"
+    fix=(f' Changing that one tag, or marking the {LANG_NAMES.get(target,target)} sections with lang="{target}", fixes them together.'
+         if target else " Changing that one tag fixes them together.")
+    return ('<p class="shared">'+esc(f"{lead} take their language from {where}, which says {tag}.")+esc(fix)+'</p>')
+
+
 def _group(detector, findings, folder, ai_ran=False):
     title,why,_=FINDING_COPY.get(detector,("Rendering observation","Measurements are available for review.",""))
     count=(' <span class="count">'+_label(len(findings),"place")+'</span>') if len(findings)>1 else ""
+    cards=[_card(f,folder,ai_ran) for f in findings]
+    # Long lists of the same problem bury the rest of the report: show a few, fold the others.
+    if len(cards)>SHOWN_CARDS+1:
+        rest=len(cards)-SHOWN_CARDS
+        body="".join(cards[:SHOWN_CARDS])+('<details class="more-cards"><summary>'+esc(f"Show the other {rest} places")+'</summary>'
+                                            +"".join(cards[SHOWN_CARDS:])+'</details>')
+    else:
+        body="".join(cards)
     return ('<section class="group" id="'+esc(detector)+'"><h3>'+esc(title)+count+'</h3><p class="why">'+esc(why)+'</p>'
-            +"".join(_card(f,folder,ai_ran) for f in findings)+'</section>')
+            +_shared_source(detector,findings)+body+'</section>')
 
 
 def _summary_sentence(counts):
@@ -499,6 +529,8 @@ def _overview(groups, counts):
                 state='<span class="state ok">'+CHECK+'Fix ready</span>'
             elif verified:
                 state='<span class="state ok">'+CHECK+str(verified)+' of '+str(len(items))+' fixes ready</span>'
+            elif _shared_source(detector,items):
+                state='<span class="state">One tag to change</span>'
             elif detector in {"broken-cluster","legacy-font","mixed-language"}:
                 state='<span class="state">Edit the text</span>'
             elif failed or detector=="font-load-failed":
@@ -601,6 +633,12 @@ details.notes[open]>summary:after{content:'Hide'}
 .group{padding-top:40px;scroll-margin-top:16px}
 .group h3{font-size:21px}.group h3 .count{margin-left:6px;font-size:15px;font-weight:400;color:var(--soft)}
 .why{margin-top:6px;max-width:64ch;color:var(--soft)}
+.shared{max-width:72ch;margin-top:14px;padding:14px 18px;border:1px solid #CCD8EA;border-left:4px solid var(--blue);border-radius:8px;background:#EAF0F9;color:var(--ink)}
+.more-cards{margin-top:18px}
+.more-cards>summary{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border:1px solid var(--edge);border-radius:8px;background:#fff;cursor:pointer;font-weight:600;color:var(--ink);list-style:none}
+.more-cards>summary::-webkit-details-marker{display:none}
+.more-cards>summary:hover{border-color:var(--green);color:var(--green)}
+.more-cards[open]>summary{margin-bottom:2px}
 .group+.group{margin-top:12px}
 /* Finding card */
 .card{margin-top:20px;background:#fff;border:1px solid var(--edge);border-top:4px solid var(--sevc,var(--blue-bar));border-radius:12px;box-shadow:0 1px 2px rgba(27,36,64,.05),0 8px 24px rgba(27,36,64,.05);scroll-margin-top:16px}
@@ -686,7 +724,7 @@ figcaption{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);tex
 .top{min-height:76px}.brand{gap:10px}.brand-name{font-size:24px}.brand-sub{font-size:13px;gap:8px}.logo{width:38px;height:38px}.downloads{gap:6px}.downloads a{min-height:40px;padding:0 12px;font-size:14px}.dl-word{display:none}
 }
 @media(max-width:420px){.downloads a:last-child{display:none}}@media(max-width:360px){.downloads a>span{display:none}.downloads a{padding:0 12px}.downloads .ico{width:18px;height:18px}}
-@media print{.panes .pane{display:block!important}.tabs,.attempts summary{display:none}.attempts ol{display:grid!important}.downloads,.more summary{display:none}.cover{background:#fff;color:var(--ink);border:1px solid var(--line)}.cover .for,.cover .meta{color:var(--soft)}.card,.overview{break-inside:avoid;box-shadow:none}details.notes>*{display:block}}
+@media print{.panes .pane{display:block!important}.tabs,.attempts summary{display:none}.attempts ol{display:grid!important}.downloads,.more summary{display:none}.cover{background:#fff;color:var(--ink);border:1px solid var(--line)}.cover .for,.cover .meta{color:var(--soft)}.card,.overview{break-inside:avoid;box-shadow:none}details.notes>*,details.more-cards>*{display:block}}
 """
 
 

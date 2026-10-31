@@ -168,24 +168,24 @@ Page: http://127.0.0.1:49205/index.html
 
 ## Notes
 
-### Note: Tight line spacing
+### Note: Unusually tight line spacing
 
 > ಇದೊಂದು ಬಹಳ ಉದ್ದವಾದ ಕನ್ನಡ ಪರೀಕ್ಷಾ ಪಠ್ಯವಾಗಿದೆ. ಎರಡು ಸಾಲುಗಳ ನಡುವೆ ಸಾಕಷ್ಟು ಜಾಗವಿಲ್ಲ.
 
 Line height is 1.08 times the font size.
 
 
-What to change: Check it at normal zoom. A line height of about 1.6 suits Devanagari and Kannada.
+What to change: Inspect the text at normal zoom. Increase line height only if marks actually overlap or become difficult to read.
 
 Page: http://127.0.0.1:49205/index.html
 
-### Note: A different font was used
+### Note: Font family names differ
 
 > यह फ़ॉन्ट फ़ाइल उपलब्ध नहीं है और फ़ॉलबैक हो सकता है।
 
 The page asked for brokenlocal, but Chromium drew this text with Times New Roman and Nirmala UI.
 
 
-What to change: Compare the letters with the intended font. A fallback can be deliberate.
+What to change: Compare the text visually before changing fonts; an internal name difference alone does not prove a rendering problem.
 
 Page: http://127.0.0.1:49205/index.html

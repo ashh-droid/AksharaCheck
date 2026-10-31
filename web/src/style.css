@@ -246,7 +246,8 @@ figcaption { margin-top: 6px; text-align: center; font-size: 13px; color: var(--
 .recorded-counts .sev { font-size: 13px; }
 .recorded-stat { margin-top: 4px; font-size: 15px; color: var(--ink-soft); }
 .recorded-review { margin-top: 4px; font-size: 14px; line-height: 1.55; color: var(--ink-soft); overflow-wrap: anywhere; }
-@media (max-width: 959px) { .recorded-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 1099px) { .recorded-grid { gap: 14px; } .recorded-card { padding: 20px 18px 18px; } .recorded-site { font-size: 20px; } .recorded-sample { font-size: 19px; padding: 12px 14px; } }
+@media (max-width: 959px) { .recorded-grid { grid-template-columns: minmax(0, 1fr); gap: 20px; } }
 @media (max-width: 430px) { .recorded-card { padding: 20px 18px 18px; } .recorded-site { font-size: 21px; } .recorded-sample { font-size: 19px; padding: 12px 14px; } }
 .recorded-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: auto; padding-top: 18px; font-size: 14px; color: var(--ink-soft); }
 .recorded-card .recorded-foot { border-top: 0; }

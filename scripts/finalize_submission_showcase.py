@@ -21,9 +21,9 @@ TITLE = "Karnataka Varthe (Kannada)"
 TARGET = "https://varthe.karnataka.gov.in/"
 ENGINE = "2026-10-31-precision"
 NOTE = (
-    "72 Kannada text observations inherited English (en) from the HTML "
-    "language tag. These share one source; one possible mobile-overflow "
-    "observation still needs visual review."
+    "72 of these share one cause: the page's <html> tag says English "
+    "(lang=\"en\"), so one change fixes them. One possible overflow still "
+    "needs a visual check."
 )
 BASE = "https://ashh-droid.github.io/AksharaCheck/samples/"
 NEW_LINK = f"{BASE}{SLUG}/report.html"

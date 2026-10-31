@@ -10,7 +10,7 @@ AksharaCheck — Find the letters your website breaks
 
 ## Proposed 1,000-character summary
 
-AksharaCheck helps website builders catch broken Hindi and Kannada rendering that ordinary checks often miss. It opens a page in Chromium at phone and desktop widths, collects concrete evidence of issues such as incorrect language tags, split character clusters, clipped marks and overflowing text, then asks BharatCode's model API to explain the finding in English, Hindi and Kannada and propose a restricted repair. Chromium independently retests each repair and marks it verified only when the original issue disappears without hiding, shrinking or displacing text. Reports include original screenshots, repair attempts and provenance. The scanner works without an AI key; BharatCode powers the multilingual explanation and repair workflow. Built with Python, Playwright, React and Vite.
+AksharaCheck finds Hindi and Kannada text that websites render wrongly: broken letters, clipped vowel marks, overflowing lines and text tagged with the wrong language. It opens a page in Chromium at phone and desktop widths and records evidence: screenshots, Unicode code points and measurements. BharatCode's qwen-3.8-27b then explains each finding in English, Hindi and Kannada and proposes a repair limited to safe CSS or a lang attribute. Chromium tests every proposal in a fresh page and marks it verified only if the problem is gone and the text stays visible, full size and on screen; a rejected proposal goes back to the model with the reason. In the demo, BharatCode explained 9 of 9 findings and Chromium verified 4 repairs. On the Karnataka government news site, it found 72 pieces of Kannada text announced as English because of one page-level tag. Built with Python, Playwright, FastAPI, React and Vite.
 
 The nine-finding run passed on 31 October 2026 (9 of 9 explained, 4 repairs verified in Chromium), so the summary may say so. Re-check this line if the demo is run again on a later revision.
 
@@ -72,7 +72,7 @@ Use an empty folder, new virtual environment, installed Chromium, a scan of a pe
 - [x] Main branch merged with passing CI, no demo blockers
 - [x] Nine-finding BharatCode run PASS (9 of 9 explained, 4 verified repairs)
 - [x] Reviewed controlled fixture demo published and labelled
-- [x] At least one genuine reviewed public-page scan published (Hindi Wikipedia)
+- [x] Reviewed public-page scans published: Karnataka Varthe (Kannada) and DD News (Hindi)
 - [x] README screenshots captured from an actual report and linked
 - [ ] 2–3-minute video recorded from actual steps and linked, if completed
 - [ ] Fresh Windows clone and Chromium report checked
