@@ -98,6 +98,43 @@ def check(page, width, height):
     assert abs(footer["hindiTop"] - footer["kannadaTop"]) < 8, (
         f"{width}px: footer languages are not aligned: {footer}")
 
+    # Report showcase must stay balanced at every screen width. All three
+    # links remain clickable with readable labels and no clipped call-to-action.
+    cards = page.locator(".recorded-grid .recorded-card")
+    assert cards.count() == 3, f"{width}px: expected the curated three-report showcase"
+    layout = cards.evaluate_all("""elements => elements.map(e => {
+        const r=e.getBoundingClientRect();
+        const button=e.querySelector('.recorded-open').getBoundingClientRect();
+        return {x:r.x,y:r.y,width:r.width,height:r.height,
+                scroll:e.scrollWidth,client:e.clientWidth,
+                link:e.getAttribute('href'),
+                label:e.querySelector('.recorded-site').textContent.trim(),
+                buttonLeft:button.left,buttonRight:button.right,
+                cardRight:r.right};
+    })""")
+    assert all(c["width"] > 200 and c["height"] > 160 for c in layout), (
+        f"{width}px: report cards unreadably narrow or short: {layout}")
+    assert all(c["scroll"] <= c["client"] + 2 for c in layout), (
+        f"{width}px: text clipped horizontally in report card: {layout}")
+    assert all(c["buttonLeft"] >= c["x"] - 1 and c["buttonRight"] <= c["cardRight"] + 1
+               for c in layout), f"{width}px: report button extends out of its card: {layout}"
+    assert all(c["link"].startswith("/samples/") and c["link"].endswith("/report.html")
+               for c in layout), f"{width}px: broken report URL format: {layout}"
+    assert len({c["label"] for c in layout}) == 3
+    if width >= 960:
+        assert max(c["y"] for c in layout) - min(c["y"] for c in layout) <= 2, (
+            f"{width}px: three report cards should share one row: {layout}")
+        assert max(c["width"] for c in layout) - min(c["width"] for c in layout) <= 2, (
+            f"{width}px: report card columns should be equal: {layout}")
+    else:
+        assert layout[0]["y"] < layout[1]["y"] < layout[2]["y"], (
+            f"{width}px: report cards should stack in order: {layout}")
+        assert max(c["width"] for c in layout) - min(c["width"] for c in layout) <= 2, (
+            f"{width}px: stacked report cards should be equal width: {layout}")
+    assert not page.locator(".recorded-card .recorded-sample").all_text_contents().count(
+        "No findings in the recorded scan at its tested widths. No findings"
+    )
+
     # Button text sits in the vertical middle of its button.
     offsets = page.evaluate("""() => [...document.querySelectorAll('.btn, #site-menu a, .menu-toggle')]
         .filter(b => b.offsetParent !== null)
