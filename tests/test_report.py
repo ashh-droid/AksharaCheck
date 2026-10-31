@@ -335,3 +335,18 @@ def test_download_buttons_carry_their_files_and_hide_internal_handles(tmp_path):
     assert "</script><b>" not in embedded
     assert "data-akshara-id" not in page.split("<script")[0]
     assert "data-akshara-id" not in (tmp_path / "report.md").read_text(encoding="utf-8")
+
+
+def test_language_selector_sync_and_optional_storage_script(tmp_path):
+    page = render(tmp_path, [
+        finding(id="one", ai_explanation="First explanation",
+                summary_hi="पहली भाषा की व्याख्या।", summary_kn="ಮೊದಲ ವಿವರಣೆ."),
+        finding(id="two", ai_explanation="Second explanation",
+                summary_hi="दूसरी भाषा की व्याख्या।", summary_kn="ಎರಡನೇ ವಿವರಣೆ."),
+    ], ai={"model": "qwen-3.8-27b", "calls": 2})
+    assert page.count("class=\"ai\"") == 2
+    assert 'aksharacheck-report-language' in page
+    assert 'document.querySelectorAll(".ai input.t-"+lang)' in page
+    assert 'localStorage.setItem(key,code)' in page
+    assert 'try{localStorage.getItem' not in page  # storage access is guarded by a try/catch
+    assert 'try{setLanguage(localStorage.getItem(key)||"en")}catch(e){}' in page
