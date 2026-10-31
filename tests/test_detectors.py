@@ -1,4 +1,4 @@
-from aksharacheck.detectors import indic_share,malformed_clusters,run_dom_detectors
+from aksharacheck.detectors import indic_share,malformed_clusters,run_dom_detectors,font_mismatch_findings
 from aksharacheck.ai import safe_declarations
 from aksharacheck.security import validate_url,UnsafeURL
 import pytest
@@ -62,3 +62,41 @@ def test_hidden_offscreen_navigation_not_flagged():
         bounds={"x":-300,"y":20,"w":200,"h":24}
     ))
     assert not any(f["detector"]=="possible-clipping" for f in result)
+
+
+@pytest.mark.parametrize("ratio", [1.2, 1.25, 1.3])
+def test_normal_hindi_line_spacing_is_not_a_defect_note(ratio):
+    # DD News on 31 Oct 2026 used 20/24 and 16/20 line-height, with
+    # readable text and no demonstrated clipping in its browser screenshots.
+    result=detectors(node(text="स्टैच्यू ऑफ यूनिटी के पास रेन फॉरेस्ट बना पर्यटन का नया आकर्षण",
+                          fontSize=20,lineHeight=20*ratio,lineCount=2))
+    assert not any(f["detector"]=="tight-line-height" for f in result)
+
+
+def test_very_tight_multiline_indic_text_still_gets_review_note():
+    result=detectors(node(text="यह हिन्दी भाषा का उदाहरण है",fontSize=20,lineHeight=18,lineCount=2))
+    notes=[f for f in result if f["detector"]=="tight-line-height"]
+    assert len(notes)==1 and notes[0]["severity"]=="info"
+
+
+@pytest.mark.parametrize("word",["राष्ट्रीय","अंतरराष्ट्रीय"])
+def test_expected_windows_arial_to_nirmala_glyph_fallback_is_not_an_error(word):
+    observed=node(text=word,font="Arial",platform_fonts=[
+        {"familyName":"Nirmala UI","postScriptName":"NirmalaUI-Bold","glyphCount":len(word),"isCustomFont":False}])
+    assert font_mismatch_findings("https://ddnews.gov.in/",390,[observed])==[]
+
+
+def test_unknown_indic_font_substitution_remains_visible_as_review_note():
+    observed=node(text="राष्ट्रीय",font="Custom Hindi Typeface",platform_fonts=[
+        {"familyName":"Nirmala UI","glyphCount":8,"isCustomFont":False}])
+    notes=font_mismatch_findings("https://example.com/",390,[observed])
+    assert len(notes)==1
+    assert notes[0]["severity"]=="info"
+    assert notes[0]["detector"]=="font-fallback"
+
+
+def test_arbitrary_nonindic_arial_fallback_is_not_suppressed():
+    observed=node(text="ಕನ್ನಡ ವಾರ್ತೆ",font="Arial",platform_fonts=[
+        {"familyName":"Nirmala UI","glyphCount":7,"isCustomFont":False}])
+    notes=font_mismatch_findings("https://example.com/",390,[observed])
+    assert len(notes)==1
