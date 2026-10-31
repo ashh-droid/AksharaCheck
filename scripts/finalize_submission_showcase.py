@@ -74,7 +74,7 @@ def replace_readme(s: str) -> str:
     new = f"[Karnataka Varthe (Kannada) report]({NEW_LINK})"
     if old in s:
         s = s.replace(old, new, 1)
-    elif new not in s:
+    elif NEW_LINK not in s:
         raise ValueError("Could not find the README showcase link.")
 
     old_row = (
@@ -94,8 +94,9 @@ def replace_readme(s: str) -> str:
     )
     if old_row in s:
         s = s.replace(old_row, new_rows, 1)
-    elif new_rows not in s:
-        raise ValueError("Could not find the old Wikipedia results row.")
+    elif (f"| [Karnataka Varthe (Kannada)]({NEW_LINK}), 31 Oct 2026 |" not in s
+          or f"| [DD News (Hindi)]({DD_LINK}), 31 Oct 2026 |" not in s):
+        raise ValueError("Could not find the reviewed Kannada/Hindi results rows.")
 
     s = s.replace(
         "Both reports are published exactly as AksharaCheck wrote them. Open them "
