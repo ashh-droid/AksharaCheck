@@ -1,14 +1,16 @@
 """Generate JSON, Markdown and a standalone HTML report.
 
-The HTML needs no JavaScript and no network: styles are inline and the Anek
-fonts are copied next to the report. Everything that comes from a scanned
-site is HTML-escaped.
+The HTML report needs no network: styles and the favicon are embedded, while
+Anek fonts are copied next to the report. Optional JavaScript improves offline
+downloads and language selection; findings remain readable without JavaScript.
+Everything that comes from a scanned site is HTML-escaped.
 """
 from __future__ import annotations
 
 import html
 import re
 import json
+import base64
 import shutil
 import struct
 from collections import Counter, defaultdict
@@ -70,6 +72,18 @@ ORDER=("error","warning","info")
 PNG_MAGIC=b"\x89PNG\r\n\x1a\n"
 ASSETS=Path(__file__).resolve().parent/"assets"
 FONT_FILES=[f"font-anek-{script}-{weight}.woff2" for script in ("latin","devanagari","kannada") for weight in ("400","600")]
+
+# Embedded favicon: no relative paths to break when the HTML report is opened
+# from file:// or from a copied report directory on GitHub Pages.
+REPORT_FAVICON_SVG='''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+<rect width="32" height="32" rx="7" fill="#141B30"/>
+<path d="M13.26 8.48 A8 8 0 1 1 13.26 23.52" fill="none" stroke="#3FB58A" stroke-width="3" stroke-linecap="round"/>
+<circle cx="9.87" cy="21.14" r="1.5" fill="#F07A88"/>
+<circle cx="8" cy="16" r="1.5" fill="#F07A88"/>
+<circle cx="9.87" cy="10.86" r="1.5" fill="#F07A88"/>
+</svg>'''
+REPORT_FAVICON="data:image/svg+xml;base64,"+base64.b64encode(REPORT_FAVICON_SVG.encode("utf-8")).decode("ascii")
+
 
 
 def esc(value):
@@ -737,6 +751,7 @@ def _html_report(data,folder,files=None):
         '<!doctype html><html lang="en"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
         '<meta name="color-scheme" content="only light">'
+        '<link rel="icon" type="image/svg+xml" href="'+REPORT_FAVICON+'">'
         '<title>'+esc(name)+' | AksharaCheck report</title><style>'+CSS+'</style></head><body>'
         '<header class="shell"><div class="top"><span class="brand">'+LOGO+'<span class="brand-text"><span class="brand-name">AksharaCheck</span>'
         '<span class="brand-sub"><span lang="hi">अक्षर जाँच</span><span lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ</span></span></span></span>'
