@@ -70,3 +70,26 @@ def test_masking_properties_are_disallowed():
     assert css=={"height":"auto"}
     assert safe_attributes({"lang":"hi"},"wrong-lang")=={"lang":"hi"}
     assert safe_attributes({"lang":"hi"},"possible-clipping")=={}
+
+
+@pytest.mark.parametrize("text", [
+    "ಆ್ಯಪ್ ಡೌನ್‌ಲೋಡ್",
+    "ಅ್ಯಪ್",
+    "ಉ್ೞ",  # Badaga vowel + virama + U+0CDE, permitted by Unicode.
+])
+def test_kannada_vowel_virama_sequences_are_not_broken_clusters(text):
+    """Prevent false positive on real Karnataka site and documented orthography."""
+    assert not malformed_clusters(text), text
+
+
+@pytest.mark.parametrize("text", ["ಆ್", "ಅ್ ", "ಕ್್", "ಅ್ ಕ"])
+def test_genuinely_stray_viramas_still_flagged(text):
+    """Do not broadly disable the broken-mark detector."""
+    assert malformed_clusters(text), text
+
+
+def test_karnataka_app_does_not_create_a_false_severity_error():
+    sample = "ಆ್ಯಪ್ ಡೌನ್‌ಲೋಡ್"
+    found=run_dom_detectors("https://example.org", 390,
+        [node(text=sample,lang="kn")], lang="kn")
+    assert not any(f["detector"]=="broken-cluster" for f in found)
