@@ -8,7 +8,7 @@ On 31 October 2026, an initial scan showed **1 error, 134 warnings and 50 inform
 
 The 133 `wrong-lang` warnings mean that many text elements are inheriting or declaring a language inconsistent with the observed Kannada script (the captured examples reported `en`). This may represent a legitimate accessibility issue, but **133 separate elements are not necessarily 133 distinct root-cause defects**. Inspect whether the document or a common ancestor uses `lang="en"`, and validate whether its `lang` attribute is overridden for Kannada text. The one mobile-overflow warning also requires checking whether any text is actually clipped or inaccessible.
 
-Do **not** publish the pre-fix "1 broken letter" headline as a confirmed government website defect.
+The browser sampler checks a limited set of visible text nodes, so results are not a comprehensive audit of every page or every on-screen element.\n\nDo **not** publish the pre-fix "1 broken letter" headline as a confirmed government website defect.
 
 ## Prajavani (Kannada news)
 
@@ -26,12 +26,12 @@ start output\karnataka-varthe-v2\report.html
 
 Expected from the corrected rule: the specific `ಆ್ಯಪ್` sequence is no longer an invalid-cluster error. Other findings may change if the live page has changed. Verify the resulting counts and examine the `wrong-lang` warning details before drawing conclusions.
 
-## One Hindi page: Doordarshan News on Prasar Bharati
+## One Hindi page: DD News
 
-Official Hindi-language information page: https://prasarbharati.gov.in/dd-news/
+Official Hindi news homepage: https://ddnews.gov.in/ . This currently shows Hindi news content; check the actual loaded result before interpreting any findings.
 
 ```cmd
-.venv\Scripts\python.exe -m aksharacheck scan https://prasarbharati.gov.in/dd-news/ --lang hi --pages 1 --output output\dd-news-hindi
+.venv\Scripts\python.exe -m aksharacheck scan https://ddnews.gov.in/ --lang hi --pages 1 --output output\dd-news-hindi
 start output\dd-news-hindi\report.html
 ```
 
