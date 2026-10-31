@@ -93,3 +93,22 @@ def test_karnataka_app_does_not_create_a_false_severity_error():
     found=run_dom_detectors("https://example.org", 390,
         [node(text=sample,lang="kn")], lang="kn")
     assert not any(f["detector"]=="broken-cluster" for f in found)
+
+
+def test_language_warnings_explain_nearest_ancestor_and_preserve_suspected_issues():
+    found=run_dom_detectors("https://example.org",390,
+        [node(text="ಕರ್ನಾಟಕ ವಾರ್ತೆ",lang="en",langSource="html")],lang="kn")
+    warnings=[f for f in found if f["detector"]=="wrong-lang"]
+    assert len(warnings)==1
+    assert warnings[0]["evidence"]["lang_source"]=="html"
+    assert warnings[0]["evidence"]["effective"]=="en"
+
+
+def test_same_suspected_language_warning_no_longer_treated_as_distinct_root_cause():
+    first=run_dom_detectors("https://example.org",390,
+        [node(selector="#a",text="ಕರ್ನಾಟಕ ವಾರ್ತೆ",lang="en",langSource="html")],lang="kn")
+    second=run_dom_detectors("https://example.org",390,
+        [node(selector="#b",text="ರಾಜ್ಯ ಸುದ್ದಿ",lang="en",langSource="html")],lang="kn")
+    warnings=[f for f in first+second if f["detector"]=="wrong-lang"]
+    assert len(warnings)==2  # Two affected elements, but one inherited source.
+    assert {f["evidence"]["lang_source"] for f in warnings}=={"html"}
