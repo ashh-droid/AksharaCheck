@@ -54,6 +54,7 @@ type RecordedScan = {
   verified_fixes?: number;
   ai_explained?: number;
   ai_eligible?: number;
+  review_note?: string;
   highlight?: { title?: string; sample?: string };
 };
 
@@ -631,6 +632,7 @@ function RecordedScans({ scans }: { scans: RecordedScan[] }) {
                 )}
               </span>
               {stat && <span className="recorded-stat">{stat}</span>}
+              {s.review_note && <span className="recorded-review">{s.review_note}</span>}
               <span className="recorded-foot">
                 <span>Scanned {scanDate(s.scanned_at)}</span>
                 <span className="recorded-open">
