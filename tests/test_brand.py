@@ -111,3 +111,14 @@ def test_desktop_hero_content_is_lifted_without_reflow():
     assert ".hero > .hero-copy,\n  .hero > .demo" in css
     assert "top: calc(-1 * clamp(12px, 2.5vh, 24px));" in css
     assert "min-height: calc(100svh - 88px)" in css
+
+
+def test_public_setup_is_usable_on_windows_without_a_secret():
+    """A judge using the visible terminal commands should reach a real scan."""
+    assert "Windows Command Prompt" in PAGE
+    assert "py -3 -m venv .venv" in PAGE
+    assert "python.exe -m playwright install chromium" in PAGE
+    assert "python.exe -m aksharacheck scan" in PAGE
+    assert "export BHARATCODE_API_KEY=" not in PAGE
+    assert "<li>Open source</li>" not in PAGE
+    assert "<li>Source available on GitHub</li>" in PAGE

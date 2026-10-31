@@ -1,14 +1,16 @@
 """Generate JSON, Markdown and a standalone HTML report.
 
-The HTML needs no JavaScript and no network: styles are inline and the Anek
-fonts are copied next to the report. Everything that comes from a scanned
-site is HTML-escaped.
+The HTML report needs no network: styles and the favicon are embedded, while
+Anek fonts are copied next to the report. Optional JavaScript improves offline
+downloads and language selection; findings remain readable without JavaScript.
+Everything that comes from a scanned site is HTML-escaped.
 """
 from __future__ import annotations
 
 import html
 import re
 import json
+import base64
 import shutil
 import struct
 from collections import Counter, defaultdict
@@ -70,6 +72,18 @@ ORDER=("error","warning","info")
 PNG_MAGIC=b"\x89PNG\r\n\x1a\n"
 ASSETS=Path(__file__).resolve().parent/"assets"
 FONT_FILES=[f"font-anek-{script}-{weight}.woff2" for script in ("latin","devanagari","kannada") for weight in ("400","600")]
+
+# Embedded favicon: no relative paths to break when the HTML report is opened
+# from file:// or from a copied report directory on GitHub Pages.
+REPORT_FAVICON_SVG='''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+<rect width="32" height="32" rx="7" fill="#141B30"/>
+<path d="M13.26 8.48 A8 8 0 1 1 13.26 23.52" fill="none" stroke="#3FB58A" stroke-width="3" stroke-linecap="round"/>
+<circle cx="9.87" cy="21.14" r="1.5" fill="#F07A88"/>
+<circle cx="8" cy="16" r="1.5" fill="#F07A88"/>
+<circle cx="9.87" cy="10.86" r="1.5" fill="#F07A88"/>
+</svg>'''
+REPORT_FAVICON="data:image/svg+xml;base64,"+base64.b64encode(REPORT_FAVICON_SVG.encode("utf-8")).decode("ascii")
+
 
 
 def esc(value):
@@ -663,6 +677,31 @@ def _download_script(files):
             'setTimeout(function(){URL.revokeObjectURL(url)},2000);event.preventDefault();}catch(error){}});});</script>')
 
 
+def _language_script():
+    """Remember a reader's explanation language and use it in every report card.
+
+    Without JavaScript, independent radio controls still work as before.
+    localStorage may be disabled for file:// reports, so storage is optional.
+    """
+    return ('<script>(function(){'
+            'var key="aksharacheck-report-language";'
+            'function setLanguage(lang){'
+            'if(!/^(en|hi|kn)$/.test(lang))return;'
+            'document.querySelectorAll(".ai input.t-"+lang).forEach(function(input){input.checked=true});'
+            '}'
+            'try{setLanguage(localStorage.getItem(key)||"en")}catch(e){}'
+            'document.addEventListener("change",function(event){'
+            'var input=event.target;'
+            'if(!(input instanceof HTMLInputElement)||input.type!=="radio"||!input.closest(".ai"))return;'
+            'var code=input.classList.contains("t-hi")?"hi":input.classList.contains("t-kn")?"kn":'
+            'input.classList.contains("t-en")?"en":null;'
+            'if(!code)return;'
+            'setLanguage(code);'
+            'try{localStorage.setItem(key,code)}catch(e){}'
+            '});'
+            '})();</script>')
+
+
 def _html_report(data,folder,files=None):
     findings=data.get("findings",[])
     counts=Counter(f.get("severity","info") for f in findings)
@@ -712,6 +751,7 @@ def _html_report(data,folder,files=None):
         '<!doctype html><html lang="en"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
         '<meta name="color-scheme" content="only light">'
+        '<link rel="icon" type="image/svg+xml" href="'+REPORT_FAVICON+'">'
         '<title>'+esc(name)+' | AksharaCheck report</title><style>'+CSS+'</style></head><body>'
         '<header class="shell"><div class="top"><span class="brand">'+LOGO+'<span class="brand-text"><span class="brand-name">AksharaCheck</span>'
         '<span class="brand-sub"><span lang="hi">अक्षर जाँच</span><span lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ</span></span></span></span>'
@@ -723,7 +763,7 @@ def _html_report(data,folder,files=None):
         '<p class="meta">'+esc(checked)+'</p>'+_ai_line(data)+''.join(notices)+'</section>'
         +_overview(groups,counts)+"".join(bands)+'</main>'
         '<footer class="shell"><div class="foot"><span>AksharaCheck measures how Chromium draws the page. It is not a full accessibility audit.</span>'
-        '<span><span lang="hi">अक्षर जाँच</span> · <span lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ</span></span></div></footer>'+_download_script(files)+'</body></html>'
+        '<span><span lang="hi">अक्षर जाँच</span> · <span lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ</span></span></div></footer>'+_download_script(files)+_language_script()+'</body></html>'
     )
 
 

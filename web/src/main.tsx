@@ -63,12 +63,12 @@ const PAGES_PREVIEW = window.location.hostname.endsWith('.github.io') && !import
 const REPO = 'https://github.com/ashh-droid/AksharaCheck';
 const BASE = import.meta.env.BASE_URL;
 const COMMANDS = [
-  'git clone ' + 'https://github.com/ashh-droid/AksharaCheck.git',
+  'git clone https://github.com/ashh-droid/AksharaCheck.git',
   'cd AksharaCheck',
-  'pip install -e .',
-  'python -m playwright install chromium',
-  'export BHARATCODE_API_KEY=your-key',
-  'aksharacheck scan https://your-site.in --ai',
+  'py -3 -m venv .venv',
+  '.venv\\Scripts\\python.exe -m pip install -e .',
+  '.venv\\Scripts\\python.exe -m playwright install chromium',
+  '.venv\\Scripts\\python.exe -m aksharacheck scan https://your-site.in --lang both --output output',
 ];
 const recordedReportUrl = (slug: string) => BASE + 'samples/' + encodeURIComponent(slug) + '/report.html';
 
@@ -811,7 +811,7 @@ function App() {
             <ul className="hero-facts">
               <li>Real Chromium at phone and desktop widths</li>
               <li>Explanations in English, Hindi and Kannada</li>
-              <li>Open source</li>
+              <li>Source available on GitHub</li>
             </ul>
           </div>
           <RepairDemo />
@@ -993,7 +993,7 @@ function App() {
           </div>
           <div className="terminal">
             <div className="terminal-bar">
-              <span>Terminal</span>
+              <span>Windows Command Prompt</span>
               <CopyButton text={COMMANDS.join('\n')} />
             </div>
             <pre aria-label="Commands to run AksharaCheck">
