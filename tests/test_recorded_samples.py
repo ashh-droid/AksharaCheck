@@ -118,7 +118,16 @@ def test_published_report_snapshots_have_tab_icon_and_working_language_preferenc
     catalog=json.loads((root/"catalog.json").read_text(encoding="utf-8"))
     byslug={x["slug"]:x for x in catalog["scans"]}
     assert byslug["akshara-fixture-demo"]["kind"]=="fixture"
-    assert byslug["hindi-wikipedia"]["kind"]=="public"
+    assert (root/"hindi-wikipedia"/"report.html").is_file()  # historical archive remains
+    assert "dd-news-hindi" in byslug and byslug["dd-news-hindi"]["kind"]=="public"
+    if "karnataka-varthe-kannada" in byslug:
+        assert [x["slug"] for x in catalog["scans"]][:3]==[
+            "akshara-fixture-demo","karnataka-varthe-kannada","dd-news-hindi"]
+        assert byslug["karnataka-varthe-kannada"]["kind"]=="public"
+        assert "72 Kannada text observations" in byslug["karnataka-varthe-kannada"]["review_note"]
+        assert "hindi-wikipedia" not in byslug
+    else:
+        assert byslug["hindi-wikipedia"]["kind"]=="public"
 
 
 def test_published_clean_dd_news_evidence_matches_saved_json_and_renderer():
