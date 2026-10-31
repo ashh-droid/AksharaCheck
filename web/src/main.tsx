@@ -52,8 +52,23 @@ type RecordedScan = {
   counts?: { error?: number; warning?: number; info?: number };
   ai_calls?: number;
   verified_fixes?: number;
+  ai_explained?: number;
+  ai_eligible?: number;
   highlight?: { title?: string; sample?: string };
 };
+
+/* ---------- Icons ----------
+   Drawn shapes, not ✓ ✗ ↗ characters: Anek has no such glyphs, so Windows
+   substitutes a symbol font and draws them in a different style. */
+
+const ICONS = { check: 'M3 8.5l3.2 3.2L13 4.8', cross: 'M4 4l8 8M12 4l-8 8', out: 'M5.5 10.5l5-5M6.5 5.5h4v4' } as const;
+function Icon({ name }: { name: keyof typeof ICONS }) {
+  return (
+    <svg className={'ico ico-' + name} viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <path d={ICONS[name]} />
+    </svg>
+  );
+}
 
 /* ---------- Settings ---------- */
 
@@ -221,7 +236,7 @@ function Header() {
             </a>
           ))}
           <a href={REPO} target="_blank" rel="noopener noreferrer">
-            GitHub <span aria-hidden="true">↗</span>
+            GitHub <Icon name="out" />
           </a>
         </nav>
       </div>
@@ -257,12 +272,16 @@ function RepairDemo() {
         </p>
         <ol className="demo-tries" aria-label="Repairs tested in Chromium">
           <li className="bad step" style={d(1.5)}>
-            <span className="mark" aria-hidden="true">✗</span>
+            <span className="mark">
+              <Icon name="cross" />
+            </span>
             <code>height: 1px</code>
             <span>Rejected: text area shrank</span>
           </li>
           <li className="ok step" style={d(2.2)}>
-            <span className="mark" aria-hidden="true">✓</span>
+            <span className="mark">
+              <Icon name="check" />
+            </span>
             <code>height: auto; line-height: 1.7</code>
             <span>Verified in Chromium</span>
           </li>
@@ -434,21 +453,25 @@ function FindingCard({ f, asset }: { f: Finding; asset: (name: string) => string
         )}
         {fix?.status === 'verified' && (
           <div className="repair ok">
-            <p className="repair-title">✓ Fix verified in a fresh Chromium at {fix.viewport || f.viewport} px</p>
+            <p className="repair-title">
+              <Icon name="check" /> Fix ready, tested in Chromium at {fix.viewport || f.viewport} px
+            </p>
             <pre>{cssText(fix).replace(/; /g, ';\n')}</pre>
           </div>
         )}
         {fix?.status === 'unverified' && (
           <div className="repair bad">
-            <p className="repair-title">✗ No suggested fix passed. {fix.reason}</p>
+            <p className="repair-title">
+              <Icon name="cross" /> No suggested fix passed. {fix.reason}
+            </p>
           </div>
         )}
         {(fix?.attempts?.length || 0) > 1 && (
           <ol className="tries">
             {fix!.attempts!.map((a, i) => (
               <li key={i} className={a.status === 'verified' ? 'ok' : 'bad'}>
-                <span className="mark" aria-hidden="true">
-                  {a.status === 'verified' ? '✓' : '✗'}
+                <span className="mark">
+                  <Icon name={a.status === 'verified' ? 'check' : 'cross'} />
                 </span>
                 <code>{cssText(a)}</code>
                 <span>{a.status === 'verified' ? 'Passed' : 'Rejected: ' + (a.reason || 'did not pass')}</span>
@@ -531,7 +554,9 @@ function LiveResults({
       {report && (
         <>
           {report.pages.some((p) => p.error) && <p className="alert">Some pages or widths could not be checked. They are not counted as clean.</p>}
-          {!report.findings.length && <p className="clean">✓ Nothing broke on this page at these widths.</p>}
+          {!report.findings.length && <p className="clean">
+              <Icon name="check" /> Nothing broke on this page at these widths.
+            </p>}
           {order.map((sev) => {
             const items = report.findings.filter((f) => (SEVERITY[f.severity] ? f.severity : 'info') === sev);
             if (!items.length) return null;
@@ -557,26 +582,56 @@ function LiveResults({
 function RecordedScans({ scans }: { scans: RecordedScan[] }) {
   if (!scans.length) return null;
   return (
-    <div className="recorded">
-      <h3>Recorded browser reports</h3>
+    <div className="recorded" id="recorded">
+      <div className="recorded-head">
+        <h3>Open a real report</h3>
+        <p>Produced by AksharaCheck in Chromium and published as it came out.</p>
+      </div>
       <div className="recorded-grid">
-        {scans.map((s) => (
-          <a key={s.slug} className="recorded-card" href={recordedReportUrl(s.slug)} target="_blank" rel="noopener noreferrer">
-            <span className="recorded-site">{s.title}</span>
-            <span className="recorded-url">{s.kind === 'fixture' ? 'Controlled test page · not a real website scan' : hostOf(s.target)}</span>
-            <span className="recorded-counts">{summarySentence(s.counts || {})}</span>
-            {s.highlight?.sample && (
-              <span className="recorded-sample" lang={langOf(s.highlight.sample)}>
-                {s.highlight.sample}
+        {scans.map((s) => {
+          const fixture = s.kind === 'fixture';
+          const counts = s.counts || {};
+          const pills = [
+            ['error', counts.error, plural(counts.error || 0, 'to fix', 'to fix')],
+            ['warning', counts.warning, plural(counts.warning || 0, 'to check', 'to check')],
+            ['info', counts.info, plural(counts.info || 0, 'note')],
+          ].filter(([, n]) => n) as [string, number, string][];
+          const explained = s.ai_explained || 0;
+          const stat = fixture
+            ? (explained ? `BharatCode explained ${explained} of ${s.ai_eligible || explained}` : '') +
+              ((s.verified_fixes || 0) > 0 ? (explained ? ' · ' : '') + plural(s.verified_fixes || 0, 'fix', 'fixes') + ' verified in Chromium' : '')
+            : counts.error || counts.warning ? 'Browser checks only' : 'Nothing to fix · browser checks only';
+          return (
+            <a key={s.slug} className={'recorded-card ' + (fixture ? 'fixture' : 'public')} href={recordedReportUrl(s.slug)} target="_blank" rel="noopener noreferrer">
+              <span className="recorded-kind">{fixture ? 'BharatCode demonstration' : 'Public website'}</span>
+              <span className="recorded-site">{s.title}</span>
+              <span className="recorded-url">{fixture ? 'Test page with planted rendering bugs' : hostOf(s.target)}</span>
+              {s.highlight?.sample && (
+                <span className="recorded-sample" lang={langOf(s.highlight.sample)}>
+                  {s.highlight.sample}
+                </span>
+              )}
+              <span className="recorded-counts">
+                {pills.length ? (
+                  pills.map(([kind, n, label]) => (
+                    <span key={kind} className={'sev ' + kind}>
+                      {kind === 'info' ? label : n + ' ' + label.replace(/^\d+ /, '')}
+                    </span>
+                  ))
+                ) : (
+                  <span className="sev info">Nothing found</span>
+                )}
               </span>
-            )}
-            <span className="recorded-foot">
-              <span>Scanned {scanDate(s.scanned_at)}</span>
-              {(s.verified_fixes || 0) > 0 && <span>{plural(s.verified_fixes || 0, 'verified fix', 'verified fixes')}</span>}
-              <span className="recorded-open">Open report ↗</span>
-            </span>
-          </a>
-        ))}
+              {stat && <span className="recorded-stat">{stat}</span>}
+              <span className="recorded-foot">
+                <span>Scanned {scanDate(s.scanned_at)}</span>
+                <span className="recorded-open">
+                  Open report <Icon name="out" />
+                </span>
+              </span>
+            </a>
+          );
+        })}
       </div>
     </div>
   );
@@ -653,7 +708,17 @@ function TextChecker() {
           </div>
           <div className="try-out">
             <p className={'verdict ' + (problems.length ? 'bad' : text.trim() ? 'ok' : '')} aria-live="polite">
-              {problems.length ? '✗ ' + plural(problems.length, 'broken letter') : text.trim() ? '✓ No broken letters found' : 'Results appear here'}
+              {problems.length ? (
+                <>
+                  <Icon name="cross" /> {plural(problems.length, 'broken letter')}
+                </>
+              ) : text.trim() ? (
+                <>
+                  <Icon name="check" /> No broken letters found
+                </>
+              ) : (
+                'Results appear here'
+              )}
             </p>
             {text.trim() && <p className="rendered">{marked}</p>}
             {problems.length > 0 && (
@@ -826,6 +891,7 @@ function App() {
               <p>A report names the problem, shows how Chromium drew it, lists the exact characters, and keeps every repair BharatCode tried.</p>
             </div>
             <RecordedScans scans={scans} />
+            {scans.length > 0 && <h3 className="anatomy-head">Inside one finding</h3>}
             <div className="anatomy">
               <article className="finding error example" aria-label="Example finding">
                 <div className="finding-main">

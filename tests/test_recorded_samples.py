@@ -110,7 +110,7 @@ def test_published_report_snapshots_have_tab_icon_and_working_language_preferenc
     root=Path(__file__).resolve().parents[1]/"web"/"public"/"samples"
     for slug in ("akshara-fixture-demo","hindi-wikipedia"):
         report=(root/slug/"report.html").read_text(encoding="utf-8")
-        assert '<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,' in report
+        assert '<link rel="icon" type="image/svg+xml" href="data:image/svg+xml' in report
         assert 'aksharacheck-report-language' in report
         assert 'document.querySelectorAll(".ai input.t-"+lang)' in report
         assert "AksharaCheck report</title>" in report
