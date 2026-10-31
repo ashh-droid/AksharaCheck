@@ -4,13 +4,20 @@
 
 > Open a website, find concrete rendering evidence, ask BharatCode to suggest a repair, and only label the repair **verified** after it passes the same deterministic test in a fresh browser. AI never creates findings.
 
-**Status:** Functional MVP undergoing public-demo validation. Browser detection and AI repairs have different verification states; the public report will use only measured findings.
+**Status (31 October 2026):** The controlled nine-finding BharatCode demo passed on Windows: 9/9 actionable findings received explanations, and Chromium independently verified 4 proposed repairs. A separately recorded scan of Hindi Wikipedia returned 0 errors, 0 warnings and 3 informational notes. The public Pages preview hosts these reviewed *recordings* and a local-in-browser text checker; it does not run the Python/Chromium scanning backend.
 
 ## Try AksharaCheck
 
 [Try the Hindi/Kannada text checker (GitHub Pages)](https://ashh-droid.github.io/AksharaCheck/) · [Source code](https://github.com/ashh-droid/AksharaCheck) · [Submission instructions](https://bharatcode.ai/hackathon)
 
-The static Pages preview lets visitors check Hindi/Kannada text in their own browser. **Full website scans run locally with Python + Chromium**; GitHub Pages alone cannot run the scanner or store a BharatCode API key. The recorded-report gallery is populated only after genuine reports have been run, reviewed and published.
+The static Pages preview lets visitors check Hindi/Kannada text in their own browser. **Full website scans run locally with Python + Chromium**; GitHub Pages alone cannot run the scanner or store a BharatCode API key. Two reviewed reports are now committed and deployed to the separate `gh-pages` branch. The local fixture is explicitly labelled as a controlled demo, not an audit of a public website.
+
+### See the recorded evidence
+
+- [BharatCode end-to-end controlled demo report](https://ashh-droid.github.io/AksharaCheck/samples/akshara-fixture-demo/report.html): 3 errors, 6 warnings, 2 notes. BharatCode explained all 9 actionable findings in English, Hindi and Kannada; Chromium verified 4 repairs. Six new model calls completed and three earlier explanations were reused and their eligible repairs rechecked. **This is a deliberately broken local test page, not a real website.**
+- [Independent Hindi Wikipedia scan](https://ashh-droid.github.io/AksharaCheck/samples/hindi-wikipedia/report.html): measured on 31 October 2026 at 390 px and 1440 px; 0 errors, 0 warnings and 3 informational notes. **No BharatCode model call was made for this scan.** Notes do not establish that Wikipedia is broken.
+
+These are recorded results, not a continuously running public crawler. Open the full HTML reports for their screenshots, evidence and provenance. A short recording of the actual terminal and Chromium verification run is still to be added.
 
 ### How BharatCode is used
 
@@ -34,7 +41,7 @@ The browser scan does not require an AI key. For the optional real BharatCode de
 
 For automated checks, `.venv\Scripts\python.exe -m aksharacheck scan https://hi.wikipedia.org/ --fail-on error --output output\ci-scan` exits unsuccessfully when an error-level finding is detected. These results are scoped rendering checks, **not** a comprehensive accessibility certification.
 
-For the hackathon, public proof should include the actual report screenshot and a reviewed recorded scan. Do not substitute generated screenshots or claim live scans until they have been performed.
+For the hackathon, the reviewed recorded scans are linked above. A report-cover screenshot and a brief unedited capture of the live BharatCode-to-Chromium demonstration should be added when available; do not invent screenshots or claim model calls that did not occur.
 
 ## Submission evidence and recording
 
@@ -46,7 +53,7 @@ After the live AI demo prints `PASS` and you review the report, the controlled f
 .venv\Scripts\python.exe scripts\publish_recorded_scan.py output\ai-demo --slug akshara-fixture-demo --title "AksharaCheck controlled demo" --reviewed-public-content --fixture-demo
 ```
 
-For a real public website, use the regular publisher without `--fixture-demo` (see the recorded-scan instructions below). The gallery remains empty until reviewed files are actually committed and deployed.
+For a real public website, use the regular publisher without `--fixture-demo` (see the recorded-scan instructions below). The reviewed controlled demo and Hindi Wikipedia recording have now been committed and deployed.
 
 ## Website experience
 
