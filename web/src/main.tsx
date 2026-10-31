@@ -863,7 +863,7 @@ function App() {
             </p>
             {PAGES_PREVIEW ? (
               <div className="hero-actions">
-                <a className="btn primary" href="#reports">
+                <a className="btn primary" href={scans.length ? '#recorded' : '#reports'}>
                   {scans.length ? 'See real reports' : 'See what a report shows'}
                 </a>
                 <a className="btn secondary" href="#run">
@@ -890,8 +890,6 @@ function App() {
               <h2 id="reports-title">Every finding comes with its evidence</h2>
               <p>A report names the problem, shows how Chromium drew it, lists the exact characters, and keeps every repair BharatCode tried.</p>
             </div>
-            <RecordedScans scans={scans} />
-            {scans.length > 0 && <h3 className="anatomy-head">Inside one finding</h3>}
             <div className="anatomy">
               <article className="finding error example" aria-label="Example finding">
                 <div className="finding-main">
@@ -948,6 +946,8 @@ function App() {
                 </div>
               </div>
             </div>
+            {/* First how a finding reads, then the real reports that prove it. */}
+            <RecordedScans scans={scans} />
           </div>
         </section>
 
