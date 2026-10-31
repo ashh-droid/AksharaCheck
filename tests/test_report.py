@@ -350,3 +350,29 @@ def test_language_selector_sync_and_optional_storage_script(tmp_path):
     assert 'localStorage.setItem(key,code)' in page
     assert 'try{localStorage.getItem' not in page  # storage access is guarded by a try/catch
     assert 'try{setLanguage(localStorage.getItem(key)||"en")}catch(e){}' in page
+
+
+def test_html_report_includes_standalone_aksharacheck_tab_icon(tmp_path):
+    import base64
+    from html.parser import HTMLParser
+    from aksharacheck.report import REPORT_FAVICON_SVG
+
+    page = render(tmp_path, [finding()])
+    class IconParser(HTMLParser):
+        icons = []
+        def handle_starttag(self, tag, attrs):
+            if tag == "link":
+                data = dict(attrs)
+                if data.get("rel") == "icon":
+                    self.icons.append(data)
+    parser = IconParser()
+    parser.feed(page)
+    assert len(parser.icons) == 1
+    icon = parser.icons[0]
+    assert icon["type"] == "image/svg+xml"
+    prefix = "data:image/svg+xml;base64,"
+    assert icon["href"].startswith(prefix)
+    decoded = base64.b64decode(icon["href"][len(prefix):]).decode("utf-8")
+    assert decoded == REPORT_FAVICON_SVG
+    assert 'viewBox="0 0 32 32"' in decoded
+    assert "AksharaCheck report" in page
