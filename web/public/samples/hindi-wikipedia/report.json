@@ -1,0 +1,142 @@
+{
+  "version": "0.1.0",
+  "engine_version": "2026-10-29-visibility-v2",
+  "generated_at": "2026-10-31T12:08:13+00:00",
+  "target": "https://hi.wikipedia.org/",
+  "language": "both",
+  "pages": [
+    {
+      "url": "https://hi.wikipedia.org/wiki/%E0%A4%AE%E0%A5%81%E0%A4%96%E0%A4%AA%E0%A5%83%E0%A4%B7%E0%A5%8D%E0%A4%A0",
+      "viewport": 390,
+      "screenshot": "page-01-390.png",
+      "nodes_checked": 366,
+      "finding_count": 2
+    },
+    {
+      "url": "https://hi.wikipedia.org/wiki/%E0%A4%AE%E0%A5%81%E0%A4%96%E0%A4%AA%E0%A5%83%E0%A4%B7%E0%A5%8D%E0%A4%A0",
+      "viewport": 1440,
+      "screenshot": "page-01-1440.png",
+      "nodes_checked": 380,
+      "finding_count": 3
+    }
+  ],
+  "findings": [
+    {
+      "id": "358c542748a5",
+      "url": "https://hi.wikipedia.org/wiki/%E0%A4%AE%E0%A5%81%E0%A4%96%E0%A4%AA%E0%A5%83%E0%A4%B7%E0%A5%8D%E0%A4%A0",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-c160f135\"]",
+      "sample": "कैश साफ़ करें",
+      "detector": "tight-line-height",
+      "severity": "info",
+      "confidence": "measured",
+      "evidence": {
+        "font_size": 12.0,
+        "line_height": 10.8,
+        "ratio": 0.9
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 288,
+        "y": 8293,
+        "w": 78,
+        "h": 17
+      },
+      "element_screenshot": "element-358c542748a5-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-358c542748a5-1440.png"
+      }
+    },
+    {
+      "id": "c6f2ccfa819f",
+      "url": "https://hi.wikipedia.org/wiki/%E0%A4%AE%E0%A5%81%E0%A4%96%E0%A4%AA%E0%A5%83%E0%A4%B7%E0%A5%8D%E0%A4%A0",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-044f1cd8\"]",
+      "sample": "मुखपृष्ठ",
+      "detector": "font-fallback",
+      "severity": "info",
+      "confidence": "measured",
+      "evidence": {
+        "requested": "linux libertine",
+        "actual": [
+          {
+            "familyName": "Nirmala UI",
+            "postScriptName": "NirmalaUI",
+            "isCustomFont": false,
+            "glyphCount": 6
+          }
+        ],
+        "note": "Fallback is not always a rendering defect"
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 24,
+        "y": 98,
+        "w": 79,
+        "h": 32
+      },
+      "element_screenshot": "element-c6f2ccfa819f-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-c6f2ccfa819f-1440.png"
+      }
+    },
+    {
+      "id": "f48c8a766a17",
+      "url": "https://hi.wikipedia.org/wiki/%E0%A4%AE%E0%A5%81%E0%A4%96%E0%A4%AA%E0%A5%83%E0%A4%B7%E0%A5%8D%E0%A4%A0",
+      "viewport": 1440,
+      "viewports": [
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-887604fa\"]",
+      "sample": "छिपाएँ",
+      "detector": "font-fallback",
+      "severity": "info",
+      "confidence": "measured",
+      "evidence": {
+        "requested": "arial",
+        "actual": [
+          {
+            "familyName": "Nirmala UI",
+            "postScriptName": "NirmalaUI",
+            "isCustomFont": false,
+            "glyphCount": 6
+          }
+        ],
+        "note": "Fallback is not always a rendering defect"
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-1440.png",
+      "bounds": {
+        "x": 1277,
+        "y": 137,
+        "w": 46,
+        "h": 24
+      },
+      "element_screenshot": "element-f48c8a766a17-1440.png"
+    }
+  ],
+  "summary": {
+    "error": 0,
+    "warning": 0,
+    "info": 3
+  }
+}

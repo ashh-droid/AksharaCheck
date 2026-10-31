@@ -1,0 +1,602 @@
+{
+  "version": "0.1.0",
+  "engine_version": "2026-10-29-visibility-v2",
+  "generated_at": "2026-10-31T12:02:00+00:00",
+  "target": "http://127.0.0.1:49205/index.html",
+  "language": "both",
+  "pages": [
+    {
+      "url": "http://127.0.0.1:49205/index.html",
+      "viewport": 390,
+      "screenshot": "page-01-390.png",
+      "nodes_checked": 22,
+      "finding_count": 11
+    },
+    {
+      "url": "http://127.0.0.1:49205/index.html",
+      "viewport": 1440,
+      "screenshot": "page-01-1440.png",
+      "nodes_checked": 22,
+      "finding_count": 10
+    }
+  ],
+  "findings": [
+    {
+      "id": "b4686034d8de",
+      "url": "http://127.0.0.1:49205/index.html",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-db17028a\"]",
+      "sample": "टूटा अक्षर · ತುಂಡಾದ ಅಕ್ಷರ",
+      "detector": "mixed-language",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "scripts": {
+          "devanagari": 9,
+          "kannada": 11
+        },
+        "effective": "en",
+        "suggestion": "Wrap each language run in a span with its own lang attribute"
+      },
+      "fix": {
+        "status": "not-applicable",
+        "reason": "No automatic repair for this detector"
+      },
+      "ai_explanation": "The text mixes Hindi and Kannada letters without telling the browser which language each part is, so the wrong font may be used. Add a language attribute so each script gets the correct rendering.",
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 28,
+        "y": 28,
+        "w": 334,
+        "h": 86
+      },
+      "element_screenshot": "element-b4686034d8de-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-b4686034d8de-1440.png"
+      },
+      "summary_hi": "इस टेक्स्ट में हिंदी और कन्नड़ अक्षर मिले हुए हैं, इसलिए हर भाग के लिए भाषा बतानी चाहिए।",
+      "summary_kn": "ಈ ಪಠ್ಯದಲ್ಲಿ ದೇವನಾಗರಿ ಮತ್ತು ಕನ್ನಡ ಅಕ್ಷರಗಳು ಮಿಶ್ರಿತವಾಗಿದ್ದು, ಪ್ರತಿ ಭಾಗಕ್ಕೂ ಸರಿಯಾದ ಭಾಷಾ ಗುರುತನ್ನು ಹೊಂದಿರಬೇಕು।"
+    },
+    {
+      "id": "ef8771f2e401",
+      "url": "http://127.0.0.1:49205/index.html",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-080f3d0c\"]",
+      "sample": "यह हिन्दी में लिखा गया नमूना पाठ है जो सही भाषा घोषित नहीं करता है।",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "devanagari",
+        "effective": "en",
+        "allowed_languages": [
+          "awa",
+          "bho",
+          "brx",
+          "doi",
+          "hi",
+          "kok",
+          "mag",
+          "mai",
+          "mr",
+          "ne",
+          "new",
+          "sa",
+          "sd"
+        ],
+        "share": 1.0
+      },
+      "fix": {
+        "status": "verified",
+        "css": {},
+        "attributes": {
+          "lang": "hi"
+        },
+        "rule": "",
+        "viewport": 390,
+        "after_screenshot": "element-ef8771f2e401-390-fixed.png",
+        "attempts": [
+          {
+            "css": {},
+            "attributes": {
+              "lang": "hi"
+            },
+            "status": "verified",
+            "reason": ""
+          }
+        ]
+      },
+      "ai_explanation": "The page shows Hindi text but is set to display in English. Change the language setting to Hindi so the text is read correctly.",
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 53,
+        "y": 391,
+        "w": 284,
+        "h": 42
+      },
+      "element_screenshot": "element-ef8771f2e401-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-ef8771f2e401-1440.png"
+      },
+      "summary_hi": "पेज पर हिंदी लिखा हुआ है, इसलिए भाषा सेटिंग हिंदी की करनी चाहिए।",
+      "summary_kn": "ಟ್ರೆಲ್ಲಿನಲ್ಲಿ ಹಿಂದಿ ಲಿಖಿತವಿದೆ, ಆದ್ದರಿಂದ ಭಾಷೆ ಸೆಟ್ಟಿಂಗ್ ಅನ್ನು ಹಿಂದಿಗೆ ಬದಲಾಯಿಸಬೇಕು.",
+      "ai_resumed": true
+    },
+    {
+      "id": "58d74d76ccb8",
+      "url": "http://127.0.0.1:49205/index.html",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-29ef8dc6\"]",
+      "sample": "ಇದು ಕನ್ನಡದಲ್ಲಿ ಬರೆದಿರುವ ಉದಾಹರಣೆ ಪಠ್ಯವಾಗಿದ್ದು ಅದರ ಭಾಷೆಯನ್ನು ಘೋಷಿಸಿಲ್ಲ.",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.98
+      },
+      "fix": {
+        "status": "verified",
+        "css": {},
+        "attributes": {
+          "lang": "kn"
+        },
+        "rule": "",
+        "viewport": 390,
+        "after_screenshot": "element-58d74d76ccb8-390-fixed.png",
+        "attempts": [
+          {
+            "css": {},
+            "attributes": {
+              "lang": "kn"
+            },
+            "status": "verified",
+            "reason": ""
+          }
+        ]
+      },
+      "ai_explanation": "This text is written in Kannada, but the page tells the browser it is English. Set the language of this text to Kannada so screen readers pronounce it correctly.",
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 53,
+        "y": 449,
+        "w": 284,
+        "h": 63
+      },
+      "element_screenshot": "element-58d74d76ccb8-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-58d74d76ccb8-1440.png"
+      },
+      "summary_hi": "यह पाठ कन्नड़ में लिखा है, इसलिए इसकी भाषा कन्नड़ सेट करें।",
+      "summary_kn": "ಈ ಪಠ್ಯ ಕನ್ನಡದಲ್ಲಿ ಬರೆದಿದೆ, ಆದ್ದರಿಂದ ಅದರ ಭಾಷೆಯನ್ನು ಕನ್ನಡಕ್ಕೆ ಹೊಂದಿಸಿ.",
+      "ai_resumed": true
+    },
+    {
+      "id": "1667720e15cb",
+      "url": "http://127.0.0.1:49205/index.html",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-2b3db567\"]",
+      "sample": "यह एक मााित्रा त्रुटि का परीक्षण है",
+      "detector": "broken-cluster",
+      "severity": "error",
+      "confidence": "measured",
+      "evidence": {
+        "invalid_sequences": [
+          {
+            "position": 8,
+            "sequence": "माा",
+            "codepoints": [
+              "U+092E",
+              "U+093E",
+              "U+093E"
+            ],
+            "reason": "dependent vowel sign without a preceding consonant"
+          },
+          {
+            "position": 9,
+            "sequence": "ााि",
+            "codepoints": [
+              "U+093E",
+              "U+093E",
+              "U+093F"
+            ],
+            "reason": "dependent vowel sign without a preceding consonant"
+          }
+        ]
+      },
+      "fix": {
+        "status": "not-applicable",
+        "reason": "No automatic repair for this detector"
+      },
+      "ai_explanation": "This Devanagari text contains broken character sequences that render as strange, malformed letters. Please fix the underlying text by removing the stray vowel signs so each vowel follows its consonant.",
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 53,
+        "y": 700,
+        "w": 284,
+        "h": 21
+      },
+      "element_screenshot": "element-1667720e15cb-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-1667720e15cb-1440.png"
+      },
+      "summary_hi": "इस हिंदी टेक्स्ट में गलत अक्षर संयोजन हैं जिससे शब्द बिगड़े हुए दिख रहे हैं, कृपया इसे सही करें।",
+      "summary_kn": "ಈ ಹಿಂದಿ ಪಠ್ಯದಲ್ಲಿ ತಪ್ಪು ಅಕ್ಷರ ಸಂಯೋಜನೆಗಳಿವೆ, ದಯವಿಟ್ಟು ಸರಿಪಡಿಸಿ."
+    },
+    {
+      "id": "f2137f670d30",
+      "url": "http://127.0.0.1:49205/index.html",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-081a1122\"]",
+      "sample": "ಇದು ಕಾಿ ತಪ್ಪಾದ ಗುರುತುಗಳ ಪರೀಕ್ಷೆ",
+      "detector": "broken-cluster",
+      "severity": "error",
+      "confidence": "measured",
+      "evidence": {
+        "invalid_sequences": [
+          {
+            "position": 6,
+            "sequence": "ಕಾಿ",
+            "codepoints": [
+              "U+0C95",
+              "U+0CBE",
+              "U+0CBF"
+            ],
+            "reason": "dependent vowel sign without a preceding consonant"
+          }
+        ]
+      },
+      "fix": {
+        "status": "not-applicable",
+        "reason": "No automatic repair for this detector"
+      },
+      "ai_explanation": "The Kannada text has a stray vowel mark with no consonant to attach to, making the word unreadable. Fix the typo by either removing the extra mark or restoring the missing consonant, and check the text in Kannada script.",
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 53,
+        "y": 737,
+        "w": 284,
+        "h": 21
+      },
+      "element_screenshot": "element-f2137f670d30-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-f2137f670d30-1440.png"
+      },
+      "summary_hi": "कन्नड़ पाठ में एक अतिरिक्त स्वर चिह्न है जिसे हटाना या उसके आगे सही व्यंजन जोड़ना चाहिए।",
+      "summary_kn": "ಕನ್ನಡ ಪಠ್ಯದಲ್ಲಿ ಅನಗತ್ಯ ಸ್ವರ ಚಿಹ್ನೆ ಇದೆ, ಅದನ್ನು ತೆಗೆದುಹಾಕಿ ಅಥವಾ ಸರಿಯಾದ ವ್ಯಂಜನವನ್ನು ಸೇರಿಸಿ."
+    },
+    {
+      "id": "db1a7149456c",
+      "url": "http://127.0.0.1:49205/index.html",
+      "viewport": 390,
+      "viewports": [
+        390
+      ],
+      "selector": "[data-akshara-id=\"ak-26aee413\"]",
+      "sample": "नमस्तेहिन्दीवेबसाइटकीयहबहुतलंबीएकलपंक्तिहैजिसमेंअलगकरनेवालीजगहनहींहै",
+      "detector": "mobile-overflow",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "scroll_width": 495.0,
+        "client_width": 238.0,
+        "overflow_x": "visible"
+      },
+      "fix": {
+        "status": "verified",
+        "css": {
+          "word-break": "break-all",
+          "max-width": "100%",
+          "overflow-wrap": "anywhere",
+          "white-space": "normal"
+        },
+        "attributes": {},
+        "rule": "[data-akshara-id=\"ak-26aee413\"]{word-break:break-all;max-width:100%;overflow-wrap:anywhere;white-space:normal}",
+        "viewport": 390,
+        "after_screenshot": "element-db1a7149456c-390-fixed.png",
+        "attempts": [
+          {
+            "css": {
+              "overflow-wrap": "anywhere",
+              "word-break": "break-word",
+              "max-width": "100%"
+            },
+            "attributes": {},
+            "status": "unverified",
+            "reason": "Original issue still present"
+          },
+          {
+            "css": {
+              "word-break": "break-all",
+              "max-width": "100%",
+              "overflow-wrap": "anywhere",
+              "white-space": "normal"
+            },
+            "attributes": {},
+            "status": "verified",
+            "reason": ""
+          }
+        ]
+      },
+      "ai_explanation": "This line of Hindi text is much wider than the screen, so it runs off the side instead of wrapping. Allow the text to break onto the next line so it fits within the visible area.",
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 53,
+        "y": 913,
+        "w": 240,
+        "h": 33
+      },
+      "element_screenshot": "element-db1a7149456c-390.png",
+      "summary_hi": "यह हिन्दी पंक्ति स्क्रीन से चौड़ी है, इसलिए इसे लपेटने की अनुमति दें।",
+      "summary_kn": "ಈ ಹಿಂದಿ ಪಂಕ್ತಿ ಪರದೆಗಿಂತ ಅಗಲವಾಗಿದೆ, ಆದ್ದರಿಂದ ಅದನ್ನು ಸುತ್ತಿಕೊಳ್ಳಲು ಬಿಡಿ.",
+      "ai_resumed": true
+    },
+    {
+      "id": "6ce913503971",
+      "url": "http://127.0.0.1:49205/index.html",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-9260cc1f\"]",
+      "sample": "कृपया हिन्दी और कन्नड़ में पूरा पाठ दिखाएं",
+      "detector": "possible-clipping",
+      "severity": "warning",
+      "confidence": "suspected",
+      "evidence": {
+        "scroll_height": 59.0,
+        "client_height": 18.0,
+        "overflow_pixels": 41.0,
+        "note": "Potential content clipping. Verify the screenshot before changing CSS."
+      },
+      "fix": {
+        "status": "verified",
+        "css": {
+          "min-height": "auto",
+          "height": "auto"
+        },
+        "attributes": {},
+        "rule": "[data-akshara-id=\"ak-9260cc1f\"]{min-height:auto;height:auto}",
+        "viewport": 390,
+        "after_screenshot": "element-6ce913503971-390-fixed.png",
+        "attempts": [
+          {
+            "css": {
+              "min-height": "auto",
+              "height": "auto"
+            },
+            "attributes": {},
+            "status": "verified",
+            "reason": ""
+          }
+        ]
+      },
+      "ai_explanation": "The text is taller than its box, so part of it is being cut off. Increase the height or line-height so the whole text fits.",
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 53,
+        "y": 1106,
+        "w": 284,
+        "h": 18
+      },
+      "element_screenshot": "element-6ce913503971-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-6ce913503971-1440.png"
+      },
+      "summary_hi": "पाठ बॉक्स से ऊँचा है और आधा कट रहा है, इसलिए बॉक्स की ऊँचाई बढ़ाएँ।",
+      "summary_kn": "ಪಠ್ಯವು ಪೆಟ್ಟಿಗೆಗಿಂತ ಎತ್ತರವಾಗಿ ಕತ್ತರಿಸಲ್ಪಡುತ್ತಿದೆ, ಪೆಟ್ಟಿಗೆಯ ಎತ್ತರವನ್ನು ಹೆಚ್ಚಿಸಿ।"
+    },
+    {
+      "id": "f88c70cc4d23",
+      "url": "http://127.0.0.1:49205/index.html",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-d3c80a39\"]",
+      "sample": "ಇದೊಂದು ಬಹಳ ಉದ್ದವಾದ ಕನ್ನಡ ಪರೀಕ್ಷಾ ಪಠ್ಯವಾಗಿದೆ. ಎರಡು ಸಾಲುಗಳ ನಡುವೆ ಸಾಕಷ್ಟು ಜಾಗವಿಲ್ಲ.",
+      "detector": "tight-line-height",
+      "severity": "info",
+      "confidence": "measured",
+      "evidence": {
+        "font_size": 24.0,
+        "line_height": 26.0,
+        "ratio": 1.08
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 53,
+        "y": 1292,
+        "w": 205,
+        "h": 182
+      },
+      "element_screenshot": "element-f88c70cc4d23-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-f88c70cc4d23-1440.png"
+      }
+    },
+    {
+      "id": "37b1b23a3a29",
+      "url": "http://127.0.0.1:49205/index.html",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-c2468c22\"]",
+      "sample": "Hkkjr ds yksx Hkk\"kk dk vknj djrs gSa",
+      "detector": "legacy-font",
+      "severity": "warning",
+      "confidence": "suspected",
+      "evidence": {
+        "computed_font": "\"KrutiDev 010\", serif",
+        "note": "Legacy font with Latin-encoded content; verify encoding manually"
+      },
+      "fix": {
+        "status": "not-applicable",
+        "reason": "No automatic repair for this detector"
+      },
+      "ai_explanation": "This text uses an old KrutiDev font that won't display properly on modern browsers. Switch it to a proper Devanagari font like Noto Sans Devanagari instead.",
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 53,
+        "y": 1900,
+        "w": 284,
+        "h": 18
+      },
+      "element_screenshot": "element-37b1b23a3a29-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-37b1b23a3a29-1440.png"
+      },
+      "summary_hi": "पुराने कृतिदेव फ़ॉन्ट को नोटो सान्स देवनागरी से बदलें।",
+      "summary_kn": "ಹಳೆಯ ಕೃತಿದೇವ ಫಾಂಟ್ ಅನ್ನು ನೋಟೋ ಸ್ಯಾನ್ಸ್ ದೇವನಾಗರಿ ಬದಲಿಸಿ."
+    },
+    {
+      "id": "11961b0bba71",
+      "url": "http://127.0.0.1:49205/index.html",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "document",
+      "sample": "",
+      "detector": "font-load-failed",
+      "severity": "error",
+      "confidence": "measured",
+      "evidence": {
+        "font_url": "http://127.0.0.1:49205/fonts/does-not-exist.woff2",
+        "status": 404
+      },
+      "fix": {
+        "status": "not-applicable",
+        "reason": "No automatic repair for this detector"
+      },
+      "ai_explanation": "A custom font file the page tries to load is missing, so the browser falls back to a default font. Either fix the font path so it points to a file that exists, or remove the font reference so the page uses its default typeface.",
+      "screenshot": "page-01-390.png",
+      "bounds": null,
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "summary_hi": "पेज पर इस्तेमाल होने वाला कस्टम फ़ॉन्ट फ़ाइल मौजूद नहीं है, इसलिए या तो फ़ाइल का सही पता लगाएँ या फ़ॉन्ट को हटा दें।",
+      "summary_kn": "ಪುಟದಲ್ಲಿ ಬಳಸಲಾಗುತ್ತಿರುವ ಕಸ್ಟಮ್ ಫಾಂಟ್ ಕಡತ ಲಭ್ಯವಿಲ್ಲ, ಆದ್ದರಿಂದ ಫಾಂಟ್ ವಿಳಾಸವನ್ನು ಸರಿಪಡಿಸಿ ಅಥವಾ ಅದನ್ನು ತೆಗೆದುಹಾಕಿ."
+    },
+    {
+      "id": "548daacb249f",
+      "url": "http://127.0.0.1:49205/index.html",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-93d06919\"]",
+      "sample": "यह फ़ॉन्ट फ़ाइल उपलब्ध नहीं है और फ़ॉलबैक हो सकता है।",
+      "detector": "font-fallback",
+      "severity": "info",
+      "confidence": "measured",
+      "evidence": {
+        "requested": "brokenlocal",
+        "actual": [
+          {
+            "familyName": "Times New Roman",
+            "postScriptName": "TimesNewRomanPSMT",
+            "isCustomFont": false,
+            "glyphCount": 9
+          },
+          {
+            "familyName": "Nirmala UI",
+            "postScriptName": "NirmalaUI",
+            "isCustomFont": false,
+            "glyphCount": 36
+          }
+        ],
+        "note": "Fallback is not always a rendering defect"
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 53,
+        "y": 1638,
+        "w": 284,
+        "h": 42
+      },
+      "element_screenshot": "element-548daacb249f-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-548daacb249f-1440.png"
+      }
+    }
+  ],
+  "summary": {
+    "error": 3,
+    "warning": 6,
+    "info": 2
+  },
+  "ai": {
+    "model": "qwen-3.8-27b",
+    "calls": 6,
+    "input_tokens": 2178,
+    "output_tokens": 1775,
+    "seconds": 99.39,
+    "resumed_findings": 3
+  }
+}
