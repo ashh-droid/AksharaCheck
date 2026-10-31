@@ -119,3 +119,18 @@ def test_published_report_snapshots_have_tab_icon_and_working_language_preferenc
     byslug={x["slug"]:x for x in catalog["scans"]}
     assert byslug["akshara-fixture-demo"]["kind"]=="fixture"
     assert byslug["hindi-wikipedia"]["kind"]=="public"
+
+
+def test_published_clean_dd_news_evidence_matches_saved_json_and_renderer():
+    """Our posted clean report must show true captured evidence, not a fabricated pass."""
+    from aksharacheck.report import _clean_scan_evidence
+    root=Path(__file__).resolve().parents[1]/"web"/"public"/"samples"/"dd-news-hindi"
+    data=json.loads((root/"report.json").read_text(encoding="utf-8"))
+    assert data["findings"]==[]
+    assert [p["nodes_checked"] for p in data["pages"]]==[162,213]
+    assert all((root/p["screenshot"]).is_file() for p in data["pages"])
+    html=(root/"report.html").read_text(encoding="utf-8")
+    assert _clean_scan_evidence(data,root) in html
+    assert html.count('id="clean-evidence-title"')==1
+    assert "No BharatCode model calls were needed" in html
+    assert "375 text-element checks" in html
