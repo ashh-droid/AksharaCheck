@@ -1,0 +1,3563 @@
+{
+  "version": "0.1.0",
+  "engine_version": "2026-10-31-precision",
+  "generated_at": "2026-10-31T15:53:43+00:00",
+  "target": "https://varthe.karnataka.gov.in/",
+  "language": "kn",
+  "pages": [
+    {
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "screenshot": "page-01-390.png",
+      "nodes_checked": 72,
+      "finding_count": 70
+    },
+    {
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 1440,
+      "screenshot": "page-01-1440.png",
+      "nodes_checked": 99,
+      "finding_count": 83
+    }
+  ],
+  "findings": [
+    {
+      "id": "32f9c36acf4a",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-497300f1\"]",
+      "sample": "ಕರ್ನಾಟಕ ವಾರ್ತೆ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 152,
+        "y": 23,
+        "w": 141,
+        "h": 21
+      },
+      "element_screenshot": "element-32f9c36acf4a-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-32f9c36acf4a-1440.png"
+      }
+    },
+    {
+      "id": "f0c84f87e208",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390
+      ],
+      "selector": "[data-akshara-id=\"ak-85a2a768\"]",
+      "sample": "ಲಾಗಿನ್",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 304,
+        "y": 324,
+        "w": 82,
+        "h": 28
+      },
+      "element_screenshot": "element-f0c84f87e208-390.png"
+    },
+    {
+      "id": "a8d63b4451b4",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-4c848d71\"]",
+      "sample": "ಜನಪ್ರಿಯ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 8,
+        "y": 371,
+        "w": 72,
+        "h": 28
+      },
+      "element_screenshot": "element-a8d63b4451b4-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-a8d63b4451b4-1440.png"
+      }
+    },
+    {
+      "id": "d283749d75da",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-3ed7ba64\"]",
+      "sample": "ಅರಣ್ಯ ಇಲಾಖೆ ಅನುಮತಿಯಿಲ್ಲದೆ ₹400 ಕೋಟಿ ವೆಚ್ಚ: ಅಧಿಕಾರಿಗಳ ವಿರುದ್ಧ ಸಚಿವ ಚಲುವರಾಯಸ್ವಾಮಿ ಆಕ್ರೋಶ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.93
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 337,
+        "y": 378,
+        "w": 607,
+        "h": 16
+      },
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      }
+    },
+    {
+      "id": "25789547f590",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-a4601da4\"]",
+      "sample": "ಇತ್ತೀಚಿನ ಸುದ್ದಿ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 16,
+        "y": 961,
+        "w": 358,
+        "h": 31
+      },
+      "element_screenshot": "element-25789547f590-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-25789547f590-1440.png"
+      }
+    },
+    {
+      "id": "2ea1dab7c929",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-64e67166\"]",
+      "sample": "ಅರಣ್ಯ ಇಲಾಖೆ ಅನುಮತಿಯಿಲ್ಲದೆ ₹400 ಕೋಟಿ ವೆಚ್ಚ: ಅಧಿಕಾರಿಗಳ ವಿರುದ್ಧ ಸಚಿವ ಚಲುವರಾಯಸ್ವಾಮಿ ಆಕ್ರೋಶ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.93
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 50,
+        "y": 977,
+        "w": 316,
+        "h": 71
+      },
+      "element_screenshot": "element-2ea1dab7c929-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-2ea1dab7c929-1440.png"
+      }
+    },
+    {
+      "id": "e24db61df430",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-f1a243c5\"]",
+      "sample": "ಹೆಚ್ಚು ನೋಡಿ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 273,
+        "y": 1031,
+        "w": 94,
+        "h": 17
+      },
+      "element_screenshot": "element-e24db61df430-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-e24db61df430-1440.png"
+      }
+    },
+    {
+      "id": "9aa4b52ddf0e",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-96f9ebc6\"]",
+      "sample": "ಸವದತ್ತಿ ಯಲ್ಲಮ್ಮ ದೇವಿ ದರ್ಶನ ಪಡೆದ ಸಿಎಂ ಡಿ.ಕೆ. ಶಿವಕುಮಾರ್",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.96
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 50,
+        "y": 1062,
+        "w": 316,
+        "h": 53
+      },
+      "element_screenshot": "element-9aa4b52ddf0e-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-9aa4b52ddf0e-1440.png"
+      }
+    },
+    {
+      "id": "d5e51aa63010",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-858ad4ce\"]",
+      "sample": "ಹೆಚ್ಚು ನೋಡಿ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 273,
+        "y": 1099,
+        "w": 94,
+        "h": 17
+      },
+      "element_screenshot": "element-d5e51aa63010-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-d5e51aa63010-1440.png"
+      }
+    },
+    {
+      "id": "22ea9a419bbf",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-63967255\"]",
+      "sample": "ಶಾಸಕರ ಭವನದ ವಾಲ್ಮೀಕಿ ತಪೋವನದಲ್ಲಿ ಮಹರ್ಷಿ ವಾಲ್ಮೀಕಿ ಪ್ರತಿಮೆಗೆ ಮಾಲಾರ್ಪಣೆ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 50,
+        "y": 1129,
+        "w": 316,
+        "h": 53
+      },
+      "element_screenshot": "element-22ea9a419bbf-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-22ea9a419bbf-1440.png"
+      }
+    },
+    {
+      "id": "4223b63b6f03",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-262cf26b\"]",
+      "sample": "ಹೆಚ್ಚು ನೋಡಿ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 273,
+        "y": 1166,
+        "w": 94,
+        "h": 17
+      },
+      "element_screenshot": "element-4223b63b6f03-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-4223b63b6f03-1440.png"
+      }
+    },
+    {
+      "id": "a885a009ae6e",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-56ce6dc5\"]",
+      "sample": "ಬೆಳಗಾವಿಯಲ್ಲಿ ಮಹರ್ಷಿ ವಾಲ್ಮೀಕಿ ಜಯಂತಿ ಮೆರವಣಿಗೆಗೆ ಸಿಎಂ ಚಾಲನೆ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 50,
+        "y": 1197,
+        "w": 316,
+        "h": 53
+      },
+      "element_screenshot": "element-a885a009ae6e-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-a885a009ae6e-1440.png"
+      }
+    },
+    {
+      "id": "738c5a97d753",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-06e37e64\"]",
+      "sample": "ಹೆಚ್ಚು ನೋಡಿ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 273,
+        "y": 1233,
+        "w": 94,
+        "h": 17
+      },
+      "element_screenshot": "element-738c5a97d753-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-738c5a97d753-1440.png"
+      }
+    },
+    {
+      "id": "c572ccb06348",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-eb93aacb\"]",
+      "sample": "ಫಿಬಾ ಏಷ್ಯಾ ಮಹಿಳಾ ಬಾಸ್ಕೆಟ್‌ಬಾಲ್ ಲೀಗ್ ಚಾಂಪಿಯನ್ ಡೆನ್ಸೊ ಐರಿಸ್‌ಗೆ ಟ್ರೋಫಿ ವಿತರಣೆ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.97
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 50,
+        "y": 1264,
+        "w": 316,
+        "h": 53
+      },
+      "element_screenshot": "element-c572ccb06348-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-c572ccb06348-1440.png"
+      }
+    },
+    {
+      "id": "06b499929fff",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-6cb06641\"]",
+      "sample": "ಹೆಚ್ಚು ನೋಡಿ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 273,
+        "y": 1300,
+        "w": 94,
+        "h": 17
+      },
+      "element_screenshot": "element-06b499929fff-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-06b499929fff-1440.png"
+      }
+    },
+    {
+      "id": "137927d54af6",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-541b34e9\"]",
+      "sample": "ಗೋಲ್ಡನ್ ಚಾರಿಯಟ್ 2026-27ನೇ ಸಾಲಿನ ಪ್ರವಾಸಕ್ಕೆ ಸಿಎಂ ಚಾಲನೆ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.85
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 50,
+        "y": 1331,
+        "w": 316,
+        "h": 53
+      },
+      "element_screenshot": "element-137927d54af6-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-137927d54af6-1440.png"
+      }
+    },
+    {
+      "id": "6e9101640cd0",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-a1f6f2da\"]",
+      "sample": "ಹೆಚ್ಚು ನೋಡಿ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 273,
+        "y": 1367,
+        "w": 94,
+        "h": 17
+      },
+      "element_screenshot": "element-6e9101640cd0-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-6e9101640cd0-1440.png"
+      }
+    },
+    {
+      "id": "efdc0d53a1a5",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-be8fe8ad\"]",
+      "sample": "ಪೋಲೆಂಡ್ ಪ್ರಧಾನ ಮಂತ್ರಿ ಡೊನಾಲ್ಡ್ ಟಸ್ಕ್ ಅವರಿಗೆ ಗ್ರೇಟರ್ ಬೆಂಗಳೂರು ಅಭಿವೃದ್ಧಿ ಸಚಿವ ಕೃಷ್ಣಭೈರೇಗೌಡ ಅವರಿಂದ ಆತ್ಮ...",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.97
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 50,
+        "y": 1398,
+        "w": 316,
+        "h": 71
+      },
+      "element_screenshot": "element-efdc0d53a1a5-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-efdc0d53a1a5-1440.png"
+      }
+    },
+    {
+      "id": "3781052f0f7f",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-26681a87\"]",
+      "sample": "ಹೆಚ್ಚು ನೋಡಿ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 273,
+        "y": 1453,
+        "w": 94,
+        "h": 17
+      },
+      "element_screenshot": "element-3781052f0f7f-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-3781052f0f7f-1440.png"
+      }
+    },
+    {
+      "id": "7608f10a5271",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-91a9c2f6\"]",
+      "sample": "ಜಾಗತಿಕ ಹೂಡಿಕೆದಾರರ ಸಮಾವೇಶ-2027ಕ್ಕೆ ಪೋಲೆಂಡ್‌ಗೆ ಆಹ್ವಾನ: ₹80 ಕೋಟಿ ಹೂಡಿಕೆ ಪ್ರಸ್ತಾವನೆ, 1,000 ಉದ್ಯೋಗ ಸೃಷ್ಟಿ...",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.79
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 50,
+        "y": 1483,
+        "w": 316,
+        "h": 71
+      },
+      "element_screenshot": "element-7608f10a5271-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-7608f10a5271-1440.png"
+      }
+    },
+    {
+      "id": "16786e26fb42",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-e7dd5eb0\"]",
+      "sample": "ಹೆಚ್ಚು ನೋಡಿ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 273,
+        "y": 1538,
+        "w": 94,
+        "h": 17
+      },
+      "element_screenshot": "element-16786e26fb42-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-16786e26fb42-1440.png"
+      }
+    },
+    {
+      "id": "be710012642f",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-2a4e103d\"]",
+      "sample": "ಬೆಂಗಳೂರಿಗೆ ಆಗಮಿಸಿದ ಪೋಲೆಂಡ್ ಪ್ರಧಾನಿ ಡೊನಾಲ್ಡ್ ಟಸ್ಕ್: ಸಚಿವ ಕೃಷ್ಣಭೈರೇಗೌಡರಿಂದ ಆತ್ಮೀಯ ಸ್ವಾಗತ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.99
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 50,
+        "y": 1569,
+        "w": 316,
+        "h": 53
+      },
+      "element_screenshot": "element-be710012642f-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-be710012642f-1440.png"
+      }
+    },
+    {
+      "id": "5bc31b75b1cc",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-ac41991d\"]",
+      "sample": "ಹೆಚ್ಚು ನೋಡಿ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 273,
+        "y": 1605,
+        "w": 94,
+        "h": 17
+      },
+      "element_screenshot": "element-5bc31b75b1cc-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-5bc31b75b1cc-1440.png"
+      }
+    },
+    {
+      "id": "17ca111d3cb7",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-5e7cbd28\"]",
+      "sample": "ಹುತಾತ್ಮ ಪೊಲೀಸರ ಕುಟುಂಬಗಳ ಬೆನ್ನಿಗೆ ಸರ್ಕಾರ ನಿಲ್ಲಲಿದೆ: ಡಿ.ಕೆ. ಶಿವಕುಮಾರ್",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.95
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 51,
+        "y": 1636,
+        "w": 315,
+        "h": 53
+      },
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      }
+    },
+    {
+      "id": "be01a8fa344f",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-b1c855f1\"]",
+      "sample": "ಹೆಚ್ಚು ನೋಡಿ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 273,
+        "y": 1672,
+        "w": 94,
+        "h": 17
+      },
+      "element_screenshot": "element-be01a8fa344f-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      }
+    },
+    {
+      "id": "d9029001ef1f",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-33a8be46\"]",
+      "sample": "ವಾರ್ತಾ ಜನಪದ ಮ್ಯಾಗಜೀನ್‌ಗಳು",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.96
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 32,
+        "y": 709,
+        "w": 145,
+        "h": 26
+      },
+      "element_screenshot": "element-d9029001ef1f-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-d9029001ef1f-1440.png"
+      }
+    },
+    {
+      "id": "5a81f32e7bae",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-bafedbc5\"]",
+      "sample": "ಮಾರ್ಚ್ ಆಫ್ ಕರ್ನಾಟಕ ಮ್ಯಾಗಜೀನ್‌ಗಳು",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.97
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 203,
+        "y": 697,
+        "w": 166,
+        "h": 37
+      },
+      "element_screenshot": "element-5a81f32e7bae-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-5a81f32e7bae-1440.png"
+      }
+    },
+    {
+      "id": "197deb856423",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-185a7581\"]",
+      "sample": "ರಾಜ್ಯ ಸುದ್ದಿ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 16,
+        "y": 1683,
+        "w": 103,
+        "h": 24
+      },
+      "element_screenshot": "element-197deb856423-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-197deb856423-1440.png"
+      }
+    },
+    {
+      "id": "a13557cabf1b",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390
+      ],
+      "selector": "[data-akshara-id=\"ak-185a7581\"]",
+      "sample": "ರಾಜ್ಯ ಸುದ್ದಿ",
+      "detector": "mobile-overflow",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "scroll_width": 250.0,
+        "client_width": 103.0,
+        "overflow_x": "visible"
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 16,
+        "y": 1683,
+        "w": 103,
+        "h": 24
+      },
+      "element_screenshot": "element-a13557cabf1b-390.png"
+    },
+    {
+      "id": "15c2684eea2b",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-cf4bf7e1\"]",
+      "sample": "ಇನ್ನಷ್ಟು ನೋಡಿ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 231,
+        "y": 1685,
+        "w": 143,
+        "h": 20
+      },
+      "element_screenshot": "element-15c2684eea2b-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-15c2684eea2b-1440.png"
+      }
+    },
+    {
+      "id": "2e440137371a",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-8d14530d\"]",
+      "sample": "ಅರಣ್ಯ ಇಲಾಖೆ ಅನುಮತಿಯಿಲ್ಲದೆ ₹400 ಕೋಟಿ ವೆಚ್ಚ: ಅಧಿಕಾರಿಗಳ ವಿರುದ್ಧ ಸಚಿವ ಚಲುವ...",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.88
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 29,
+        "y": 1930,
+        "w": 332,
+        "h": 70
+      },
+      "element_screenshot": "element-2e440137371a-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-2e440137371a-1440.png"
+      }
+    },
+    {
+      "id": "5fdc4223d238",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-edf4e5ba\"]",
+      "sample": "ಬೆಳಗಾವಿ, ಅ.26 (ಕರ್ನಾಟಕ ವಾರ್ತೆ): ಅರಣ್ಯ ಇಲಾಖೆಯ ಅನುಮತಿಯಿಲ್ಲದೆ ಬಳ್ಳಾರಿ ನಾಲಾ ಯೋಜನೆಗೆ ಸಂಬಂಧಿಸಿದಂತೆ ಈಗಾಗಲೇ ₹400 ಕೋಟಿ ವೆಚ್ಚ ಮಾಡಿ...",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.87
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 31,
+        "y": 2026,
+        "w": 328,
+        "h": 66
+      },
+      "element_screenshot": "element-5fdc4223d238-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-5fdc4223d238-1440.png"
+      }
+    },
+    {
+      "id": "6e353c97db4b",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-576de8ba\"]",
+      "sample": "ಶಾಸಕರ ಭವನದ ವಾಲ್ಮೀಕಿ ತಪೋವನದಲ್ಲಿ ಮಹರ್ಷಿ ವಾಲ್ಮೀಕಿ ಪ್ರತಿಮೆಗೆ ಮಾಲಾರ್ಪಣೆ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 26,
+        "y": 2236,
+        "w": 338,
+        "h": 39
+      },
+      "element_screenshot": "element-6e353c97db4b-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-6e353c97db4b-1440.png"
+      }
+    },
+    {
+      "id": "777925f6893a",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-d51de378\"]",
+      "sample": "ಫಿಬಾ ಏಷ್ಯಾ ಮಹಿಳಾ ಬಾಸ್ಕೆಟ್‌ಬಾಲ್ ಲೀಗ್ ಚಾಂಪಿಯನ್ ಡೆನ್ಸೊ ಐರಿಸ್‌ಗೆ ಟ್ರೋಫಿ ವಿ...",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.92
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 26,
+        "y": 2376,
+        "w": 338,
+        "h": 39
+      },
+      "element_screenshot": "element-777925f6893a-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-777925f6893a-1440.png"
+      }
+    },
+    {
+      "id": "06c954eea338",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-ac6ca897\"]",
+      "sample": "ಪೋಲೆಂಡ್ ಪ್ರಧಾನ ಮಂತ್ರಿ ಡೊನಾಲ್ಡ್ ಟಸ್ಕ್ ಅವರಿಗೆ ಗ್ರೇಟರ್ ಬೆಂಗಳೂರು ಅಭಿವೃದ್ಧಿ...",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.95
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 26,
+        "y": 2516,
+        "w": 338,
+        "h": 39
+      },
+      "element_screenshot": "element-06c954eea338-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-06c954eea338-1440.png"
+      }
+    },
+    {
+      "id": "b40fab35dcb3",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-0d1327cd\"]",
+      "sample": "ರೀಲ್ಸ್",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 20,
+        "y": 2589,
+        "w": 233,
+        "h": 24
+      },
+      "element_screenshot": "element-b40fab35dcb3-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-b40fab35dcb3-1440.png"
+      }
+    },
+    {
+      "id": "e67689096262",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-f7b0ae9a\"]",
+      "sample": "ಹೆಚ್ಚು ತೋರಿಸಿ ->",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.86
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 261,
+        "y": 2593,
+        "w": 109,
+        "h": 17
+      },
+      "element_screenshot": "element-e67689096262-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-e67689096262-1440.png"
+      }
+    },
+    {
+      "id": "428c2f17385c",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-cdfeed11\"]",
+      "sample": "ರೀಲ್ಸ್ ಲೋಡ್ ಮಾಡಲು ವಿಫಲವಾಗಿದೆ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 65,
+        "y": 2633,
+        "w": 260,
+        "h": 462
+      },
+      "element_screenshot": "element-428c2f17385c-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-428c2f17385c-1440.png"
+      }
+    },
+    {
+      "id": "94ec24a185ae",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-5da72593\"]",
+      "sample": "ಜಿಲ್ಲಾ ಸುದ್ದಿ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 22,
+        "y": 3195,
+        "w": 221,
+        "h": 21
+      },
+      "element_screenshot": "element-94ec24a185ae-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-94ec24a185ae-1440.png"
+      }
+    },
+    {
+      "id": "d257c52bc34a",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-68242016\"]",
+      "sample": "ಹೆಚ್ಚು ತೋರಿಸಿ ->",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.86
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 251,
+        "y": 3196,
+        "w": 117,
+        "h": 19
+      },
+      "element_screenshot": "element-d257c52bc34a-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-d257c52bc34a-1440.png"
+      }
+    },
+    {
+      "id": "93f913b3d665",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-5925923f\"]",
+      "sample": "ಸವದತ್ತಿ ಯಲ್ಲಮ್ಮ ಕ್ಷೇತ್ರದ ಅಭಿವೃದ್ಧಿಗೆ ₹215 ಕೋಟಿ ಯೋಜ...",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.85
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 38,
+        "y": 3468,
+        "w": 403,
+        "h": 20
+      },
+      "element_screenshot": "element-93f913b3d665-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-93f913b3d665-1440.png"
+      }
+    },
+    {
+      "id": "a9b90b249d9f",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-e661cae4\"]",
+      "sample": "ಲೇಖನಗಳು",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 22,
+        "y": 3578,
+        "w": 221,
+        "h": 21
+      },
+      "element_screenshot": "element-a9b90b249d9f-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-a9b90b249d9f-1440.png"
+      }
+    },
+    {
+      "id": "84734be40956",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-8f956fd3\"]",
+      "sample": "ಹೆಚ್ಚು ತೋರಿಸಿ ->",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.86
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 251,
+        "y": 3579,
+        "w": 117,
+        "h": 19
+      },
+      "element_screenshot": "element-84734be40956-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-84734be40956-1440.png"
+      }
+    },
+    {
+      "id": "91364cc28d4e",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-c7750f46\"]",
+      "sample": "ಆರೋಗ್ಯಕರ ಜೀವನಕ್ಕಾಗಿ ಗಾಂಧೀಜಿಯವರಿಂದ ಕೆಲವು ಪಾಠಗಳು",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 38,
+        "y": 3851,
+        "w": 417,
+        "h": 20
+      },
+      "element_screenshot": "element-91364cc28d4e-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-91364cc28d4e-1440.png"
+      }
+    },
+    {
+      "id": "2fc33f8b72c2",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-83ec4d9e\"]",
+      "sample": "ಲೆಟೆಸ್ಟ್ ವಿಡಿಯೋಸ್",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 16,
+        "y": 3936,
+        "w": 249,
+        "h": 21
+      },
+      "element_screenshot": "element-2fc33f8b72c2-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-2fc33f8b72c2-1440.png"
+      }
+    },
+    {
+      "id": "8cd91a50b5d0",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-a72ace79\"]",
+      "sample": "ಹೆಚ್ಚು ತೋರಿಸಿ ->",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.86
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 273,
+        "y": 3940,
+        "w": 101,
+        "h": 14
+      },
+      "element_screenshot": "element-8cd91a50b5d0-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-8cd91a50b5d0-1440.png"
+      }
+    },
+    {
+      "id": "60db31a51c3c",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-54f83642\"]",
+      "sample": "ಶಾರ್ಟ್ಸ್",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 20,
+        "y": 5017,
+        "w": 241,
+        "h": 21
+      },
+      "element_screenshot": "element-60db31a51c3c-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-60db31a51c3c-1440.png"
+      }
+    },
+    {
+      "id": "a0c87665efc7",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-3f98019c\"]",
+      "sample": "ಹೆಚ್ಚು ತೋರಿಸಿ ->",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.86
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 269,
+        "y": 5021,
+        "w": 101,
+        "h": 14
+      },
+      "element_screenshot": "element-a0c87665efc7-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-a0c87665efc7-1440.png"
+      }
+    },
+    {
+      "id": "ef1ea757f99d",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-b5191de3\"]",
+      "sample": "ಫೋಟೋಗಳನ್ನು ಲೋಡ್ ಮಾಡಲು ವಿಫಲವಾಗಿದೆ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 16,
+        "y": 5584,
+        "w": 358,
+        "h": 106
+      },
+      "element_screenshot": "element-ef1ea757f99d-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-ef1ea757f99d-1440.png"
+      }
+    },
+    {
+      "id": "909106388169",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-4f9c268a\"]",
+      "sample": "ಈ ಪುಟವು ಸರ್ಕಾರದ ಜಾಲತಾಣಗಳು/ವೆಬ್ ಪುಟಗಳಿಗೆ ಕೊಂಡಿಗಳನ್ನು ಸಹ ಒದಗಿಸುತ್ತದೆ ಎಂಬುದನ್ನು ದಯವಿಟ್ಟು ಗಮನಿಸಿ. ಸಚಿವಾಲಯಗಳು/ಇಲಾಖೆಗಳು/ಸಂಸ್ಥೆಗಳು. ಈ ಜಾಲತಾಣಗಳ ವಿಷಯವು ಆಯಾ ಸಂಸ್ಥೆಗಳ ಒಡೆತನದಲ್ಲಿದೆ ಮತ್ತು ಯಾವುದ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.97
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 28,
+        "y": 5892,
+        "w": 350,
+        "h": 108
+      },
+      "element_screenshot": "element-909106388169-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-909106388169-1440.png"
+      }
+    },
+    {
+      "id": "f06454179f47",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-9d0867f5\"]",
+      "sample": "ವೆಬ್‌ಸೈಟ್ ನೀತಿಗಳು",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.94
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 28,
+        "y": 6020,
+        "w": 165,
+        "h": 24
+      },
+      "element_screenshot": "element-f06454179f47-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-f06454179f47-1440.png"
+      }
+    },
+    {
+      "id": "df645ef8b632",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-27720cea\"]",
+      "sample": "ಕಾಪಿರೈಟ್ ನೀತಿ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 28,
+        "y": 6058,
+        "w": 96,
+        "h": 17
+      },
+      "element_screenshot": "element-df645ef8b632-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-df645ef8b632-1440.png"
+      }
+    },
+    {
+      "id": "702ec4c9bc29",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-fa84b484\"]",
+      "sample": "ಹೈಪರ್‌ಲಿಂಕಿಂಗ್ ನೀತಿ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.94
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 28,
+        "y": 6088,
+        "w": 137,
+        "h": 17
+      },
+      "element_screenshot": "element-702ec4c9bc29-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-702ec4c9bc29-1440.png"
+      }
+    },
+    {
+      "id": "d6f6cd8284ca",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-3c2ebd4c\"]",
+      "sample": "ಭದ್ರತಾ ನೀತಿ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 28,
+        "y": 6118,
+        "w": 78,
+        "h": 17
+      },
+      "element_screenshot": "element-d6f6cd8284ca-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-d6f6cd8284ca-1440.png"
+      }
+    },
+    {
+      "id": "0bb7530f9474",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-59aced2b\"]",
+      "sample": "ನಿಯಮಗಳು & ಷರತ್ತುಗಳು",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.94
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 28,
+        "y": 6148,
+        "w": 161,
+        "h": 17
+      },
+      "element_screenshot": "element-0bb7530f9474-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-0bb7530f9474-1440.png"
+      }
+    },
+    {
+      "id": "9f81b5679cc7",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-d261691b\"]",
+      "sample": "ಗೌಪ್ಯತೆ ನೀತಿ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 28,
+        "y": 6178,
+        "w": 77,
+        "h": 17
+      },
+      "element_screenshot": "element-9f81b5679cc7-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-9f81b5679cc7-1440.png"
+      }
+    },
+    {
+      "id": "0d4a3a6a7b55",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-06b69782\"]",
+      "sample": "ಭೇಟಿಗಾರರು",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 213,
+        "y": 6020,
+        "w": 165,
+        "h": 24
+      },
+      "element_screenshot": "element-0d4a3a6a7b55-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-0d4a3a6a7b55-1440.png"
+      }
+    },
+    {
+      "id": "4d4ee18edc11",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-924ebfe8\"]",
+      "sample": "ದಿನಾಂಕ/ಸಮಯ:",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.82
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 213,
+        "y": 6057,
+        "w": 102,
+        "h": 15
+      },
+      "element_screenshot": "element-4d4ee18edc11-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-4d4ee18edc11-1440.png"
+      }
+    },
+    {
+      "id": "363fefa071cb",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-facf35b5\"]",
+      "sample": "ಭೇಟಿಗಾರರ ಕೌಂಟರ್:",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.93
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 213,
+        "y": 6098,
+        "w": 126,
+        "h": 15
+      },
+      "element_screenshot": "element-363fefa071cb-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-363fefa071cb-1440.png"
+      }
+    },
+    {
+      "id": "fdf1b2ec75c6",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-bfce6352\"]",
+      "sample": "ಆವೃತ್ತಿ:",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.88
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 213,
+        "y": 6124,
+        "w": 48,
+        "h": 15
+      },
+      "element_screenshot": "element-fdf1b2ec75c6-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-fdf1b2ec75c6-1440.png"
+      }
+    },
+    {
+      "id": "af51469790f1",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-1fd47bb9\"]",
+      "sample": "ಆ್ಯಪ್ ಡೌನ್‌ಲೋಡ್",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.93
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 128,
+        "y": 6246,
+        "w": 150,
+        "h": 24
+      },
+      "element_screenshot": "element-af51469790f1-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-af51469790f1-1440.png"
+      }
+    },
+    {
+      "id": "8da0f2751596",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-49118685\"]",
+      "sample": "ವಿನ್ಯಾಸ, ಅಭಿವೃದ್ಧಿ ಮತ್ತು ಹೋಸ್ಟ್ ಮಾಡಿದವರು: ಡಿಜಿ9 - ವೆಬ್ ಪೋರ್ಟಲ್, ಕರ್ನಾಟಕ ಸರ್ಕಾರ  ©  2026 , ಎಲ್ಲಾ ಹಕ್ಕುಗಳನ್ನು ಕಾಯ್ದಿರಿಸಲಾಗಿದೆ.",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.89
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 12,
+        "y": 6343,
+        "w": 366,
+        "h": 76
+      },
+      "element_screenshot": "element-8da0f2751596-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-8da0f2751596-1440.png"
+      }
+    },
+    {
+      "id": "a327e24f6fc2",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390
+      ],
+      "selector": "[data-akshara-id=\"ak-85a2a768\"]",
+      "sample": "ಲಾಗಿನ್",
+      "detector": "font-fallback",
+      "severity": "info",
+      "confidence": "measured",
+      "evidence": {
+        "requested": "inter",
+        "actual": [
+          {
+            "familyName": "Nirmala UI",
+            "postScriptName": "NirmalaUI-Bold",
+            "isCustomFont": false,
+            "glyphCount": 3
+          }
+        ],
+        "note": "Fallback is not always a rendering defect"
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 304,
+        "y": 324,
+        "w": 82,
+        "h": 28
+      },
+      "element_screenshot": "element-a327e24f6fc2-390.png"
+    },
+    {
+      "id": "bc24f4fd84d0",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-4c848d71\"]",
+      "sample": "ಜನಪ್ರಿಯ",
+      "detector": "font-fallback",
+      "severity": "info",
+      "confidence": "measured",
+      "evidence": {
+        "requested": "inter",
+        "actual": [
+          {
+            "familyName": "Nirmala UI",
+            "postScriptName": "NirmalaUI-Bold",
+            "isCustomFont": false,
+            "glyphCount": 5
+          }
+        ],
+        "note": "Fallback is not always a rendering defect"
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 8,
+        "y": 371,
+        "w": 72,
+        "h": 28
+      },
+      "element_screenshot": "element-bc24f4fd84d0-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-bc24f4fd84d0-1440.png"
+      }
+    },
+    {
+      "id": "becd801ce2e7",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-97bf73d9\"]",
+      "sample": "ಲೈವ್",
+      "detector": "font-fallback",
+      "severity": "info",
+      "confidence": "measured",
+      "evidence": {
+        "requested": "roboto",
+        "actual": [
+          {
+            "familyName": "Nirmala UI",
+            "postScriptName": "NirmalaUI-Bold",
+            "isCustomFont": false,
+            "glyphCount": 3
+          }
+        ],
+        "note": "Fallback is not always a rendering defect"
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 24,
+        "y": 761,
+        "w": 58,
+        "h": 20
+      },
+      "element_screenshot": "element-becd801ce2e7-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-becd801ce2e7-1440.png"
+      }
+    },
+    {
+      "id": "9c144d8241b5",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-0d1327cd\"]",
+      "sample": "ರೀಲ್ಸ್",
+      "detector": "font-fallback",
+      "severity": "info",
+      "confidence": "measured",
+      "evidence": {
+        "requested": "roboto",
+        "actual": [
+          {
+            "familyName": "Nirmala UI",
+            "postScriptName": "NirmalaUI-Bold",
+            "isCustomFont": false,
+            "glyphCount": 4
+          }
+        ],
+        "note": "Fallback is not always a rendering defect"
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 20,
+        "y": 2589,
+        "w": 233,
+        "h": 24
+      },
+      "element_screenshot": "element-9c144d8241b5-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-9c144d8241b5-1440.png"
+      }
+    },
+    {
+      "id": "86c7fd03efd5",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-e661cae4\"]",
+      "sample": "ಲೇಖನಗಳು",
+      "detector": "font-fallback",
+      "severity": "info",
+      "confidence": "measured",
+      "evidence": {
+        "requested": "roboto",
+        "actual": [
+          {
+            "familyName": "Nirmala UI",
+            "postScriptName": "NirmalaUI-Bold",
+            "isCustomFont": false,
+            "glyphCount": 6
+          }
+        ],
+        "note": "Fallback is not always a rendering defect"
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 22,
+        "y": 3578,
+        "w": 221,
+        "h": 21
+      },
+      "element_screenshot": "element-86c7fd03efd5-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-86c7fd03efd5-1440.png"
+      }
+    },
+    {
+      "id": "5ed88ff22373",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-54f83642\"]",
+      "sample": "ಶಾರ್ಟ್ಸ್",
+      "detector": "font-fallback",
+      "severity": "info",
+      "confidence": "measured",
+      "evidence": {
+        "requested": "roboto",
+        "actual": [
+          {
+            "familyName": "Nirmala UI",
+            "postScriptName": "NirmalaUI-Bold",
+            "isCustomFont": false,
+            "glyphCount": 4
+          }
+        ],
+        "note": "Fallback is not always a rendering defect"
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 20,
+        "y": 5017,
+        "w": 241,
+        "h": 21
+      },
+      "element_screenshot": "element-5ed88ff22373-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-5ed88ff22373-1440.png"
+      }
+    },
+    {
+      "id": "533d3bafb21b",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-ec9ae0a6\"]",
+      "sample": "ಸಹಾಯ",
+      "detector": "font-fallback",
+      "severity": "info",
+      "confidence": "measured",
+      "evidence": {
+        "requested": "inter",
+        "actual": [
+          {
+            "familyName": "Nirmala UI",
+            "postScriptName": "NirmalaUI",
+            "isCustomFont": false,
+            "glyphCount": 3
+          }
+        ],
+        "note": "Fallback is not always a rendering defect"
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 28,
+        "y": 6208,
+        "w": 53,
+        "h": 17
+      },
+      "element_screenshot": "element-533d3bafb21b-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-533d3bafb21b-1440.png"
+      }
+    },
+    {
+      "id": "1ef49ca5bfa9",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 390,
+      "viewports": [
+        390,
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-06b69782\"]",
+      "sample": "ಭೇಟಿಗಾರರು",
+      "detector": "font-fallback",
+      "severity": "info",
+      "confidence": "measured",
+      "evidence": {
+        "requested": "roboto",
+        "actual": [
+          {
+            "familyName": "Nirmala UI",
+            "postScriptName": "NirmalaUI-Bold",
+            "isCustomFont": false,
+            "glyphCount": 6
+          }
+        ],
+        "note": "Fallback is not always a rendering defect"
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-390.png",
+      "bounds": {
+        "x": 213,
+        "y": 6020,
+        "w": 165,
+        "h": 24
+      },
+      "element_screenshot": "element-1ef49ca5bfa9-390.png",
+      "screenshots": {
+        "1440": "page-01-1440.png"
+      },
+      "element_screenshots": {
+        "1440": "element-1ef49ca5bfa9-1440.png"
+      }
+    },
+    {
+      "id": "89e47065b322",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 1440,
+      "viewports": [
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-93eb2404\"]",
+      "sample": "ಲಾಗಿನ್",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-1440.png",
+      "bounds": {
+        "x": 1302,
+        "y": 216,
+        "w": 98,
+        "h": 34
+      },
+      "element_screenshot": "element-89e47065b322-1440.png"
+    },
+    {
+      "id": "5ee01596529d",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 1440,
+      "viewports": [
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-7e91da45\"]",
+      "sample": "ಸಿಎಂ ಕಾರ್ಯಕ್ರಮಗಳು",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-1440.png",
+      "bounds": {
+        "x": 150,
+        "y": 275,
+        "w": 183,
+        "h": 35
+      },
+      "element_screenshot": "element-5ee01596529d-1440.png"
+    },
+    {
+      "id": "e22b52e9090e",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 1440,
+      "viewports": [
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-50124ec5\"]",
+      "sample": "ಲೇಖನಗಳು",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-1440.png",
+      "bounds": {
+        "x": 342,
+        "y": 275,
+        "w": 109,
+        "h": 35
+      },
+      "element_screenshot": "element-e22b52e9090e-1440.png"
+    },
+    {
+      "id": "fc7c77a2170d",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 1440,
+      "viewports": [
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-cdf141c1\"]",
+      "sample": "ಸುದ್ದಿ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-1440.png",
+      "bounds": {
+        "x": 458,
+        "y": 275,
+        "w": 70,
+        "h": 35
+      },
+      "element_screenshot": "element-fc7c77a2170d-1440.png"
+    },
+    {
+      "id": "2ebbee8e91fa",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 1440,
+      "viewports": [
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-30e546b1\"]",
+      "sample": "ಮ್ಯಾಗಜೀನ್‌ಗಳು",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.92
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-1440.png",
+      "bounds": {
+        "x": 536,
+        "y": 275,
+        "w": 143,
+        "h": 35
+      },
+      "element_screenshot": "element-2ebbee8e91fa-1440.png"
+    },
+    {
+      "id": "6b76395b2066",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 1440,
+      "viewports": [
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-c898f88f\"]",
+      "sample": "ನಮ್ಮ ಸೇವೆಗಳು",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-1440.png",
+      "bounds": {
+        "x": 687,
+        "y": 275,
+        "w": 136,
+        "h": 35
+      },
+      "element_screenshot": "element-6b76395b2066-1440.png"
+    },
+    {
+      "id": "e022198cdf79",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 1440,
+      "viewports": [
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-d4c0366f\"]",
+      "sample": "ಮೀಡಿಯಾ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-1440.png",
+      "bounds": {
+        "x": 831,
+        "y": 275,
+        "w": 103,
+        "h": 35
+      },
+      "element_screenshot": "element-e022198cdf79-1440.png"
+    },
+    {
+      "id": "350bac387123",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 1440,
+      "viewports": [
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-926bc01d\"]",
+      "sample": "ಮಹರ್ಷಿ ವಾಲ್ಮೀಕಿ ಮಹಾನ್ ದಾರ್ಶನಿಕ ಹಾಗೂ ತತ್ವಜ್ಞಾನಿ: ಜಿ...",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.91
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-1440.png",
+      "bounds": {
+        "x": 655,
+        "y": 1985,
+        "w": 523,
+        "h": 27
+      },
+      "element_screenshot": "element-350bac387123-1440.png"
+    },
+    {
+      "id": "eec7a3f23540",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 1440,
+      "viewports": [
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-e00a165f\"]",
+      "sample": "ಸಂಬಂಧಗಳ ಮಹತ್ವ ಸಾರಿದ ಮಹಾಗ್ರಂಥ ರಾಮಾಯಣ: ಎಡಿಸಿ ಚಂದ್ರಯ್...",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.91
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-1440.png",
+      "bounds": {
+        "x": 1201,
+        "y": 1985,
+        "w": 629,
+        "h": 27
+      },
+      "element_screenshot": "element-eec7a3f23540-1440.png"
+    },
+    {
+      "id": "6196b703f931",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 1440,
+      "viewports": [
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-ab35b623\"]",
+      "sample": "ಮೈಸೂರು ಗಜಪಯನಃ ದಸರಾ ವೈಭವಕ್ಕೆ ಮುನ್ನುಡಿ",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 1.0
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-1440.png",
+      "bounds": {
+        "x": 672,
+        "y": 2445,
+        "w": 429,
+        "h": 27
+      },
+      "element_screenshot": "element-6196b703f931-1440.png"
+    },
+    {
+      "id": "ba056b86978c",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 1440,
+      "viewports": [
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-2b9d2cfb\"]",
+      "sample": "ಕನ್ನಡ ಕವಿ ಮತ್ತು ಗಾಂಧಿಯವರ ಸಿಬ್ಬಂದಿಃ ದಂಡಿ ಯಾತ್ರೆಯ ಒಂ...",
+      "detector": "wrong-lang",
+      "severity": "warning",
+      "confidence": "measured",
+      "evidence": {
+        "script": "kannada",
+        "effective": "en",
+        "lang_source": "html",
+        "allowed_languages": [
+          "btk",
+          "kn",
+          "kok",
+          "sa",
+          "tcy"
+        ],
+        "share": 0.93
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-1440.png",
+      "bounds": {
+        "x": 1125,
+        "y": 2445,
+        "w": 548,
+        "h": 27
+      },
+      "element_screenshot": "element-ba056b86978c-1440.png"
+    },
+    {
+      "id": "bb47787d55c9",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 1440,
+      "viewports": [
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-93eb2404\"]",
+      "sample": "ಲಾಗಿನ್",
+      "detector": "font-fallback",
+      "severity": "info",
+      "confidence": "measured",
+      "evidence": {
+        "requested": "inter",
+        "actual": [
+          {
+            "familyName": "Nirmala UI",
+            "postScriptName": "NirmalaUI-Bold",
+            "isCustomFont": false,
+            "glyphCount": 3
+          }
+        ],
+        "note": "Fallback is not always a rendering defect"
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-1440.png",
+      "bounds": {
+        "x": 1302,
+        "y": 216,
+        "w": 98,
+        "h": 34
+      },
+      "element_screenshot": "element-bb47787d55c9-1440.png"
+    },
+    {
+      "id": "fd918c94cf21",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 1440,
+      "viewports": [
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-05b77816\"]",
+      "sample": "ಹೋಮ್",
+      "detector": "font-fallback",
+      "severity": "info",
+      "confidence": "measured",
+      "evidence": {
+        "requested": "inter",
+        "actual": [
+          {
+            "familyName": "Nirmala UI",
+            "postScriptName": "NirmalaUI-Bold",
+            "isCustomFont": false,
+            "glyphCount": 3
+          }
+        ],
+        "note": "Fallback is not always a rendering defect"
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-1440.png",
+      "bounds": {
+        "x": 52,
+        "y": 276,
+        "w": 90,
+        "h": 34
+      },
+      "element_screenshot": "element-fd918c94cf21-1440.png"
+    },
+    {
+      "id": "15b1d3770740",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 1440,
+      "viewports": [
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-50124ec5\"]",
+      "sample": "ಲೇಖನಗಳು",
+      "detector": "font-fallback",
+      "severity": "info",
+      "confidence": "measured",
+      "evidence": {
+        "requested": "inter",
+        "actual": [
+          {
+            "familyName": "Nirmala UI",
+            "postScriptName": "NirmalaUI-Bold",
+            "isCustomFont": false,
+            "glyphCount": 6
+          }
+        ],
+        "note": "Fallback is not always a rendering defect"
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-1440.png",
+      "bounds": {
+        "x": 342,
+        "y": 275,
+        "w": 109,
+        "h": 35
+      },
+      "element_screenshot": "element-15b1d3770740-1440.png"
+    },
+    {
+      "id": "6922811d6472",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 1440,
+      "viewports": [
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-cdf141c1\"]",
+      "sample": "ಸುದ್ದಿ",
+      "detector": "font-fallback",
+      "severity": "info",
+      "confidence": "measured",
+      "evidence": {
+        "requested": "inter",
+        "actual": [
+          {
+            "familyName": "Nirmala UI",
+            "postScriptName": "NirmalaUI-Bold",
+            "isCustomFont": false,
+            "glyphCount": 3
+          }
+        ],
+        "note": "Fallback is not always a rendering defect"
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-1440.png",
+      "bounds": {
+        "x": 458,
+        "y": 275,
+        "w": 70,
+        "h": 35
+      },
+      "element_screenshot": "element-6922811d6472-1440.png"
+    },
+    {
+      "id": "bb00ebc93e3a",
+      "url": "https://varthe.karnataka.gov.in/",
+      "viewport": 1440,
+      "viewports": [
+        1440
+      ],
+      "selector": "[data-akshara-id=\"ak-d4c0366f\"]",
+      "sample": "ಮೀಡಿಯಾ",
+      "detector": "font-fallback",
+      "severity": "info",
+      "confidence": "measured",
+      "evidence": {
+        "requested": "inter",
+        "actual": [
+          {
+            "familyName": "Nirmala UI",
+            "postScriptName": "NirmalaUI-Bold",
+            "isCustomFont": false,
+            "glyphCount": 4
+          }
+        ],
+        "note": "Fallback is not always a rendering defect"
+      },
+      "fix": null,
+      "ai_explanation": null,
+      "screenshot": "page-01-1440.png",
+      "bounds": {
+        "x": 831,
+        "y": 275,
+        "w": 103,
+        "h": 35
+      },
+      "element_screenshot": "element-bb00ebc93e3a-1440.png"
+    }
+  ],
+  "summary": {
+    "error": 0,
+    "warning": 73,
+    "info": 13
+  }
+}

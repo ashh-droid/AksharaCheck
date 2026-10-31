@@ -21,24 +21,25 @@
       }
     },
     {
-      "slug": "hindi-wikipedia",
+      "slug": "karnataka-varthe-kannada",
       "kind": "public",
-      "title": "Hindi Wikipedia",
-      "target": "https://hi.wikipedia.org/",
-      "scanned_at": "2026-10-31T12:08:13+00:00",
+      "title": "Karnataka Varthe (Kannada)",
+      "target": "https://varthe.karnataka.gov.in/",
+      "scanned_at": "2026-10-31T15:53:43+00:00",
       "counts": {
         "error": 0,
-        "warning": 0,
-        "info": 3
+        "warning": 73,
+        "info": 13
       },
       "ai_calls": 0,
       "verified_fixes": 0,
       "ai_explained": 0,
-      "ai_eligible": 0,
+      "ai_eligible": 73,
       "highlight": {
-        "detector": "tight-line-height",
-        "sample": "कैश साफ़ करें"
-      }
+        "detector": "wrong-lang",
+        "sample": "ಕರ್ನಾಟಕ ವಾರ್ತೆ"
+      },
+      "review_note": "72 Kannada text observations inherited English (en) from the HTML language tag. These share one source; one possible mobile-overflow observation still needs visual review."
     },
     {
       "slug": "dd-news-hindi",
