@@ -1,3 +1,40 @@
 {
-  "scans": []
+  "scans": [
+    {
+      "slug": "akshara-fixture-demo",
+      "kind": "fixture",
+      "title": "AksharaCheck controlled demo",
+      "target": "http://127.0.0.1:49205/index.html",
+      "scanned_at": "2026-10-31T12:02:00+00:00",
+      "counts": {
+        "error": 3,
+        "warning": 6,
+        "info": 2
+      },
+      "ai_calls": 6,
+      "verified_fixes": 4,
+      "highlight": {
+        "detector": "broken-cluster",
+        "sample": "यह एक मााित्रा त्रुटि का परीक्षण है"
+      }
+    },
+    {
+      "slug": "hindi-wikipedia",
+      "kind": "public",
+      "title": "Hindi Wikipedia",
+      "target": "https://hi.wikipedia.org/",
+      "scanned_at": "2026-10-31T12:08:13+00:00",
+      "counts": {
+        "error": 0,
+        "warning": 0,
+        "info": 3
+      },
+      "ai_calls": 0,
+      "verified_fixes": 0,
+      "highlight": {
+        "detector": "tight-line-height",
+        "sample": "कैश साफ़ करें"
+      }
+    }
+  ]
 }
