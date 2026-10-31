@@ -80,3 +80,25 @@ def test_gallery_source_has_responsive_three_card_layout():
     assert "@media (max-width: 959px) { .recorded-grid" in css
     assert "s.review_note &&" in page
     assert "min-width: 0; display: flex; flex-direction: column" in css
+
+
+def test_judge_first_readme_has_three_real_links_and_scoped_claims():
+    readme=(ROOT/"README.md").read_text(encoding="utf-8")
+    assert "A three-minute tour for judges" in readme
+    assert "9 of 9 actionable findings explained" in readme
+    assert "4 repairs verified in Chromium" in readme
+    assert "No account or API key is needed." in readme
+    assert "no change to the live site or screen-reader behavior was verified" in readme
+    assert "an older [hindi wikipedia report]" in readme.lower()
+    assert "72 pieces of Kannada text are announced as English" not in readme
+    assert "changing that one tag fixes all 72" not in readme
+    assert "All three are dated snapshots, published exactly as" not in readme
+    for slug in ("akshara-fixture-demo","karnataka-varthe-kannada","dd-news-hindi"):
+        url=f"https://ashh-droid.github.io/AksharaCheck/samples/{slug}/report.html"
+        assert url in readme
+        assert (ROOT/"web"/"public"/"samples"/slug/"report.html").is_file()
+
+
+def test_showcase_publisher_does_not_undo_manually_improved_readme():
+    source=(ROOT/"README.md").read_text(encoding="utf-8")
+    assert showcase.replace_readme(source)==source
