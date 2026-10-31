@@ -663,6 +663,31 @@ def _download_script(files):
             'setTimeout(function(){URL.revokeObjectURL(url)},2000);event.preventDefault();}catch(error){}});});</script>')
 
 
+def _language_script():
+    """Remember a reader's explanation language and use it in every report card.
+
+    Without JavaScript, independent radio controls still work as before.
+    localStorage may be disabled for file:// reports, so storage is optional.
+    """
+    return ('<script>(function(){'
+            'var key="aksharacheck-report-language";'
+            'function setLanguage(lang){'
+            'if(!/^(en|hi|kn)$/.test(lang))return;'
+            'document.querySelectorAll(".ai input.t-"+lang).forEach(function(input){input.checked=true});'
+            '}'
+            'try{setLanguage(localStorage.getItem(key)||"en")}catch(e){}'
+            'document.addEventListener("change",function(event){'
+            'var input=event.target;'
+            'if(!(input instanceof HTMLInputElement)||input.type!=="radio"||!input.closest(".ai"))return;'
+            'var code=input.classList.contains("t-hi")?"hi":input.classList.contains("t-kn")?"kn":'
+            'input.classList.contains("t-en")?"en":null;'
+            'if(!code)return;'
+            'setLanguage(code);'
+            'try{localStorage.setItem(key,code)}catch(e){}'
+            '});'
+            '})();</script>')
+
+
 def _html_report(data,folder,files=None):
     findings=data.get("findings",[])
     counts=Counter(f.get("severity","info") for f in findings)
@@ -723,7 +748,7 @@ def _html_report(data,folder,files=None):
         '<p class="meta">'+esc(checked)+'</p>'+_ai_line(data)+''.join(notices)+'</section>'
         +_overview(groups,counts)+"".join(bands)+'</main>'
         '<footer class="shell"><div class="foot"><span>AksharaCheck measures how Chromium draws the page. It is not a full accessibility audit.</span>'
-        '<span><span lang="hi">अक्षर जाँच</span> · <span lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ</span></span></div></footer>'+_download_script(files)+'</body></html>'
+        '<span><span lang="hi">अक्षर जाँच</span> · <span lang="kn">ಅಕ್ಷರ ಪರಿಶೀಲನೆ</span></span></div></footer>'+_download_script(files)+_language_script()+'</body></html>'
     )
 
 
