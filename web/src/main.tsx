@@ -584,8 +584,8 @@ function RecordedScans({ scans }: { scans: RecordedScan[] }) {
   return (
     <div className="recorded" id="recorded">
       <div className="recorded-head">
-        <h3>Open a real report</h3>
-        <p>Produced by AksharaCheck in Chromium and published as it came out.</p>
+        <h3>Explore recorded reports</h3>
+        <p>Controlled BharatCode demonstration and real public-page scans. These are dated browser snapshots, not full accessibility certifications.</p>
       </div>
       <div className="recorded-grid">
         {scans.map((s) => {
@@ -600,17 +600,25 @@ function RecordedScans({ scans }: { scans: RecordedScan[] }) {
           const stat = fixture
             ? (explained ? `BharatCode explained ${explained} of ${s.ai_eligible || explained}` : '') +
               ((s.verified_fixes || 0) > 0 ? (explained ? ' · ' : '') + plural(s.verified_fixes || 0, 'fix', 'fixes') + ' verified in Chromium' : '')
-            : counts.error || counts.warning ? 'Browser checks only' : 'Nothing to fix · browser checks only';
+            : (counts.error || counts.warning)
+              ? 'Browser-only scan · findings require manual review'
+              : counts.info
+                ? 'Browser-only scan · informational observations, not confirmed defects'
+                : 'Browser-only scan · no findings at the tested widths';
           return (
             <a key={s.slug} className={'recorded-card ' + (fixture ? 'fixture' : 'public')} href={recordedReportUrl(s.slug)} target="_blank" rel="noopener noreferrer">
               <span className="recorded-kind">{fixture ? 'BharatCode demonstration' : 'Public website'}</span>
               <span className="recorded-site">{s.title}</span>
               <span className="recorded-url">{fixture ? 'Test page with planted rendering bugs' : hostOf(s.target)}</span>
-              {s.highlight?.sample && (
+              {s.highlight?.sample ? (
                 <span className="recorded-sample" lang={langOf(s.highlight.sample)}>
                   {s.highlight.sample}
                 </span>
-              )}
+              ) : !counts.error && !counts.warning && !counts.info ? (
+                <span className="recorded-sample recorded-clean">
+                  <Icon name="check" /> No findings in the recorded scan at its tested widths.
+                </span>
+              ) : null}
               <span className="recorded-counts">
                 {pills.length ? (
                   pills.map(([kind, n, label]) => (
@@ -619,7 +627,7 @@ function RecordedScans({ scans }: { scans: RecordedScan[] }) {
                     </span>
                   ))
                 ) : (
-                  <span className="sev info">Nothing found</span>
+                  <span className="sev info">0 findings</span>
                 )}
               </span>
               {stat && <span className="recorded-stat">{stat}</span>}
