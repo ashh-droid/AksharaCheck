@@ -39,6 +39,23 @@
         "detector": "tight-line-height",
         "sample": "कैश साफ़ करें"
       }
+    },
+    {
+      "slug": "dd-news-hindi",
+      "kind": "public",
+      "title": "DD News (Hindi)",
+      "target": "https://ddnews.gov.in/",
+      "scanned_at": "2026-10-31T15:14:08+00:00",
+      "counts": {
+        "error": 0,
+        "warning": 0,
+        "info": 0
+      },
+      "ai_calls": 0,
+      "verified_fixes": 0,
+      "ai_explained": 0,
+      "ai_eligible": 0,
+      "highlight": {}
     }
   ]
 }
