@@ -27,12 +27,12 @@ def test_full_report_review_detects_false_positive_and_inherited_language(tmp_pa
              "sample":"ಆ್ಯಪ್ ಡೌನ್‌ಲೋಡ್","evidence":{"invalid_sequences":[
                  {"position":1,"sequence":"ಆ್","reason":"virama without a preceding consonant"}]}},
             {"id":"lang1","detector":"wrong-lang","severity":"warning","viewport":390,
-             "sample":"ಕರ್ನಾಟಕ ವಾರ್ತೆ","evidence":{"effective":"en","script":"kannada"}},
+             "sample":"ಕರ್ನಾಟಕ ವಾರ್ತೆ","bounds":{"x":0,"y":0,"w":0,"h":0},"evidence":{"effective":"en","script":"kannada","lang_source":"html"}},
             {"id":"lang2","detector":"wrong-lang","severity":"warning","viewport":390,
-             "sample":"ಸುದ್ದಿಗಳು ಮತ್ತು ಮಾಹಿತಿ","evidence":{"effective":"en","script":"kannada"}},
+             "sample":"ಸುದ್ದಿಗಳು ಮತ್ತು ಮಾಹಿತಿ","bounds":{"x":16,"y":140,"w":160,"h":24},"evidence":{"effective":"en","script":"kannada","lang_source":"html"}},
             {"id":"font","detector":"font-fallback","severity":"info","viewport":390,
              "sample":"ಚಂದಾದಾರರಾಗಿ","evidence":{"requested":"pvtextsemibold","actual":[
-                 {"familyName":"Prajavani Text Semibold","glyphCount":12}]}},
+                 {"familyName":"Prajavani Text Semibold","glyphCount":12,"isCustomFont":True}]}},
         ],
     }
     target.write_text(json.dumps(source,ensure_ascii=False),encoding="utf-8")
@@ -41,6 +41,11 @@ def test_full_report_review_detects_false_positive_and_inherited_language(tmp_pa
     assert target.read_bytes()==original
     assert data["counts"]["match"] is True
     assert data["language_tags"]["effective_language_tags"]=={"en":2}
+    assert data["language_tags"]["declaring_elements"]=={"html":2}
+    assert data["language_tags"]["captured_geometry"]=={
+        "collapsed_or_zero_geometry":1,"potentially_visible":1}
+    assert data["font_name_differences"]["custom_font_only_count"]==1
+    assert data["font_name_differences"]["pairs"][0]["platform_family"]=="Prajavani Text Semibold"
     assert data["broken_clusters"][0]["current_rule_still_flags"] is False
     assert data["possible_custom_font_aliases"]["count"]==1
     assert data["missing_screenshot_files"]==["page-01-390.png"]

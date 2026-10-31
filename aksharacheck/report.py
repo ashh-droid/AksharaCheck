@@ -37,8 +37,8 @@ FINDING_COPY={
     ),
     "wrong-lang":(
         "Wrong language tag",
-        "The text is in one script but tagged as another language, so screen readers use the wrong voice and browsers may pick the wrong font.",
-        "Set the lang attribute that matches the text, such as lang=\"hi\" or lang=\"kn\"."
+        "The text inherits or declares a tag for another language. Many affected elements can share one parent language-tag problem.",
+        "Check the nearest parent lang attribute first; set lang=\"hi\" or lang=\"kn\" on the appropriate section."
     ),
     "mixed-language":(
         "Two languages without labels",
@@ -51,9 +51,9 @@ FINDING_COPY={
         "Check the font address, and whether that font is actually used for visible text."
     ),
     "font-fallback":(
-        "A different font was used",
-        "Chromium drew this text with a font other than the first one the page asked for.",
-        "Compare the letters with the intended font. A fallback can be deliberate."
+        "Font family names differ",
+        "The CSS font name and Chromium's internal rendered font name differ. Web-font aliases can legitimately have different names.",
+        "Compare the text visually before changing fonts; an internal name difference alone does not prove a rendering problem."
     ),
     "legacy-font":(
         "Old non-Unicode font",

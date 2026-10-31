@@ -25,15 +25,26 @@ DOM_JS = r'''(args) => {
    const direct=[...el.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join(' ').trim();
    if(!direct || direct.length<2)continue;
    const cs=getComputedStyle(el);if(cs.display==='none'||cs.visibility==='hidden'||parseFloat(cs.opacity)<0.5)continue;
-   const selector='ak-'+hash(path(el)+'|'+direct.slice(0,300));el.setAttribute('data-akshara-id',selector);index++;
    const rect=el.getBoundingClientRect();
-   const isOffscreen=rect.right<=0 || rect.left>=innerWidth || rect.width<2 || rect.height<2;
+   // Text in a collapsed or completely off-canvas widget cannot be
+   // assessed visually. Keep vertically below-the-fold content eligible.
+   if(rect.width<2 || rect.height<2 || rect.right<=0 || rect.left>=innerWidth)continue;
    const isAriaHidden=!!el.closest('[aria-hidden="true"],[inert]');
    if(isAriaHidden)continue;
-   let p=el,lang='';while(p){if(p.getAttribute?.('lang')){lang=p.getAttribute('lang');break}p=p.parentElement}
+   const selector='ak-'+hash(path(el)+'|'+direct.slice(0,300));el.setAttribute('data-akshara-id',selector);index++;
+   const isOffscreen=false;
+   let p=el,lang='',langSource='(missing)';
+   while(p){
+     if(p.getAttribute?.('lang')){
+       lang=p.getAttribute('lang');
+       langSource=p===el?'self':p===document.documentElement?'html':p===document.body?'body':path(p);
+       break;
+     }
+     p=p.parentElement;
+   }
    const fs=parseFloat(cs.fontSize)||0; const lh=cs.lineHeight==='normal'?0:(parseFloat(cs.lineHeight)||0);
    out.push({selector:`[data-akshara-id="${selector}"]`, text:direct.slice(0,600), font:cs.fontFamily,
-    fontSize:fs,lineHeight:lh,lang,display:cs.display,visibility:cs.visibility,opacity:cs.opacity,clientWidth:el.clientWidth,scrollWidth:el.scrollWidth,
+    fontSize:fs,lineHeight:lh,lang,langSource,display:cs.display,visibility:cs.visibility,opacity:cs.opacity,clientWidth:el.clientWidth,scrollWidth:el.scrollWidth,
     clientHeight:el.clientHeight,scrollHeight:el.scrollHeight,overflowX:cs.overflowX,
     overflowY:cs.overflowY,lineCount:fs?Math.max(1,Math.round(rect.height/(lh||fs*1.2))):1,
     intentionalClamp:cs.webkitLineClamp!=='none'||cs.textOverflow==='ellipsis',

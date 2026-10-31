@@ -8,7 +8,7 @@ from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 
 import pytest
 from playwright.async_api import async_playwright
-from aksharacheck.browser import Scanner
+from aksharacheck.browser import Scanner, DOM_JS
 
 FIXTURE=Path(__file__).resolve().parents[1]/"fixtures"/"toota-akshar"
 
@@ -69,3 +69,29 @@ async def test_clean_page_has_no_errors_or_warnings(tmp_path,fixture_url,chromiu
     serious=[f for f in result["findings"] if f["severity"] in {"error","warning"}]
     assert not serious,[(f["detector"],f["sample"][:80]) for f in serious]
     assert (tmp_path/"report.json").is_file()
+
+
+@pytest.mark.asyncio
+async def test_visible_text_sampling_ignores_collapsed_and_offscreen_widgets(chromium_available):
+    """Real-site regression: hidden navigation must not inflate language warnings."""
+    async with async_playwright() as p:
+        browser=await p.chromium.launch(headless=True)
+        try:
+            page=await browser.new_page(viewport={"width":390,"height":850})
+            await page.set_content('''<!doctype html><html lang="en"><body>
+              <div id="visible">ಕನ್ನಡ ವಾರ್ತೆ</div>
+              <div id="collapsed" style="height:0;width:0;overflow:hidden">ಲೇಖನಗಳು</div>
+              <div id="offscreen" style="position:absolute;left:600px">ನಮ್ಮ ಸೇವೆಗಳು</div>
+              <div id="below" style="position:absolute;top:1600px">ರಾಜ್ಯ ಸುದ್ದಿ</div>
+            </body></html>''')
+            nodes=await page.evaluate(DOM_JS,{})
+            samples={n["text"]:n for n in nodes}
+            assert "ಕನ್ನಡ ವಾರ್ತೆ" in samples
+            assert samples["ಕನ್ನಡ ವಾರ್ತೆ"]["lang"]=="en"
+            assert samples["ಕನ್ನಡ ವಾರ್ತೆ"]["langSource"]=="html"
+            assert "ಲೇಖನಗಳು" not in samples
+            assert "ನಮ್ಮ ಸೇವೆಗಳು" not in samples
+            # Below-the-fold content is still visible when a reader scrolls.
+            assert "ರಾಜ್ಯ ಸುದ್ದಿ" in samples
+        finally:
+            await browser.close()

@@ -108,6 +108,7 @@ def run_dom_detectors(page_url, viewport, nodes, lang="both"):
         if total>=6 and min(counts.values())/total>=.15:
             result.append(finding(page_url,viewport,node,"mixed-language","warning",
                                   {"scripts":counts,"effective":effective or "(missing)",
+                                   "lang_source":node.get("langSource") or "(unknown)",
                                    "suggestion":"Wrap each language run in a span with its own lang attribute"}))
         elif share>=.45 and len(sample.strip())>=6:
             script="devanagari" if counts["devanagari"]>=counts["kannada"] else "kannada"
@@ -115,6 +116,7 @@ def run_dom_detectors(page_url, viewport, nodes, lang="both"):
             if effective not in valid:
                 result.append(finding(page_url,viewport,node,"wrong-lang","warning",
                                       {"script":script,"effective":effective or "(missing)",
+                                       "lang_source":node.get("langSource") or "(unknown)",
                                        "allowed_languages":sorted(valid),"share":round(share,2)}))
         width = float(node.get("clientWidth") or 0)
         scroll = float(node.get("scrollWidth") or 0)
