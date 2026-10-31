@@ -72,7 +72,9 @@ def validate(data: dict, folder: Path) -> None:
 def replace_readme(s: str) -> str:
     old = f"[Hindi Wikipedia report]({WIKI_LINK})"
     new = f"[Karnataka Varthe (Kannada) report]({NEW_LINK})"
-    if old in s:
+    # Keep Wikipedia's archived report link once the Kannada showcase exists.
+    # Only replace the old navigation link during the first migration.
+    if NEW_LINK not in s and old in s:
         s = s.replace(old, new, 1)
     elif NEW_LINK not in s:
         raise ValueError("Could not find the README showcase link.")
