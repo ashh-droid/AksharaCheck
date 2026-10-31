@@ -36,7 +36,10 @@ def test_report_layout_in_chromium(tmp_path):
         {"id": "b", "url": "https://example.org", "viewport": 390, "viewports": [390], "selector": '[data-akshara-id="ak-2"]',
          "sample": "ಇದು ಕಾ ಪರೀಕ್ಷೆ", "detector": "broken-cluster", "severity": "error", "confidence": "confirmed",
          "evidence": {"invalid_sequences": [{"position": 3, "sequence": "ಕಾ ಿ", "codepoints": ["U+0C95", "U+0CBE", "U+0020", "U+0CBF"],
-                                             "reason": "dependent vowel sign without a preceding consonant"}]}},
+                                             "reason": "dependent vowel sign without a preceding consonant"}]},
+         "ai_explanation": "The vowel sign is separated from its letter.",
+         "summary_hi": "यहाँ स्वर चिह्न गलत जगह पर है।",
+         "summary_kn": "ಸ್ವರ ಗುರುತು ತಪ್ಪು ಸ್ಥಾನದಲ್ಲಿದೆ."},
     ]
     write_reports({"target": "https://example.org", "engine_version": "test", "findings": findings, "pages": [],
                    "ai": {"model": "qwen-3.8-27b", "calls": 3, "input_tokens": 100, "output_tokens": 50, "seconds": 4}}, tmp_path)

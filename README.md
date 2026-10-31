@@ -262,7 +262,7 @@ pip install pytest-asyncio
 pytest -q tests/test_browser_integration.py
 ```
 
-Also run `cd web && npm install && npm run build` and test a complete Chromium scan. CI is not enabled while the repository is private; do not merge a PR without these checks.
+Also run `cd web && npm install && npm run build` and test a complete Chromium scan. GitHub Actions CI is active on this public repository; only merge a branch after its updated automated checks pass.
 
 ## Repo and hackathon
 

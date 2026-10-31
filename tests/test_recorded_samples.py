@@ -103,3 +103,19 @@ def test_fixture_is_explicitly_marked_and_other_local_urls_remain_blocked(tmp_pa
         publish.copy_scan(source,"other-private","Other",True,fixture_demo=True)
     assert not publish.fixture_demo_url("http://192.168.1.3:8765/index.html")
     assert not publish.fixture_demo_url("http://127.0.0.1:8765/private")
+
+
+def test_published_report_snapshots_have_tab_icon_and_working_language_preference():
+    """Recorded reports must not lose their self-contained branding after publishing."""
+    root=Path(__file__).resolve().parents[1]/"web"/"public"/"samples"
+    for slug in ("akshara-fixture-demo","hindi-wikipedia"):
+        report=(root/slug/"report.html").read_text(encoding="utf-8")
+        assert '<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,' in report
+        assert 'aksharacheck-report-language' in report
+        assert 'document.querySelectorAll(".ai input.t-"+lang)' in report
+        assert "AksharaCheck report</title>" in report
+        assert (root/slug/"report.json").is_file()
+    catalog=json.loads((root/"catalog.json").read_text(encoding="utf-8"))
+    byslug={x["slug"]:x for x in catalog["scans"]}
+    assert byslug["akshara-fixture-demo"]["kind"]=="fixture"
+    assert byslug["hindi-wikipedia"]["kind"]=="public"
