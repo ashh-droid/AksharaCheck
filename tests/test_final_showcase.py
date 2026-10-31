@@ -89,7 +89,7 @@ def test_judge_first_readme_has_three_real_links_and_scoped_claims():
     assert "4 repairs verified in Chromium" in readme
     assert "No account or API key is needed." in readme
     assert "no change to the live site or screen-reader behavior was verified" in readme
-    assert "an older [Hindi Wikipedia report]" in readme.lower()
+    assert "an older [hindi wikipedia report]" in readme.lower()
     assert "72 pieces of Kannada text are announced as English" not in readme
     assert "changing that one tag fixes all 72" not in readme
     assert "All three are dated snapshots, published exactly as" not in readme
