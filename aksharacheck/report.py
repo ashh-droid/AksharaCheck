@@ -61,9 +61,9 @@ FINDING_COPY={
         "Convert the text to Unicode and use a Unicode font."
     ),
     "tight-line-height":(
-        "Tight line spacing",
-        "Several lines sit close together, which leaves little room for Indic marks.",
-        "Check it at normal zoom. A line height of about 1.6 suits Devanagari and Kannada."
+        "Unusually tight line spacing",
+        "Multiple lines have unusually little vertical separation. This is a review cue, not proof that letters are clipped.",
+        "Inspect the text at normal zoom. Increase line height only if marks actually overlap or become difficult to read."
     ),
 }
 # One vocabulary everywhere: Fix, Check, Note.

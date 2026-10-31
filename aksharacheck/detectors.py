@@ -125,7 +125,10 @@ def run_dom_detectors(page_url, viewport, nodes, lang="both"):
             result.append(finding(page_url,viewport,node,"mobile-overflow","warning", {"scroll_width":scroll,"client_width":width,"overflow_x":overflow_x}))
         font_size = float(node.get("fontSize") or 0)
         lh = float(node.get("lineHeight") or 0)
-        if font_size > 0 and lh and (lh/font_size) < 1.4 and (node.get("lineCount") or 1) > 1:
+        # A line-height around 1.2–1.25 is ordinary typography and does not
+        # demonstrate clipping. Flag only unusually compressed multi-line text;
+        # visible ink collision still requires checking the screenshot.
+        if font_size > 0 and lh and (lh/font_size) < 1.15 and (node.get("lineCount") or 1) > 1:
             result.append(finding(page_url,viewport,node,"tight-line-height","info", {"font_size":font_size,"line_height":lh,"ratio":round(lh/font_size,2)}))
         # ScrollHeight can exceed a 0-1px hidden navigation item even when no text
         # is presented to the reader. Require readable visible geometry and meaningful
@@ -164,7 +167,7 @@ def failed_font_findings(url, viewport, failures):
 
 
 def font_mismatch_findings(url, viewport, nodes):
-    """CDP evidence is informative by default; fallback can be intentional."""
+    """CDP font differences are hints, not proof of broken rendering."""
     out=[]
     for n in nodes:
         actual=n.get("platform_fonts") or []
@@ -172,6 +175,17 @@ def font_mismatch_findings(url, viewport, nodes):
         if not actual or not specified or specified in {"sans-serif","serif","monospace","system-ui","inherit"}:
             continue
         actual_names=[x.get("familyName","").lower() for x in actual if x.get("glyphCount",0)>0]
+        # Arial does not provide Devanagari glyphs on typical Windows installs.
+        # Chromium correctly draws that text with Nirmala UI; calling it a
+        # font problem adds noise without evidence of unreadable characters.
+        expected_devanagari_fallback=(
+            specified=="arial"
+            and script_counts(n.get("text",""))["devanagari"]>0
+            and actual_names
+            and all(name.startswith("nirmala ui") for name in actual_names)
+        )
+        if expected_devanagari_fallback:
+            continue
         if actual_names and all(specified not in name for name in actual_names) and indic_share(n.get("text",""))>.25:
             out.append(finding(url,viewport,n,"font-fallback","info",{"requested":specified,"actual":actual,"note":"Fallback is not always a rendering defect"}))
     return out
