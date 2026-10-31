@@ -37,6 +37,19 @@ start output\dd-news-hindi\report.html
 
 This scans the accessible public page at phone (390px) and desktop (1440px). A valid clean scan is still useful evidence. If any defect is suspected, manually inspect the exact screenshot, selector, language attribute and rendered characters; exclude false alarms and explain limitations before publishing.
 
+## Full saved-report audit, without rescanning or AI calls
+
+The screenshots in a chat show only selected findings. To review every finding, every DOM language-tag warning, every font-mismatch note, scan completeness, and missing screenshot files, run:
+
+```cmd
+cd /d C:\Projects\AksharaCheck
+.venv\Scripts\python.exe scripts\audit_saved_reports.py output\karnataka-varthe\report.json output\prajavani\report.json
+```
+
+This creates **only** `output\karnataka-varthe\audit-review.json` and `output\prajavani\audit-review.json`. The original reports and all image evidence are left untouched. If your outputs use different folder names, substitute their exact paths.
+
+For a genuinely deep per-finding review, send both original `report.json` files and the element screenshots, preferably as two separate ZIP archives. Include the complete HTML and image files when possible. Source text, screenshot evidence and original Unicode codepoints are essential; a summary of counts alone cannot establish whether the 133 warnings share a root cause or whether Prajavani's custom font was actually substituted.
+
 ## Publication gate
 
 - Confirm the page actually loaded at both widths, without blocked/error responses.
