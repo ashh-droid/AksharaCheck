@@ -398,3 +398,48 @@ def test_rendering_a_saved_report_keeps_its_page_counts(tmp_path):
     write_reports(saved, tmp_path)
     again = json.loads((tmp_path / "report.json").read_text(encoding="utf-8"))
     assert again["pages"][0]["finding_count"] == 1
+
+
+def test_clean_scan_displays_real_viewport_coverage_and_linked_screenshots(tmp_path):
+    png(tmp_path / "page-01-390.png",390,800)
+    png(tmp_path / "page-01-1440.png",1440,900)
+    pages=[
+        {"url":"https://ddnews.gov.in/","viewport":390,"screenshot":"page-01-390.png",
+         "nodes_checked":162,"finding_count":0},
+        {"url":"https://ddnews.gov.in/","viewport":1440,"screenshot":"page-01-1440.png",
+         "nodes_checked":213,"finding_count":0},
+    ]
+    page=render(tmp_path,[],target="https://ddnews.gov.in/",pages=pages)
+    assert 'id="clean-evidence-title"' in page
+    assert "375 text-element checks across 2 captured viewports" in page
+    assert "162 sampled text elements" in page and "213 sampled text elements" in page
+    for image in ("page-01-390.png","page-01-1440.png"):
+        assert 'href="'+image+'"' in page
+        assert 'src="'+image+'"' in page
+    assert "Indic character sequences" in page
+    assert "Language tags and mixed scripts" in page
+    assert "Overflow and possible clipping" in page
+    assert "Font loading and rendered font names" in page
+    assert "Unusually tight line spacing" in page
+    assert "No BharatCode model calls were needed" in page
+    saved=json.loads((tmp_path/"report.json").read_text(encoding="utf-8"))
+    assert [p["nodes_checked"] for p in saved["pages"]]==[162,213]
+    assert [p["finding_count"] for p in saved["pages"]]==[0,0]
+
+
+def test_clean_report_does_not_reference_missing_or_unsafe_page_images(tmp_path):
+    pages=[{"viewport":390,"url":"https://example.org/","screenshot":"../../secrets.png","nodes_checked":5}]
+    page=render(tmp_path,[],pages=pages)
+    assert 'src="../../secrets.png"' not in page
+    assert "No saved page screenshot available" in page
+
+
+def test_unscanned_viewport_is_not_called_clean(tmp_path):
+    page=render(tmp_path,[],pages=[
+        {"viewport":390,"url":"https://example.org/","error":"timeout"},
+        {"viewport":1440,"url":"https://example.org/","nodes_checked":4}
+    ])
+    assert "No findings in completed checks; some viewports were not scanned." in page
+    assert "Do not treat missing results as a clean pass." in page
+    assert 'id="clean-evidence-title"' not in page
+    assert '<p class="clean">' not in page
