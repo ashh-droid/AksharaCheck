@@ -84,14 +84,14 @@ def replace_readme(s: str) -> str:
     )
     new_rows = (
         f"| [Karnataka Varthe (Kannada)]({NEW_LINK}), 31 Oct 2026 | "
-        "0 errors; 72 Kannada text observations inherit \\u0060lang=en\\u0060 "
+        "0 errors; 72 Kannada text observations inherit `lang=en` "
         "from one HTML ancestor. One possible mobile-overflow warning remains unverified; "
-        "13 font-name observations are informational. Browser-only scan, not a site-wide audit. |\\n"
+        "13 font-name observations are informational. Browser-only scan, not a site-wide audit. |\n"
         f"| [DD News (Hindi)]({DD_LINK}), 31 Oct 2026 | "
         "0 findings at the two tested widths. Chromium sampled 162 phone and "
         "213 desktop text elements; the report includes both page screenshots. "
         "Browser-only scan, no AI calls. |"
-    ).replace("\\u0060", "`")
+    )
     if old_row in s:
         s = s.replace(old_row, new_rows, 1)
     elif new_rows not in s:
