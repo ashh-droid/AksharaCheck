@@ -108,7 +108,7 @@ def test_fixture_is_explicitly_marked_and_other_local_urls_remain_blocked(tmp_pa
 def test_published_report_snapshots_have_tab_icon_and_working_language_preference():
     """Recorded reports must not lose their self-contained branding after publishing."""
     root=Path(__file__).resolve().parents[1]/"web"/"public"/"samples"
-    for slug in ("akshara-fixture-demo","hindi-wikipedia"):
+    for slug in ("akshara-fixture-demo","karnataka-varthe-kannada","dd-news-hindi"):
         report=(root/slug/"report.html").read_text(encoding="utf-8")
         assert '<link rel="icon" type="image/svg+xml" href="data:image/svg+xml' in report
         assert 'aksharacheck-report-language' in report
@@ -118,16 +118,13 @@ def test_published_report_snapshots_have_tab_icon_and_working_language_preferenc
     catalog=json.loads((root/"catalog.json").read_text(encoding="utf-8"))
     byslug={x["slug"]:x for x in catalog["scans"]}
     assert byslug["akshara-fixture-demo"]["kind"]=="fixture"
-    assert (root/"hindi-wikipedia"/"report.html").is_file()  # historical archive remains
     assert "dd-news-hindi" in byslug and byslug["dd-news-hindi"]["kind"]=="public"
-    if "karnataka-varthe-kannada" in byslug:
-        assert [x["slug"] for x in catalog["scans"]][:3]==[
-            "akshara-fixture-demo","karnataka-varthe-kannada","dd-news-hindi"]
-        assert byslug["karnataka-varthe-kannada"]["kind"]=="public"
-        assert "72 of these share one cause" in byslug["karnataka-varthe-kannada"]["review_note"]
-        assert "hindi-wikipedia" not in byslug
-    else:
-        assert byslug["hindi-wikipedia"]["kind"]=="public"
+    assert [x["slug"] for x in catalog["scans"]]==["akshara-fixture-demo","karnataka-varthe-kannada","dd-news-hindi"]
+    assert byslug["karnataka-varthe-kannada"]["kind"]=="public"
+    assert "72 of these share one cause" in byslug["karnataka-varthe-kannada"]["review_note"]
+    # Every published report folder is listed, so nothing unreviewed is online.
+    folders=sorted(p.name for p in root.iterdir() if p.is_dir())
+    assert folders==sorted(byslug)
 
 
 def test_published_clean_dd_news_evidence_matches_saved_json_and_renderer():

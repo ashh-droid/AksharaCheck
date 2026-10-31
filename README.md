@@ -13,8 +13,8 @@
 ### A three-minute tour for judges
 
 1. **See real BharatCode output.** Open the [controlled demonstration report](https://ashh-droid.github.io/AksharaCheck/samples/akshara-fixture-demo/report.html), switch between English, हिंदी and ಕನ್ನಡ, and inspect the overflow finding's rejected and accepted repair attempts. The report contains the actual before/after Chromium screenshots.
-2. **Inspect a Kannada-language observation.** Open the [Karnataka Varthe report](https://ashh-droid.github.io/AksharaCheck/samples/karnataka-varthe-kannada/report.html). It records 72 Kannada text elements inheriting the English language tag from one HTML ancestor, plus one unverified overflow warning. This is a browser measurement, not a screen-reader test or a change to the live government website.
-3. **Compare a clean Hindi scan.** Open the [DD News report](https://ashh-droid.github.io/AksharaCheck/samples/dd-news-hindi/report.html) to see zero findings at the tested widths, the 162 phone and 213 desktop sampled-text counts, and page screenshots. Then try the [in-browser text checker](https://ashh-droid.github.io/AksharaCheck/#try).
+2. **See a real Kannada finding.** Open the [Karnataka Varthe report](https://ashh-droid.github.io/AksharaCheck/samples/karnataka-varthe-kannada/report.html): 72 pieces of Kannada text on a government news site are tagged as English because the page's `<html>` element says `lang="en"`. The report traces all 72 to that one tag.
+3. **See a clean Hindi scan.** The [DD News report](https://ashh-droid.github.io/AksharaCheck/samples/dd-news-hindi/report.html) shows what a pass looks like: what was checked, how many text elements, and both page screenshots. Then try the [in-browser text checker](https://ashh-droid.github.io/AksharaCheck/#try).
 
 **The public GitHub Pages site is a static showcase and text checker, not a live URL scanner.** Run the Python/Chromium scanner locally using the instructions below.
 
@@ -42,12 +42,12 @@ flowchart LR
 | Recorded scan | What it shows |
 | --- | --- |
 | [BharatCode demo report](https://ashh-droid.github.io/AksharaCheck/samples/akshara-fixture-demo/report.html) (a test page with planted bugs, not a real website) | 3 problems to fix, 6 to check, 2 notes. BharatCode explained 9 of 9 findings in three languages; Chromium verified 4 repairs, including one that passed only after a first suggestion was rejected. |
-| [Karnataka Varthe (Kannada)](https://ashh-droid.github.io/AksharaCheck/samples/karnataka-varthe-kannada/report.html), 31 Oct 2026 | **0 confirmed Fix-level errors.** The scan recorded 72 Kannada text observations inheriting `lang="en"` from the same HTML ancestor, one possible phone overflow requiring review, and 13 informational font-name observations. Correct language metadata is a plausible remedy, but no change to the live site or screen-reader behavior was verified. |
+| [Karnataka Varthe (Kannada)](https://ashh-droid.github.io/AksharaCheck/samples/karnataka-varthe-kannada/report.html), 31 Oct 2026 | 72 pieces of Kannada text tagged as English, all inherited from the page's `<html lang="en">`, so one change fixes them. One possible phone overflow to review and 13 font notes. No problems in the Fix category. |
 | [DD News (Hindi)](https://ashh-droid.github.io/AksharaCheck/samples/dd-news-hindi/report.html), 31 Oct 2026 | No findings at either width. Chromium checked 162 text elements on the phone layout and 213 on desktop, and the report shows both page screenshots. |
 
-These are dated, scoped Chromium snapshots, not site-wide accessibility certifications. The controlled fixture includes actual BharatCode calls and verified repairs; the real public-page reports are browser-only and include reviewed context. An older [Hindi Wikipedia report](https://ashh-droid.github.io/AksharaCheck/samples/hindi-wikipedia/report.html) remains available as an archive, but is not part of the final showcase.
+These are dated snapshots of one page at two widths, published exactly as AksharaCheck wrote them. The demo shows BharatCode's explanations and verified repairs; the public-site reports are browser checks only.
 
-**Reducing false positives is part of the result.** Earlier DD News scans recorded 63 informational typography notes. After narrowing normal Hindi line-spacing and expected Arial-to-Nirmala UI fallback rules, a fresh scan recorded zero findings at those two widths. That improved the scanner; it did not fix or certify DD News.
+**Fewer false alarms is part of the result.** Earlier DD News scans produced 63 notes about line spacing and fonts. Narrowing those rules to skip ordinary Hindi line spacing and Windows' expected Arial-to-Nirmala UI font substitution brought it to zero, a change in the scanner rather than in DD News.
 
 ## What it checks
 
@@ -122,7 +122,7 @@ Open http://127.0.0.1:5173. The local interface can request scans through the ru
 | `aksharacheck/report.py` | HTML, Markdown and JSON reports |
 | `aksharacheck/api.py`, `cli.py` | FastAPI server and command line |
 | `web/` | React and Vite website, including the in-browser text checker |
-| `scripts/` | BharatCode demo, report publishing and visual QA |
+| `scripts/` | BharatCode demo and key check, report publishing, visual QA and Windows setup |
 | `fixtures/toota-akshar/` | Test page with planted rendering bugs |
 | `tests/` | Automated unit and real-browser checks of the website and reports |
 
