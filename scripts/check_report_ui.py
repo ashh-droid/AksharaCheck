@@ -76,6 +76,19 @@ def check(path):
                     if tabs.count():
                         tabs.first.click()
 
+                # Selecting one language applies it to all explanations, not
+                # just the card where the reader clicked.
+                groups = page.locator(".ai").filter(has=page.locator(".tabs"))
+                if groups.count() >= 2:
+                    groups.first.locator("label.tab-kn").click()
+                    assert groups.nth(1).locator("input.t-kn").is_checked(), (
+                        f"{where}: report language preference did not follow the reader"
+                    )
+                    groups.first.locator("label.tab-en").click()
+                    assert groups.nth(1).locator("input.t-en").is_checked(), (
+                        f"{where}: could not switch explanations back to English"
+                    )
+
                 # Downloads must save a file even from a file:// report, where browsers ignore "download".
                 if width == WIDTHS[-1][0]:
                     for kind in ("md", "json"):
