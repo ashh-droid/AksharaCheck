@@ -57,6 +57,14 @@ def malformed_clusters(text: str) -> list[dict]:
             reason="nukta without a preceding consonant"
         elif cp==virama:
             valid=prev in consonants or (prev==nukta and prevprev in consonants)
+            if cp==KAN_VIRAMA and i+1<len(text):
+                following=ord(text[i+1])
+                # Kannada loanwords such as "ಆ್ಯಪ್" use ಆ + ್ + ಯ.
+                # Do not label that sequence a broken character cluster.
+                # Unicode also permits vowel + virama + ೞ in Badaga.
+                if ((prev in {0x0C85,0x0C86} and following==0x0CAF)
+                        or (prev in KAN_VOWELS and following==0x0CDE)):
+                    valid=True
             reason="virama without a preceding consonant"
         elif cp in finals:
             valid=prev in consonants or prev in vowels or prev in signs or (prev==nukta and prevprev in consonants)
