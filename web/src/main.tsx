@@ -1066,7 +1066,7 @@ function App() {
               {COMMANDS.map((line) => (
                 <span key={line} className="cmd">
                   <span className="prompt" aria-hidden="true">
-                    $
+                    &gt;
                   </span>
                   {line}
                   {'\n'}
@@ -1114,7 +1114,7 @@ function App() {
         <section className="cta wrap" aria-labelledby="cta-title">
           <Logo size={48} onDark />
           <h2 id="cta-title">Find the broken letters before your readers do.</h2>
-          <a className="btn on-dark" href={PAGES_PREVIEW ? '#reports' : '#top'}>
+          <a className="btn on-dark" href={PAGES_PREVIEW ? (scans.length ? '#recorded' : '#reports') : '#top'}>
             {PAGES_PREVIEW ? 'See the reports' : 'Check a page'}
           </a>
         </section>

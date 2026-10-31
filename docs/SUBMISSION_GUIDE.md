@@ -12,7 +12,7 @@ AksharaCheck — Find the letters your website breaks
 
 AksharaCheck helps website builders catch broken Hindi and Kannada rendering that ordinary checks often miss. It opens a page in Chromium at phone and desktop widths, collects concrete evidence of issues such as incorrect language tags, split character clusters, clipped marks and overflowing text, then asks BharatCode's model API to explain the finding in English, Hindi and Kannada and propose a restricted repair. Chromium independently retests each repair and marks it verified only when the original issue disappears without hiding, shrinking or displacing text. Reports include original screenshots, repair attempts and provenance. The scanner works without an AI key; BharatCode powers the multilingual explanation and repair workflow. Built with Python, Playwright, React and Vite.
 
-Do not state that all nine findings were AI-explained unless `scripts/run_ai_demo.py --max-findings 9` prints `PASS` on the same project revision.
+The nine-finding run passed on 31 October 2026 (9 of 9 explained, 4 repairs verified in Chromium), so the summary may say so. Re-check this line if the demo is run again on a later revision.
 
 ## 2–3-minute demonstration plan
 
@@ -64,16 +64,16 @@ This site deployment requires Git credentials and publishes built static files t
 
 Use an empty folder, new virtual environment, installed Chromium, a scan of a permitted public URL, and a local browser to open the generated HTML. Confirm Devanagari and Kannada text render correctly even when offline after generating the report. Test on phone and desktop widths. Inspect links, copyright/attribution, `BharatCode.txt`, no API secrets in the repository, and that the submission URL points to the repo root.
 
-**Do not confuse GitHub Pages with the full app.** The Pages preview offers a browser-side text checker and recorded evidence. Live URL scans need a properly isolated backend. The README should say this clearly.
+**Do not confuse GitHub Pages with the full app.** The Pages preview offers a browser-side text checker and recorded evidence. Live URL scans need a properly isolated backend; the README says this in "Run the web app locally".
 
 ## Deadline checklist
 
 - [ ] BharatCode account registration and submission form verified while logged in
-- [ ] Main branch merged with passing CI, no demo blockers
-- [ ] Nine-finding BharatCode run PASS, or accurately disclose how many completed
-- [ ] Reviewed controlled fixture demo published and labelled
-- [ ] At least one genuine reviewed public-page scan published
-- [ ] README screenshot captured from an actual report and linked
+- [x] Main branch merged with passing CI, no demo blockers
+- [x] Nine-finding BharatCode run PASS (9 of 9 explained, 4 verified repairs)
+- [x] Reviewed controlled fixture demo published and labelled
+- [x] At least one genuine reviewed public-page scan published (Hindi Wikipedia)
+- [x] README screenshots captured from an actual report and linked
 - [ ] 2–3-minute video recorded from actual steps and linked, if completed
 - [ ] Fresh Windows clone and Chromium report checked
 - [ ] Public GitHub repo with `BharatCode.txt` confirmed

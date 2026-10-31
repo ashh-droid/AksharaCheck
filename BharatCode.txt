@@ -4,6 +4,8 @@ Description: Evidence-first Hindi and Kannada browser rendering auditor with AI-
 BharatCode Model: qwen-3.8-27b
 BharatCode API: https://bharatcode.ai/api/model/v1/responses
 Where API is used: For each browser finding, qwen-3.8-27b explains the problem in English, Hindi and Kannada and proposes a whitelisted CSS or lang repair. Chromium tests each repair in a fresh page; a rejected repair goes back to the model with the browser's reason, up to three tries. Only a repair that passes is marked verified. Findings themselves always come from the browser, never from the model.
-Run: pip install -e . && python -m playwright install chromium && aksharacheck scan https://example.com --lang both --ai
-Note: Set BHARATCODE_API_KEY in a server-side environment variable; never commit it.
-AI assisted development disclosure: Code and documentation were generated with AI assistance and require human testing and review.
+Run (Windows): py -3 -m venv .venv && .venv\Scripts\python.exe -m pip install -e . && .venv\Scripts\python.exe -m playwright install chromium && .venv\Scripts\python.exe -m aksharacheck scan https://hi.wikipedia.org/ --lang both --ai --output output
+BharatCode demo: .venv\Scripts\python.exe scripts\run_ai_demo.py --max-findings 9 (scans the included test page and runs the full BharatCode and Chromium loop)
+Recorded result: 9 of 9 findings explained by qwen-3.8-27b in English, Hindi and Kannada; 4 repairs verified in Chromium. Report: https://ashh-droid.github.io/AksharaCheck/samples/akshara-fixture-demo/report.html
+Key handling: set BHARATCODE_API_KEY as an environment variable on the machine that runs the scanner; it is never sent to the browser or saved.
+AI-assisted development disclosure: AI tools including ChatGPT and Claude assisted with planning, coding, debugging, design and documentation. The team reviewed and tested the work, and the test suite and Chromium checks are reproducible.
